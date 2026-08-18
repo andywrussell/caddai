@@ -10,6 +10,11 @@ first public API is published.
 
 ### Added
 
+- Developer recommendation demo (M1.1, issue #16):
+  `src/caddai/strategy/demo.py`, runnable via
+  `uv run python -m caddai.strategy.demo`, a thin presentation wrapper that
+  runs the real `recommend_club()` on a fixed, deterministic scenario and
+  prints a human-readable recommendation. Adds no new business logic.
 - Core domain model and deterministic recommendation vertical slice (M1):
   `caddai.player` (`Club`, `Player`) and `caddai.strategy` (`WindDirection`,
   `Wind`, `LieType`, `RecommendationRequest`, `RecommendationResult`,

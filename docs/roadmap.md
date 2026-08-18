@@ -16,6 +16,9 @@
   (`recommend_club`), to prove the architecture works before building
   subsystem depth. See
   [docs/plans/m1-core-domain-vertical-slice.plan.md](plans/m1-core-domain-vertical-slice.plan.md).
+  A follow-up developer tooling addition (M1.1, issue #16) added a runnable
+  demo command, `uv run python -m caddai.strategy.demo`, exercising this
+  path end to end.
 
 - **M2 — Course geometry and local GeoJSON course representation**
   `course`/`gps` subsystems: holes, fairways, greens, hazards, landing areas,
