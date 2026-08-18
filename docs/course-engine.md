@@ -20,8 +20,11 @@ Course Engineer (see `.github/agents/course-engineer.agent.md`).
   tees, fairways, greens, bunkers, water, out-of-bounds, and landing areas.
 - Represent a hole as an ordered composition of these features plus par.
 - Coordinate handling: conversion between geographic coordinates
-  (latitude/longitude) and course-local planar coordinates (metres), using
-  Shapely for geometric operations.
+  (latitude/longitude) and course-local planar coordinates (metres).
+  Point-to-point conversion (`gps.projection`) is plain trigonometry, not
+  Shapely (see [ADR 0002](adr/0002-gps-local-projection-without-shapely.md));
+  geometric operations on course features (polygons, hazards, hole
+  boundaries) will use Shapely starting at M2.3.
 - Distance calculations: point-to-point, point-to-feature (e.g. distance to
   the front/centre/back of the green), and along-line-of-play distances.
 - Hazard carry/lay-up distance queries (e.g. "distance to carry the
@@ -47,5 +50,5 @@ defined and versioned when M2 begins.
 
 All geometry and distances are in metres internally, consistent with
 `AGENTS.md` §5. GeoJSON's native lat/lon coordinates are converted to a
-metre-based local projection for internal calculations; the conversion
-approach is an implementation detail of `gps`, documented here once decided.
+metre-based local projection for internal calculations by `gps.projection`
+(see [ADR 0002](adr/0002-gps-local-projection-without-shapely.md)).

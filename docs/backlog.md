@@ -7,8 +7,6 @@
 ## Candidate items
 
 - Define the GeoJSON `properties` schema for course features (feeds M2).
-- Decide the coordinate-projection approach for lat/lon → local metres
-  conversion (feeds M2; candidate for an ADR).
 - Define the parametric form of carry/dispersion distributions (feeds M3).
 - Decide the expected-strokes model / baseline data source used by
   `strategy` (feeds M5; likely needs an ADR if it requires external

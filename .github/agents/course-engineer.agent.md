@@ -31,7 +31,10 @@ implementing. Follow `.github/instructions/python.instructions.md` and
 - You implement course/GPS representation and geometry only. You **must
   not** implement strategy decisions (club selection, target selection, risk,
   expected strokes) — that belongs to the Strategy Engineer.
-- Use Shapely for geometric operations; use NumPy for bulk numerical work.
+- Use Shapely for geometric operations (polygons, hazards, greens,
+  fairways); use NumPy for bulk numerical work. Plain point-to-point
+  coordinate math (e.g. `gps.projection`) does not require Shapely — see
+  [ADR 0002](../../docs/adr/0002-gps-local-projection-without-shapely.md).
   Canonical distance unit is **metres** — name fields explicitly
   (`carry_metres`, not `distance`).
 - Full strict type hints; Pydantic v2 models at parsing/external boundaries

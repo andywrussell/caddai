@@ -24,7 +24,9 @@
   `course`/`gps` subsystems: holes, fairways, greens, hazards, landing areas,
   distance calculations, local GeoJSON parsing. GPS coordinate and
   great-circle distance/bearing primitives (`caddai.gps`) landed as M2.1
-  (issue #3); the `course` subsystem and GeoJSON parsing are not yet
+  (issue #3); course-local planar coordinate projection (`caddai.gps.projection`,
+  see [ADR 0002](adr/0002-gps-local-projection-without-shapely.md)) landed as
+  M2.2 (issue #4). The `course` subsystem and GeoJSON parsing are not yet
   implemented.
 
 - **M3 — Player model, clubs and shot dispersion**
