@@ -1,12 +1,18 @@
-"""Architecture-invariant test: ``strategy`` must not import forbidden subsystems.
+"""Architecture-invariant tests: subsystem modules must not import forbidden subsystems.
 
-Statically parses every source file in ``caddai.strategy`` with the ``ast``
-module (not just relying on runtime import side effects) to assert the
-deterministic-strategy principle from AGENTS.md: no `strategy`/`simulation`
-code may import `llm`, `api`, `cli`, or any UI package.
+Statically parses every source file in each covered subsystem with the
+``ast`` module (not just relying on runtime import side effects) to assert
+the dependency-direction rules from AGENTS.md: no `strategy`/`simulation`
+code may import `llm`, `api`, `cli`, or any UI package, and each subsystem
+below may only depend on its own approved `caddai.*` prefixes.
+
+Parametrized across subsystems (rather than duplicated per subsystem file)
+so a new subsystem's boundary coverage is a one-line addition to
+``SUBSYSTEM_BOUNDARIES`` below — see `course`/`gps` in milestone M2.
 """
 
 import ast
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -27,12 +33,54 @@ FORBIDDEN_TOP_LEVEL_MODULES = {
 
 REPO_ROOT = Path(__file__).parent.parent
 
-STRATEGY_SOURCE_FILES = [
-    REPO_ROOT / "src/caddai/strategy/__init__.py",
-    REPO_ROOT / "src/caddai/strategy/models.py",
-    REPO_ROOT / "src/caddai/strategy/recommend.py",
-    REPO_ROOT / "src/caddai/strategy/demo.py",
+
+@dataclass(frozen=True)
+class SubsystemBoundary:
+    """A subsystem's source files and the `caddai.*` prefixes it may depend on."""
+
+    name: str
+    source_files: tuple[Path, ...]
+    allowed_caddai_prefixes: tuple[str, ...]
+    plan_reference: str
+
+
+SUBSYSTEM_BOUNDARIES = [
+    SubsystemBoundary(
+        name="strategy",
+        source_files=(
+            REPO_ROOT / "src/caddai/strategy/__init__.py",
+            REPO_ROOT / "src/caddai/strategy/models.py",
+            REPO_ROOT / "src/caddai/strategy/recommend.py",
+            REPO_ROOT / "src/caddai/strategy/demo.py",
+        ),
+        allowed_caddai_prefixes=("caddai.player", "caddai.strategy"),
+        plan_reference="Task 2 of docs/plans/m1-core-domain-vertical-slice.plan.md",
+    ),
+    SubsystemBoundary(
+        name="gps",
+        source_files=(
+            REPO_ROOT / "src/caddai/gps/__init__.py",
+            REPO_ROOT / "src/caddai/gps/models.py",
+            REPO_ROOT / "src/caddai/gps/distance.py",
+        ),
+        # gps is a leaf domain module: zero other caddai.* imports permitted.
+        allowed_caddai_prefixes=("caddai.gps",),
+        plan_reference='GitHub issue #3 ("M2.1 — GPS coordinate & distance primitives")',
+    ),
 ]
+
+
+def _boundary_test_cases() -> list[tuple[SubsystemBoundary, Path]]:
+    """Flatten each boundary's source files into one (boundary, path) case per file."""
+    return [
+        (boundary, source_path)
+        for boundary in SUBSYSTEM_BOUNDARIES
+        for source_path in boundary.source_files
+    ]
+
+
+BOUNDARY_TEST_CASES = _boundary_test_cases()
+BOUNDARY_TEST_CASE_IDS = [f"{boundary.name}-{path.name}" for boundary, path in BOUNDARY_TEST_CASES]
 
 
 def _imported_module_names(source_path: Path) -> set[str]:
@@ -57,13 +105,17 @@ def _is_forbidden(module_name: str) -> bool:
     )
 
 
-@pytest.mark.parametrize("source_path", STRATEGY_SOURCE_FILES, ids=lambda path: path.name)
-def test_strategy_module_does_not_import_forbidden_subsystems(source_path: Path) -> None:
-    """Neither strategy source file may import llm, api, cli, or a UI package."""
+@pytest.mark.parametrize(
+    ("boundary", "source_path"), BOUNDARY_TEST_CASES, ids=BOUNDARY_TEST_CASE_IDS
+)
+def test_subsystem_module_does_not_import_forbidden_subsystems(
+    boundary: SubsystemBoundary, source_path: Path
+) -> None:
+    """No covered subsystem file may import llm, api, cli, or a UI package."""
     if not source_path.exists():
         pytest.fail(
             f"{source_path} does not exist yet — this test is the executable spec "
-            "for Task 2 of docs/plans/m1-core-domain-vertical-slice.plan.md."
+            f"for {boundary.plan_reference}."
         )
 
     imported_modules = _imported_module_names(source_path)
@@ -75,26 +127,29 @@ def test_strategy_module_does_not_import_forbidden_subsystems(source_path: Path)
     )
 
 
-@pytest.mark.parametrize("source_path", STRATEGY_SOURCE_FILES, ids=lambda path: path.name)
-def test_strategy_module_only_depends_on_approved_subsystems(source_path: Path) -> None:
-    """Strategy source may only import caddai.player, caddai.strategy, stdlib, or pydantic."""
+@pytest.mark.parametrize(
+    ("boundary", "source_path"), BOUNDARY_TEST_CASES, ids=BOUNDARY_TEST_CASE_IDS
+)
+def test_subsystem_module_only_depends_on_approved_subsystems(
+    boundary: SubsystemBoundary, source_path: Path
+) -> None:
+    """Each subsystem may only import its approved caddai prefixes, stdlib, or pydantic."""
     if not source_path.exists():
         pytest.fail(
             f"{source_path} does not exist yet — this test is the executable spec "
-            "for Task 2 of docs/plans/m1-core-domain-vertical-slice.plan.md."
+            f"for {boundary.plan_reference}."
         )
 
-    allowed_caddai_prefixes = ("caddai.player", "caddai.strategy")
     imported_modules = _imported_module_names(source_path)
 
     disallowed_caddai_imports = {
         name
         for name in imported_modules
-        if name.startswith("caddai.") and not name.startswith(allowed_caddai_prefixes)
+        if name.startswith("caddai.") and not name.startswith(boundary.allowed_caddai_prefixes)
     }
 
     assert not disallowed_caddai_imports, (
         f"{source_path} imports out-of-scope caddai module(s) {disallowed_caddai_imports}; "
-        "M1 strategy depends only on player + stdlib + pydantic (docs/plans/"
-        "m1-core-domain-vertical-slice.plan.md)."
+        f"{boundary.name} may only depend on {boundary.allowed_caddai_prefixes} + stdlib "
+        f"(see {boundary.plan_reference})."
     )
