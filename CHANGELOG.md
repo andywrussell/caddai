@@ -10,6 +10,16 @@ first public API is published.
 
 ### Added
 
+- Course-local planar coordinate projection (M2.2, issue #4):
+  `caddai.gps.projection` (`LocalPoint`, `to_local`, `to_coordinate`), a
+  small-area equirectangular/tangent-plane affine transform between a
+  `Coordinate` (lat/lon) and course-local metres relative to a fixed origin.
+  Uses plain trigonometry rather than Shapely — see
+  [ADR 0002](docs/adr/0002-gps-local-projection-without-shapely.md), which
+  also updates `docs/course-engine.md`, `docs/backlog.md`, and
+  `.github/agents/course-engineer.agent.md` accordingly.
+  `tests/test_architecture_boundaries.py` continues to confirm `gps` has
+  zero dependencies on other `caddai.*` subsystems.
 - GPS coordinate and great-circle distance/bearing primitives (M2.1, issue
   #3): `caddai.gps` (`Coordinate`, `haversine_distance_metres`,
   `initial_bearing_degrees`). `gps` is a leaf domain module with zero

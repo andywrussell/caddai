@@ -9,7 +9,8 @@ for when an ADR is required and the format to use.
 | Number | Title | Status |
 |---|---|---|
 | [0001](0001-deterministic-strategy-engine.md) | Deterministic strategy engine | Accepted |
+| [0002](0002-gps-local-projection-without-shapely.md) | GPS local projection without Shapely | Accepted |
 
 ## Next available number
 
-`0002`
+`0003`
