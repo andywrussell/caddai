@@ -1,8 +1,19 @@
 # Strategy engine
 
-> Status: planned design for the `strategy`/`simulation` subsystems
-> (milestones M4–M5). Not implemented yet — `src/caddai/strategy/` and
-> `src/caddai/simulation/` do not exist in the repository yet.
+> Status: a minimal M1 vertical slice now exists —
+> [src/caddai/strategy/models.py](../src/caddai/strategy/models.py) and
+> [src/caddai/strategy/recommend.py](../src/caddai/strategy/recommend.py)
+> implement a deliberately primitive closest-expected-carry club selection
+> with placeholder wind/lie adjustment constants, proving the end-to-end
+> architecture. The real expected-value/Monte Carlo model described below
+> remains **planned** for milestones M4–M5; `src/caddai/simulation/` does not
+> exist yet.
+>
+> Forward pointer: `Wind`/`LieType` are defined in `strategy/models.py` for
+> M1 because no `course`/`gps`/`simulation` package exists yet to own them.
+> They may move to a neutral shared-domain module once `course` (M2) or
+> `simulation` (M4) land — see
+> [docs/plans/m1-core-domain-vertical-slice.plan.md](plans/m1-core-domain-vertical-slice.plan.md).
 
 ## Purpose
 
