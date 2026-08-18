@@ -1,8 +1,9 @@
 # Course engine
 
 > Status: planned design for the `course`/`gps` subsystems (milestone M2).
-> Not implemented yet — `src/caddai/course/` and `src/caddai/gps/` do not
-> exist in the repository yet.
+> `src/caddai/gps/` is now implemented (M2.1, issue #3): `Coordinate`,
+> `haversine_distance_metres`, and `initial_bearing_degrees`. `src/caddai/course/`
+> remains planned and does not exist in the repository yet.
 
 ## Purpose
 

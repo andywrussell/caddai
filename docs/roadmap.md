@@ -22,7 +22,10 @@
 
 - **M2 — Course geometry and local GeoJSON course representation**
   `course`/`gps` subsystems: holes, fairways, greens, hazards, landing areas,
-  distance calculations, local GeoJSON parsing.
+  distance calculations, local GeoJSON parsing. GPS coordinate and
+  great-circle distance/bearing primitives (`caddai.gps`) landed as M2.1
+  (issue #3); the `course` subsystem and GeoJSON parsing are not yet
+  implemented.
 
 - **M3 — Player model, clubs and shot dispersion**
   `player`/`statistics` subsystems: players, clubs, carry distributions,
