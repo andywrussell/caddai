@@ -35,10 +35,31 @@ fixing it yourself.
    `strategy`/`simulation` still don't import `llm`/`api`/`cli`/UI; module
    ownership from `AGENTS.md` §4 is respected.
 5. Update `CHANGELOG.md` under `[Unreleased]` describing the change.
-6. Report final validation results back to the orchestrator: quality gate
-   results, doc updates made, and any concerns. Note that GitHub Actions CI
-   (`.github/workflows/ci.yml`) re-runs the same quality gate on the pull
-   request; you do not need to open or push it yourself.
+6. Once all quality gates pass, stage the changes and create one or more
+   Conventional Commits (e.g. `feat(strategy): add deterministic club
+   selection`) on the feature branch created by the Orchestrator
+   (`agent/<milestone>-<short-description>`).
+7. Push the feature branch to `origin`.
+8. Open a **draft** GitHub pull request via the GitHub CLI:
+   ```bash
+   gh pr create \
+     --base main \
+     --head <feature-branch> \
+     --draft \
+     --title "<title>" \
+     --body-file <generated-pr-description-file>
+   ```
+   Generate a substantive PR description with these sections: `## Summary`,
+   `## Changes`, `## Architecture`, `## Testing`, `## Quality Gates`,
+   `## Known Limitations`, `## Reviewer Notes`, `## Follow-up Work`. Never
+   mark the PR ready for review automatically.
+9. If the Orchestrator sends QA/reviewer follow-up fixes, push additional
+   commits to the same feature branch rather than opening a new PR.
+10. Inspect GitHub Actions status on the pull request once available and
+    let CI run to completion; never bypass a failing check.
+11. Report final validation results back to the orchestrator: quality gate
+    results, doc updates made, the branch name, commits made, the PR number
+    and URL, CI status if available, and any concerns.
 
 ## Constraints
 
@@ -47,4 +68,14 @@ fixing it yourself.
   orchestrator with specifics rather than attempting a large rewrite.
 - Never weaken configuration (mypy strictness, ruff rules, skipped tests) to
   force a gate to pass.
-- Never push, force-push, merge, or perform destructive Git operations.
+- You and the Orchestrator are the only agents permitted to touch
+  Git/GitHub. You may create a feature branch (if the Orchestrator hasn't
+  already), stage files, create Conventional Commits, push the feature
+  branch to `origin`, create a GitHub **draft** pull request, update the
+  same branch, push subsequent commits, and inspect GitHub Actions status.
+- You must never: push directly to `main`, merge a pull request, enable
+  auto-merge, force push, delete remote branches, rewrite published
+  history, change GitHub repository settings or branch protection rules,
+  modify credentials, expose secrets, run `git reset --hard` against
+  shared/published work, or bypass a failing CI check. Only the human
+  merges a pull request — see `AGENTS.md` §15.
