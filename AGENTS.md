@@ -140,8 +140,9 @@ and human sign-off.
 CaddAI is developed by a coordinated team of VS Code custom agents defined in
 [.github/agents/](.github/agents):
 
-1. **CaddAI Orchestrator** — main user-facing agent; plans, delegates, does
-   not implement production features itself.
+1. **CaddAI Orchestrator** — main user-facing agent; plans, delegates,
+   creates the feature branch, does not implement production features
+   itself.
 2. **CaddAI Architect** — hidden, read-only; architecture and boundary review.
 3. **Course Engineer** — owns `course/`, `gps/`.
 4. **Player Engineer** — owns `player/`, `statistics/`.
@@ -150,7 +151,8 @@ CaddAI is developed by a coordinated team of VS Code custom agents defined in
    logic.
 7. **Adversarial Reviewer** — hidden, read-only; approves or requests changes.
 8. **Integrator** — runs quality gates, checks docs/dependency boundaries,
-   updates `CHANGELOG.md`, reports final validation.
+   updates `CHANGELOG.md`, commits, pushes the feature branch, opens a draft
+   GitHub pull request, and reports final validation.
 
 Full workflow: [docs/development-workflow.md](docs/development-workflow.md).
 
@@ -177,7 +179,7 @@ A change is done when:
 | [docs/prd.md](docs/prd.md) | Product requirements |
 | [docs/architecture.md](docs/architecture.md) | System structure, boundaries, dependency direction |
 | [docs/roadmap.md](docs/roadmap.md) | Milestones M0–M9 |
-| [docs/development-workflow.md](docs/development-workflow.md) | Request → merge workflow |
+| [docs/development-workflow.md](docs/development-workflow.md) | Request → pull request workflow |
 | [docs/domain-model.md](docs/domain-model.md) | Core golf domain concepts and entities |
 | [docs/course-engine.md](docs/course-engine.md) | Course/GPS subsystem design |
 | [docs/player-model.md](docs/player-model.md) | Player/statistics subsystem design |
@@ -234,12 +236,83 @@ Consequences
 
 Do not guess when one of these conditions applies.
 
-## 15. Git safety
+## 15. Git and pull request workflow
 
-Agents may create/edit local files and run local commands (tests, lint,
-`uv sync`, local `git add`/`git commit` on request). Agents must never create
-a remote, push, force-push, merge, alter credentials, store API keys, open or
-merge a GitHub pull request, or commit on the human's behalf without explicit
-instruction for that specific commit. Collaboration and code review happen
-through GitHub pull requests, reviewed and merged by a human; CI runs via
-GitHub Actions (see §8).
+Completed work may be proposed to the human as a GitHub pull request. **The
+human remains the only one who merges a pull request.** Full pipeline:
+[docs/development-workflow.md](docs/development-workflow.md).
+
+### Permitted Git/GitHub operations (Orchestrator and Integrator only)
+
+Only the **CaddAI Orchestrator** and **Integrator** perform Git/GitHub
+operations. All other agents only read, edit files, and (where already
+permitted) run tests — they never touch Git/GitHub. The Orchestrator and
+Integrator may:
+
+- create a feature branch from `main`,
+- stage files,
+- create Conventional Commits,
+- push the feature branch to `origin`,
+- create a GitHub **draft** pull request using the GitHub CLI (`gh`),
+- update the same feature branch in response to QA/reviewer feedback,
+- push subsequent commits to that branch,
+- inspect GitHub Actions status,
+- report the pull request URL.
+
+### Prohibited Git/GitHub operations (all agents)
+
+- push directly to `main`,
+- merge a pull request,
+- enable auto-merge,
+- force push,
+- delete remote branches,
+- rewrite published history,
+- change GitHub repository settings,
+- change branch protection rules/rulesets,
+- modify credentials,
+- expose secrets,
+- `git reset --hard` against shared/published work,
+- bypass or disable failing CI.
+
+Any of the above (or any other destructive Git operation) requires a human
+decision — see [Escalation rules](#14-escalation-rules). Agents must never
+alter credentials, store API keys, or commit on the human's behalf without
+explicit instruction for that specific commit.
+
+### Branch naming
+
+`agent/<milestone>-<short-description>`, e.g.
+`agent/m1-deterministic-vertical-slice`, `agent/m2-course-geometry`,
+`agent/m3-player-dispersion`.
+
+### Commit convention
+
+[Conventional Commits](https://www.conventionalcommits.org/), e.g.
+`feat(strategy): add deterministic club selection`,
+`test(strategy): add wind adjustment edge cases`,
+`docs(architecture): document shot state model`.
+
+### Pull request creation
+
+Created via the GitHub CLI as a **draft**, e.g.:
+
+```bash
+gh pr create \
+  --base main \
+  --head <feature-branch> \
+  --draft \
+  --title "<title>" \
+  --body-file <generated-pr-description-file>
+```
+
+The generated PR description must include: `## Summary`, `## Changes`,
+`## Architecture`, `## Testing`, `## Quality Gates`, `## Known Limitations`,
+`## Reviewer Notes`, `## Follow-up Work`. Never mark a PR ready for review
+automatically — the human decides when to promote it out of draft and when
+to merge. Let GitHub Actions CI run to completion after creating/updating
+the PR; never bypass a failing check.
+
+### Reporting
+
+After creating or updating a pull request, report: the branch name, the
+commits made, the PR number, the PR URL, and CI status if available.

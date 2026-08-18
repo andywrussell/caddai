@@ -51,3 +51,6 @@ task seems to require it, stop and escalate to the orchestrator with
   without flagging the cross-cutting change back to the orchestrator.
 - Run the affected tests (`uv run pytest`) before reporting work as done; the
   Integrator runs the full quality gate afterward.
+- Do not create branches, commit, push, or open pull requests — only the
+  Orchestrator and Integrator perform Git/GitHub operations (`AGENTS.md`
+  §15).

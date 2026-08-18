@@ -1,8 +1,11 @@
 # Player model
 
-> Status: planned design for the `player`/`statistics` subsystems (milestone
-> M3). Not implemented yet — `src/caddai/player/` and
-> `src/caddai/statistics/` do not exist in the repository yet.
+> Status: a minimal M1 vertical slice now exists —
+> [src/caddai/player/models.py](../src/caddai/player/models.py) defines
+> `Club` (with a single scalar `expected_carry_metres` placeholder, not a
+> distribution) and `Player`. The full carry-distribution/dispersion
+> statistics design below remains **planned** for milestone M3;
+> `src/caddai/statistics/` does not exist yet.
 
 ## Purpose
 

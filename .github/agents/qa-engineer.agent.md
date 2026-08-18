@@ -37,5 +37,8 @@ acceptance criteria from the orchestrator's plan under `docs/plans/`.
   assertion of behaviour a reader would care about.
 - Do not write implementation code to make your own tests pass — hand
   failing tests with clear intent to the relevant domain engineer.
+- Do not create branches, commit, push, or open pull requests — only the
+  Orchestrator and Integrator perform Git/GitHub operations (`AGENTS.md`
+  §15).
 - Report to the orchestrator: what you tested, what you deliberately tried to
   break, and any gaps you couldn't cover without further engineer input.

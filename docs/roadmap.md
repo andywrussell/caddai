@@ -1,18 +1,21 @@
 # Roadmap
 
-> Status: milestone sequencing for planned work. Only **M0** is complete.
-> Milestones are directional, not date-committed.
+> Status: milestone sequencing for planned work. **M0** and **M1** are
+> complete. Milestones are directional, not date-committed.
 
-- **M0 — Agent development platform and repository foundation** *(current)*
+- **M0 — Agent development platform and repository foundation** *(complete)*
   Repository structure, documentation set, VS Code multi-agent development
   team, quality gates, `uv`-managed `pyproject.toml`, minimal `caddai`
   package skeleton. No golf logic.
 
 - **M1 — Core golf domain model and simple deterministic recommendation
-  vertical slice**
-  Minimal domain types (hole, shot, player) and a single trivial end-to-end
-  deterministic recommendation path, to prove the architecture works before
-  building subsystem depth.
+  vertical slice** *(complete)*
+  Minimal domain types (`Player`/`Club` in `caddai.player`; `Wind`/`LieType`/
+  `RecommendationRequest`/`RecommendationResult` in `caddai.strategy`) and a
+  single trivial end-to-end deterministic recommendation path
+  (`recommend_club`), to prove the architecture works before building
+  subsystem depth. See
+  [docs/plans/m1-core-domain-vertical-slice.plan.md](plans/m1-core-domain-vertical-slice.plan.md).
 
 - **M2 — Course geometry and local GeoJSON course representation**
   `course`/`gps` subsystems: holes, fairways, greens, hazards, landing areas,
