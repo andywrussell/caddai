@@ -10,6 +10,12 @@ first public API is published.
 
 ### Added
 
+- GPS coordinate and great-circle distance/bearing primitives (M2.1, issue
+  #3): `caddai.gps` (`Coordinate`, `haversine_distance_metres`,
+  `initial_bearing_degrees`). `gps` is a leaf domain module with zero
+  dependencies on other `caddai.*` subsystems, consistent with `AGENTS.md`
+  §3/§4. `tests/test_architecture_boundaries.py` was generalized to cover
+  `gps` alongside `strategy`.
 - Developer recommendation demo (M1.1, issue #16):
   `src/caddai/strategy/demo.py`, runnable via
   `uv run python -m caddai.strategy.demo`, a thin presentation wrapper that
