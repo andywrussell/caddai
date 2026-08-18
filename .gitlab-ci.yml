@@ -1,0 +1,21 @@
+stages:
+  - quality
+
+variables:
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+
+quality-gate:
+  stage: quality
+  image: python:3.13-slim
+  cache:
+    key: uv-cache
+    paths:
+      - .cache/uv
+  before_script:
+    - pip install --no-cache-dir uv
+    - uv sync --frozen
+  script:
+    - uv run ruff format --check .
+    - uv run ruff check .
+    - uv run mypy src
+    - uv run pytest
