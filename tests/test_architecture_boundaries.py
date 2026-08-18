@@ -31,6 +31,7 @@ STRATEGY_SOURCE_FILES = [
     REPO_ROOT / "src/caddai/strategy/__init__.py",
     REPO_ROOT / "src/caddai/strategy/models.py",
     REPO_ROOT / "src/caddai/strategy/recommend.py",
+    REPO_ROOT / "src/caddai/strategy/demo.py",
 ]
 
 
