@@ -62,6 +62,7 @@ SUBSYSTEM_BOUNDARIES = [
             REPO_ROOT / "src/caddai/gps/__init__.py",
             REPO_ROOT / "src/caddai/gps/models.py",
             REPO_ROOT / "src/caddai/gps/distance.py",
+            REPO_ROOT / "src/caddai/gps/projection.py",
         ),
         # gps is a leaf domain module: zero other caddai.* imports permitted.
         allowed_caddai_prefixes=("caddai.gps",),
