@@ -120,7 +120,9 @@ uv run pytest
 Run via `scripts/check.sh` or follow
 [.github/skills/quality-gates/SKILL.md](.github/skills/quality-gates/SKILL.md).
 All four gates must pass before work is considered done — see
-[Definition of done](#11-definition-of-done).
+[Definition of done](#11-definition-of-done). The same sequence runs in CI via
+GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) on every
+pull request targeting `main` and on every push to `main`.
 
 ## 9. Approved dependencies
 
@@ -236,6 +238,8 @@ Do not guess when one of these conditions applies.
 
 Agents may create/edit local files and run local commands (tests, lint,
 `uv sync`, local `git add`/`git commit` on request). Agents must never create
-a remote, push, force-push, merge, alter credentials, store API keys, or
-commit on the human's behalf without explicit instruction for that specific
-commit.
+a remote, push, force-push, merge, alter credentials, store API keys, open or
+merge a GitHub pull request, or commit on the human's behalf without explicit
+instruction for that specific commit. Collaboration and code review happen
+through GitHub pull requests, reviewed and merged by a human; CI runs via
+GitHub Actions (see §8).

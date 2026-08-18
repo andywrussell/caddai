@@ -50,11 +50,13 @@ flowchart TD
    quality gate (`.github/skills/quality-gates/SKILL.md`), checks
    documentation and dependency-boundary consistency, and updates
    `CHANGELOG.md`.
-10. **CI** — `.gitlab-ci.yml` re-runs the same quality gate on the pushed
-    branch.
-11. **HUMAN REVIEW** — a human reviews the diff, plan, and reports before
-    merge. The Orchestrator never merges or pushes on its own.
-12. **MERGE** — performed by the human.
+10. **CI** — the GitHub Actions workflow (`.github/workflows/ci.yml`)
+    re-runs the same quality gate on the pull request and on pushes to
+    `main`.
+11. **HUMAN REVIEW** — a human reviews the diff, plan, and reports on the
+    GitHub pull request before merge. The Orchestrator never merges, pushes,
+    or opens/approves pull requests on its own.
+12. **MERGE** — performed by the human via the GitHub pull request.
 
 ## Escalation
 

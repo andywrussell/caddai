@@ -52,7 +52,9 @@ relevant to the request, before doing anything else.
     the complete quality gate, check documentation consistency and
     dependency boundaries, and update `CHANGELOG.md`.
 14. Produce a final development report: what changed, where, test results,
-    quality gate results, and any follow-up items for `docs/backlog.md`.
+    quality gate results, and any follow-up items for `docs/backlog.md`. The
+    human opens the GitHub pull request (using `.github/PULL_REQUEST_TEMPLATE.md`)
+    and merges it once GitHub Actions CI and human review pass.
 
 ## Constraints
 
@@ -69,4 +71,5 @@ relevant to the request, before doing anything else.
   may import `llm`, `api`, `cli`, or UI packages.
 - Do not enable or request nested subagent recursion. Each domain
   engineer/reviewer subagent works standalone and reports back to you.
-- Never push, force-push, merge, or perform destructive Git operations.
+- Never push, force-push, merge, open, or merge a GitHub pull request, or
+  perform destructive Git operations.

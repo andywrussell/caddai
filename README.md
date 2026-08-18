@@ -36,6 +36,9 @@ Run the full local quality gate:
 scripts/check.sh
 ```
 
+The same checks run in CI via [GitHub Actions](.github/workflows/ci.yml) on
+every pull request targeting `main` and on every push to `main`.
+
 ## Documentation
 
 Start with [AGENTS.md](AGENTS.md) (the engineering handbook), then
@@ -47,7 +50,8 @@ and [docs/roadmap.md](docs/roadmap.md).
 CaddAI is developed by a coordinated team of specialized AI agents defined in
 [.github/agents](.github/agents). See
 [docs/development-workflow.md](docs/development-workflow.md) for how a request
-flows from orchestration through implementation, review, and integration.
+flows from orchestration through implementation, review, integration, and a
+GitHub pull request.
 
 ## License
 

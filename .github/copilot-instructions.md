@@ -21,11 +21,14 @@ Every Copilot interaction in this repository must:
    [tests.instructions.md](instructions/tests.instructions.md).
 7. Run the quality gates (`.github/skills/quality-gates/SKILL.md`) before
    considering work done: `uv sync --frozen`, `ruff format --check`,
-   `ruff check`, `mypy src`, `pytest`.
+   `ruff check`, `mypy src`, `pytest`. The same gates run in GitHub Actions CI
+   (`.github/workflows/ci.yml`) on pull requests and pushes to `main`.
 8. Avoid unnecessary dependencies. Only the libraries approved in `AGENTS.md`
    may be used without an ADR and human approval.
-9. Never commit secrets, API keys, or credentials. Never push, force-push, or
-   perform destructive Git operations on the user's behalf.
+9. Never commit secrets, API keys, or credentials. Never push, force-push,
+   open/merge a GitHub pull request, or perform destructive Git operations on
+   the user's behalf. Collaboration happens through GitHub pull requests,
+   reviewed and merged by a human.
 10. Update documentation (`docs/`) when architectural behaviour changes, and
     write an ADR (`.github/skills/architecture-decision/SKILL.md`) for
     significant architectural decisions.

@@ -36,7 +36,9 @@ fixing it yourself.
    ownership from `AGENTS.md` §4 is respected.
 5. Update `CHANGELOG.md` under `[Unreleased]` describing the change.
 6. Report final validation results back to the orchestrator: quality gate
-   results, doc updates made, and any concerns.
+   results, doc updates made, and any concerns. Note that GitHub Actions CI
+   (`.github/workflows/ci.yml`) re-runs the same quality gate on the pull
+   request; you do not need to open or push it yourself.
 
 ## Constraints
 
