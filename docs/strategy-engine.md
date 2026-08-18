@@ -14,6 +14,10 @@
 > They may move to a neutral shared-domain module once `course` (M2) or
 > `simulation` (M4) land — see
 > [docs/plans/m1-core-domain-vertical-slice.plan.md](plans/m1-core-domain-vertical-slice.plan.md).
+>
+> A developer demo script, `src/caddai/strategy/demo.py`, runs
+> `recommend_club()` on a fixed scenario for manual inspection
+> (`uv run python -m caddai.strategy.demo`).
 
 ## Purpose
 

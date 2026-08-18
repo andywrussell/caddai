@@ -30,6 +30,13 @@ uv sync
 uv run pytest
 ```
 
+Run the developer recommendation demo (prints a sample club recommendation
+using the real strategy engine):
+
+```bash
+uv run python -m caddai.strategy.demo
+```
+
 Run the full local quality gate:
 
 ```bash
