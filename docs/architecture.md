@@ -1,8 +1,10 @@
 # Architecture
 
-> Status: describes intended architecture for the roadmap. Only the
-> bootstrap package (`src/caddai/__init__.py`) currently exists — no
-> subsystem below is implemented yet. See [roadmap.md](roadmap.md).
+> Status: describes intended target architecture for the full roadmap.
+> Implemented so far: `gps`/`course` (M2, complete — see
+> [course-engine.md](course-engine.md)) and a minimal `player`/`strategy`
+> vertical slice (M1 — see [roadmap.md](roadmap.md)). `statistics`,
+> `simulation`, `llm`, `api`, and `cli` do not exist yet.
 
 ## Guiding principle
 
@@ -34,7 +36,7 @@ Dashed edges: `llm` only ever *reads* a finished recommendation to phrase it
 in natural language. It is never on the decision path, and `strategy`/
 `simulation` never import it.
 
-## Subsystems (planned)
+## Subsystems
 
 | Subsystem | Path | Responsibility |
 |---|---|---|

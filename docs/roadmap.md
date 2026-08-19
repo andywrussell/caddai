@@ -1,7 +1,7 @@
 # Roadmap
 
-> Status: milestone sequencing for planned work. **M0** and **M1** are
-> complete. Milestones are directional, not date-committed.
+> Status: milestone sequencing for planned work. **M0**, **M1**, and **M2**
+> are complete. Milestones are directional, not date-committed.
 
 - **M0 — Agent development platform and repository foundation** *(complete)*
   Repository structure, documentation set, VS Code multi-agent development
@@ -21,13 +21,17 @@
   path end to end.
 
 - **M2 — Course geometry and local GeoJSON course representation**
-  `course`/`gps` subsystems: holes, fairways, greens, hazards, landing areas,
-  distance calculations, local GeoJSON parsing. GPS coordinate and
-  great-circle distance/bearing primitives (`caddai.gps`) landed as M2.1
-  (issue #3); course-local planar coordinate projection (`caddai.gps.projection`,
-  see [ADR 0002](adr/0002-gps-local-projection-without-shapely.md)) landed as
-  M2.2 (issue #4). The `course` subsystem and GeoJSON parsing are not yet
-  implemented.
+  *(complete)*
+  `course`/`gps` subsystems: GPS coordinate and great-circle primitives
+  (M2.1, issue #3), course-local planar projection (M2.2, issue #4, see
+  [ADR 0002](adr/0002-gps-local-projection-without-shapely.md)),
+  course/hole/feature domain models (M2.3, issue #5), GeoJSON fixture
+  parsing (M2.4, issue #6), polygon/boundary geometry (M2.4.5, issue #22,
+  see [ADR 0003](adr/0003-course-boundary-geometry.md)), and
+  point-to-feature distance queries (M2.5, issue #7, see
+  [ADR 0004](adr/0004-distance-query-local-frame.md)). Full subsystem
+  design, data format, and known limitations:
+  [docs/course-engine.md](course-engine.md).
 
 - **M3 — Player model, clubs and shot dispersion**
   `player`/`statistics` subsystems: players, clubs, carry distributions,
