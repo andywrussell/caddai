@@ -34,8 +34,20 @@
   [docs/course-engine.md](course-engine.md).
 
 - **M3 — Player model, clubs and shot dispersion**
-  `player`/`statistics` subsystems: players, clubs, carry distributions,
-  directional bias, performance history.
+  `player`/`statistics` subsystems: carry distribution model (M3.1, issue
+  #26), directional dispersion model (M3.2, issue #27) — adopting a
+  permanent lateral-offset sign convention (negative left, zero on-line,
+  positive right of the intended target line, independent of handedness),
+  evolving `Club`/`Player` to carry these instead of a bare scalar (M3.3,
+  issue #28), club identity/category (M3.4, issue #29), a manually entered
+  performance-history data model (M3.5, issue #30), a richer developer demo
+  (M3.7, issue #31), and a documentation/status update (M3.8, issue #32).
+  Player tendencies are represented for M3 by carry distribution +
+  directional dispersion + systematic lateral bias — no separate
+  player-tendency model. Deriving/fitting distributions from historical
+  `ShotRecord` samples is explicitly deferred to a future round-history/
+  learning milestone (see [docs/backlog.md](backlog.md)); M3 uses only
+  manually supplied statistical parameters. Tracking issue: #9.
 
 - **M4 — Candidate-shot generation and Monte Carlo simulation**
   `simulation` subsystem: shot candidate generation, seeded Monte Carlo

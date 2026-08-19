@@ -6,7 +6,13 @@
 
 ## Candidate items
 
-- Define the parametric form of carry/dispersion distributions (feeds M3).
+- Derive/fit `CarryDistribution`/`DirectionalDispersion` from historical
+  `ShotRecord` samples (deferred out of M3 — see #9/#30; M3 uses only
+  manually supplied statistical parameters; likely lands around the
+  round-history/learning milestone, M6+).
+- Player-level strategic tendencies (risk preference, aggressiveness) as a
+  distinct model, beyond club-level carry distribution/dispersion/bias
+  (deferred out of M3; belongs to later strategy/player-preference work).
 - Decide the expected-strokes model / baseline data source used by
   `strategy` (feeds M5; likely needs an ADR if it requires external
   strokes-gained reference data).
