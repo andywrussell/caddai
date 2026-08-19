@@ -3,7 +3,10 @@
 > Status: planned design for the `course`/`gps` subsystems (milestone M2).
 > `src/caddai/gps/` is now implemented (M2.1, issue #3): `Coordinate`,
 > `haversine_distance_metres`, and `initial_bearing_degrees`. `src/caddai/course/`
-> remains planned and does not exist in the repository yet.
+> is now implemented (M2.3, issue #5): `Course`, `Hole`, `Feature`, and
+> `FeatureType` — point-position feature models only. GeoJSON parsing,
+> Shapely polygon geometry, and hazard carry queries remain planned and are
+> not yet implemented.
 
 ## Purpose
 

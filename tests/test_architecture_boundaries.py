@@ -68,6 +68,15 @@ SUBSYSTEM_BOUNDARIES = [
         allowed_caddai_prefixes=("caddai.gps",),
         plan_reference='GitHub issue #3 ("M2.1 — GPS coordinate & distance primitives")',
     ),
+    SubsystemBoundary(
+        name="course",
+        source_files=(
+            REPO_ROOT / "src/caddai/course/__init__.py",
+            REPO_ROOT / "src/caddai/course/models.py",
+        ),
+        allowed_caddai_prefixes=("caddai.course", "caddai.gps"),
+        plan_reference='GitHub issue #5 ("M2.3 — Course/hole/hazard domain models")',
+    ),
 ]
 
 
