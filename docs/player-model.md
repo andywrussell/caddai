@@ -40,6 +40,13 @@ Player Engineer (see `.github/agents/player-engineer.agent.md`).
   subsystem's responsibility.
 - No dependency on `course`, `strategy`, `simulation`, `llm`, `api`, or `cli`.
 
+Reading a player's profile and club performance model is active-round core
+functionality (`AGENTS.md` §2.2): it must work from locally available data,
+with no network request on the critical path. Any future profile
+synchronisation across devices is connectivity-enhanced, not a prerequisite
+for in-round access — see
+[ADR 0005](adr/0005-offline-first-active-round-architecture.md).
+
 ## Statistical approach (planned)
 
 Carry and dispersion models will be represented as parametric distributions

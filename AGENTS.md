@@ -17,7 +17,9 @@ See [docs/vision.md](docs/vision.md) and [docs/prd.md](docs/prd.md) for full
 product context, and [docs/roadmap.md](docs/roadmap.md) for milestone
 sequencing.
 
-## 2. Non-negotiable architectural principle: deterministic strategy
+## 2. Non-negotiable architectural principles
+
+### 2.1 Deterministic strategy
 
 **CaddAI is a golf decision engine, not a chatbot.**
 
@@ -31,7 +33,54 @@ sequencing.
 - This principle is recorded in
   [docs/adr/0001-deterministic-strategy-engine.md](docs/adr/0001-deterministic-strategy-engine.md).
   Changing it requires a new ADR and explicit human approval — see
-  [Escalation rules](#9-escalation-rules).
+  [Escalation rules](#14-escalation-rules).
+
+### 2.2 Offline-first active round
+
+**Network connectivity is optional during an active round. Core golf
+decision functionality must remain capable of local execution.**
+
+The loss of internet connectivity during a round must never prevent a golfer
+from receiving core caddie functionality. This is a distinct, complementary
+constraint to [§2.1](#21-deterministic-strategy): §2.1 governs *who* decides
+(deterministic code, never an LLM); this section governs *what network
+reachability may be assumed* while a round is in progress.
+
+**Active-round core functionality** — must remain capable of running with
+only locally available device compute, storage, and data, with no network
+request on the critical path:
+
+1. Positioning/location acquisition (device-accessible GPS).
+2. Course geometry access (locally available course data).
+3. Player profile access (locally available player/club data).
+4. Distance calculations.
+5. Shot simulation.
+6. Strategy/recommendation (the deterministic engine, per §2.1).
+7. Recording player decisions and shot outcomes.
+
+No cloud API may be a *mandatory* dependency between the user interface and
+any of the above during a round.
+
+**Connectivity-enhanced functionality** — may use the network, and may
+degrade gracefully when offline, but must never become a prerequisite for
+the active-round path above: course-data download/updates before a round,
+player-profile synchronisation, round-history synchronisation, cross-device
+sync, cloud analytics, account management, weather refresh, model/software
+updates, optional cloud-based LLM enhancement, and optional cloud-based
+player-model training. If a future LLM explanation layer (§2.1, M8) is
+unreachable, the system must degrade to the structured deterministic
+recommendation, not withhold a recommendation.
+
+This principle is recorded in
+[docs/adr/0005-offline-first-active-round-architecture.md](docs/adr/0005-offline-first-active-round-architecture.md)
+and elaborated in [docs/architecture.md](docs/architecture.md#offline-first-active-round).
+Any task that would make active-round core functionality depend on a
+network request must stop and escalate with `NEEDS_DECISION` — see
+[Escalation rules](#14-escalation-rules) — rather than being implemented.
+Storage technology, mobile runtime, and infrastructure selection remain
+future decisions (see roadmap milestone "Runtime & Offline Architecture" in
+[docs/roadmap.md](docs/roadmap.md)); this section states the constraint
+those future decisions must satisfy, not the technology itself.
 
 ## 3. Architecture overview
 
@@ -178,7 +227,7 @@ A change is done when:
 | [docs/vision.md](docs/vision.md) | Why CaddAI exists, who it's for |
 | [docs/prd.md](docs/prd.md) | Product requirements |
 | [docs/architecture.md](docs/architecture.md) | System structure, boundaries, dependency direction |
-| [docs/roadmap.md](docs/roadmap.md) | Milestones M0–M9 |
+| [docs/roadmap.md](docs/roadmap.md) | Milestones M0–M9, plus a Runtime & Offline Architecture research spike (M5.5) |
 | [docs/development-workflow.md](docs/development-workflow.md) | Request → pull request workflow |
 | [docs/domain-model.md](docs/domain-model.md) | Core golf domain concepts and entities |
 | [docs/course-engine.md](docs/course-engine.md) | Course/GPS subsystem design |
@@ -193,7 +242,8 @@ A change is done when:
 
 An ADR is required for: a new runtime dependency, a public API contract
 change, a canonical unit change, a module ownership change, a dependency
-direction change, or any change to the deterministic-strategy principle. See
+direction change, any change to the deterministic-strategy principle, or any
+change to the offline-first active-round principle (§2.2). See
 [.github/skills/architecture-decision/SKILL.md](.github/skills/architecture-decision/SKILL.md)
 for format and process.
 
@@ -214,7 +264,12 @@ Stop and request a human decision (`NEEDS_DECISION`, see format below) before:
 - anything with significant privacy implications,
 - a golf strategy assumption not already defined by existing product docs,
 - conflicting requirements,
-- changing the deterministic-strategy principle.
+- changing the deterministic-strategy principle,
+- making any active-round core capability (§2.2: positioning, course
+  geometry access, player profile access, distance calculations, shot
+  simulation, strategy/recommendation, or recording decisions/outcomes)
+  depend on a network request, or otherwise changing the offline-first
+  active-round principle.
 
 `NEEDS_DECISION` output format:
 

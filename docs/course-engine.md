@@ -52,7 +52,11 @@ Course Engineer (see `.github/agents/course-engineer.agent.md`).
   Strategy Engineer's responsibility.
 - No dependency on `player`, `strategy`, `simulation`, `llm`, `api`, or `cli`.
 - No live/remote course-data fetching in early milestones — local GeoJSON
-  only. Any future third-party course-data integration requires an ADR.
+  only. Any future third-party course-data integration requires an ADR, and
+  must fit a download/cache-before-a-round model: reading already-cached
+  course geometry is active-round core functionality (`AGENTS.md` §2.2) and
+  must not depend on a live network call during a round — see
+  [ADR 0005](adr/0005-offline-first-active-round-architecture.md).
 
 ## Data format
 

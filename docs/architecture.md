@@ -12,6 +12,11 @@ CaddAI is a **deterministic decision engine** with optional natural-language
 explanation layered on top, never the reverse. See
 [adr/0001-deterministic-strategy-engine.md](adr/0001-deterministic-strategy-engine.md).
 
+CaddAI is also **offline-first for an active round**: network connectivity
+is optional while a round is in progress. See
+[Offline-first active round](#offline-first-active-round) below and
+[adr/0005-offline-first-active-round-architecture.md](adr/0005-offline-first-active-round-architecture.md).
+
 ## System diagram (target end-state)
 
 ```mermaid
@@ -35,6 +40,51 @@ graph TD
 Dashed edges: `llm` only ever *reads* a finished recommendation to phrase it
 in natural language. It is never on the decision path, and `strategy`/
 `simulation` never import it.
+
+This diagram shows the **module dependency graph**, not a deployment
+topology. `UI --> API` and `CLI --> STRAT` must not be read as implying `api`
+is necessarily a remote network service: for the active-round path, `api`
+(or `cli`) may run co-located with, or embedded in, the device performing
+the round — see [Offline-first active round](#offline-first-active-round).
+Whether/where a network boundary exists in the deployed system is a roadmap
+M7 (GPS/mobile integration) decision, not something this diagram settles.
+
+## Offline-first active round
+
+CaddAI must remain usable for its core value proposition — a shot
+recommendation — with no network connectivity during a round. This is
+recorded in
+[adr/0005-offline-first-active-round-architecture.md](adr/0005-offline-first-active-round-architecture.md)
+and is a standing constraint, complementary to (not a replacement for) the
+deterministic-strategy principle above: that ADR governs *who* decides;
+this constraint governs *what network reachability may be assumed*.
+
+**Active-round core functionality** (must remain capable of running with
+only locally available device compute, storage, and data, with no network
+request on the critical path):
+
+1. Positioning/location acquisition.
+2. Course geometry access.
+3. Player profile access.
+4. Distance calculations.
+5. Shot simulation.
+6. Strategy/recommendation.
+7. Recording player decisions and shot outcomes.
+
+**Connectivity-enhanced functionality** (may use the network and may
+degrade gracefully offline, but must never be a prerequisite for the above):
+course-data download/updates before a round, player-profile/round-history/
+cross-device synchronisation, cloud analytics, account management, weather
+refresh, model/software updates, optional cloud-based LLM enhancement, and
+optional cloud-based player-model training. If a future LLM explanation
+layer (M8) is unreachable, the system degrades to the structured
+deterministic recommendation rather than withholding one.
+
+No storage technology, mobile runtime, or infrastructure component is
+selected by this constraint — those are future decisions, informed by the
+"Runtime & Offline Architecture" research spike (roadmap M5.5; see
+[roadmap.md](roadmap.md)) that precedes committing to the full mobile
+runtime architecture (roadmap M7).
 
 ## Subsystems
 

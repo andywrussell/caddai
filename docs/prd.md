@@ -41,6 +41,16 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 - **Determinism & explainability**: every recommendation must be traceable
   to specific inputs (geometry, statistics, simulation parameters). No
   opaque "the LLM decided" reasoning.
+- **Offline-first active round**: network connectivity is optional during an
+  active round. Positioning, course geometry access, player profile access,
+  distance calculations, shot simulation, strategy/recommendation, and
+  recording decisions/outcomes must remain capable of local execution with
+  no network request on the critical path. Course-data downloads, profile/
+  round-history sync, cloud analytics, weather refresh, and optional
+  cloud-based LLM enhancement may use the network but must degrade
+  gracefully, never becoming a prerequisite for the active-round path. See
+  `AGENTS.md` §2.2 and
+  [adr/0005-offline-first-active-round-architecture.md](adr/0005-offline-first-active-round-architecture.md).
 - **Units**: SI internally, canonical distance metres; conversion to yards
   only at presentation boundaries.
 - **Type safety**: strict typing throughout (mypy strict).
@@ -73,8 +83,15 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 
 - What data source(s) will provide real course geometry beyond local
   GeoJSON fixtures? (Deferred — no decision made; do not add a cloud/geo
-  service without an ADR.)
-- What GPS hardware/mobile platform is targeted for M7? (Deferred.)
+  service without an ADR. Any such source must support downloading/caching
+  course data locally before/between rounds — it must never become a live
+  dependency for course geometry access *during* a round; see `AGENTS.md`
+  §2.2.)
+- What GPS hardware/mobile platform is targeted for M7? (Deferred — see the
+  "Runtime & Offline Architecture" research spike, roadmap M5.5, which
+  precedes this decision.)
 - What LLM provider (if any) will be used for M8, and how are costs/privacy
   handled? (Deferred — requires explicit human approval; see escalation
-  rules in `AGENTS.md`.)
+  rules in `AGENTS.md`. Whatever is chosen, the deterministic recommendation
+  must remain fully available without it — cloud LLM unreachability degrades
+  to the structured recommendation, never to no recommendation.)

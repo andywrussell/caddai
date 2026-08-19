@@ -14,22 +14,29 @@ Every Copilot interaction in this repository must:
 3. Preserve the deterministic golf strategy principle: `strategy` and
    `simulation` decide; `llm` may only explain. No strategy/simulation code
    may import `llm`, `api`, `cli`, or UI packages.
-4. Use SI units internally — canonical distance is **metres**. Name fields so
+4. Preserve the offline-first active-round principle: network connectivity
+   is optional during an active round. Active-round core functionality
+   (positioning, course geometry access, player profile access, distance
+   calculations, shot simulation, strategy/recommendation, and recording
+   decisions/outcomes) must remain capable of local execution with no
+   network request on the critical path. Never make a cloud API a mandatory
+   dependency for these — see `AGENTS.md` §2.2.
+5. Use SI units internally — canonical distance is **metres**. Name fields so
    units are unambiguous (`carry_metres`, `wind_speed_mps`).
-5. Use strict, full type hints everywhere (mypy strict mode).
-6. Write or update tests for every behaviour change, following
+6. Use strict, full type hints everywhere (mypy strict mode).
+7. Write or update tests for every behaviour change, following
    [tests.instructions.md](instructions/tests.instructions.md).
-7. Run the quality gates (`.github/skills/quality-gates/SKILL.md`) before
+8. Run the quality gates (`.github/skills/quality-gates/SKILL.md`) before
    considering work done: `uv sync --frozen`, `ruff format --check`,
    `ruff check`, `mypy src`, `pytest`. The same gates run in GitHub Actions CI
    (`.github/workflows/ci.yml`) on pull requests and pushes to `main`.
-8. Avoid unnecessary dependencies. Only the libraries approved in `AGENTS.md`
+9. Avoid unnecessary dependencies. Only the libraries approved in `AGENTS.md`
    may be used without an ADR and human approval.
-9. Never commit secrets, API keys, or credentials. Never push, force-push,
-   open/merge a GitHub pull request, or perform destructive Git operations on
-   the user's behalf. Collaboration happens through GitHub pull requests,
-   reviewed and merged by a human.
-10. Update documentation (`docs/`) when architectural behaviour changes, and
+10. Never commit secrets, API keys, or credentials. Never push, force-push,
+    open/merge a GitHub pull request, or perform destructive Git operations on
+    the user's behalf. Collaboration happens through GitHub pull requests,
+    reviewed and merged by a human.
+11. Update documentation (`docs/`) when architectural behaviour changes, and
     write an ADR (`.github/skills/architecture-decision/SKILL.md`) for
     significant architectural decisions.
 

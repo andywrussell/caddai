@@ -1,7 +1,10 @@
 # Roadmap
 
 > Status: milestone sequencing for planned work. **M0**, **M1**, and **M2**
-> are complete. Milestones are directional, not date-committed.
+> are complete. Milestones are directional, not date-committed. **M5.5** is
+> a numbered insertion between M5 and M6 (an architecture/research spike,
+> not a functional milestone) chosen to avoid renumbering M6–M9; it does not
+> imply a fractional level of completeness.
 
 - **M0 — Agent development platform and repository foundation** *(complete)*
   Repository structure, documentation set, VS Code multi-agent development
@@ -57,25 +60,57 @@
   `strategy` subsystem: club/target selection driven by expected strokes and
   risk, producing a structured deterministic recommendation.
 
+- **M5.5 — Runtime & Offline Architecture (research spike)**
+  Architecture/research milestone, not implementation. Once `strategy`/
+  `simulation` are mature enough to benchmark (post-M5), evaluate how to
+  satisfy the offline-first active-round principle (`AGENTS.md` §2.2, see
+  [ADR 0005](adr/0005-offline-first-active-round-architecture.md)) for a
+  real mobile deployment, before committing to a full mobile runtime
+  architecture (M7). Scope: mobile runtime options; whether/how the Python
+  CaddAI core can execute locally on-device; packaging/embedding Python on
+  mobile; whether native/Rust/C++ components are needed for performance or
+  packaging; local persistence options (feeds the M6 decision-journal
+  storage ADR); a course-package format for locally cached course data;
+  offline/online synchronisation strategy; where cloud API boundaries sit
+  for connectivity-enhanced features; authentication approach; computational
+  requirements (CPU/memory usage, shot-simulation latency, battery
+  implications); local/on-device LLM feasibility (informs M9); and expected
+  system behaviour when connectivity is lost mid-round. Findings should
+  produce the specific ADRs later milestones need (M6 storage, M7 mobile
+  runtime, M9 on-device inference) rather than making those technology
+  choices itself — this spike deliberately does not select a mobile
+  framework, database, or cloud provider.
+
 - **M6 — Round tracking and decision journal**
   Recording situation, recommendation, rationale, player decision, shot
   outcome, resulting lie/position (see
   [decision-journal.md](decision-journal.md)). No storage technology
-  selected yet — requires an ADR when this milestone starts.
+  selected yet — requires an ADR when this milestone starts. Recording a
+  decision/outcome is active-round core functionality (`AGENTS.md` §2.2): the
+  write path must work locally; any remote sync of round history is
+  connectivity-enhanced, not a prerequisite.
 
 - **M7 — GPS/mobile application integration**
   Live GPS position feeding the engine; mobile/UI integration. Requires
-  human decision on target platform (`AGENTS.md` escalation rules).
+  human decision on target platform (`AGENTS.md` escalation rules). Builds
+  on the M5.5 research spike's findings; positioning must remain an
+  active-round core capability per `AGENTS.md` §2.2 regardless of platform.
 
 - **M8 — LLM caddie communication layer**
   An LLM explains the deterministic recommendation in natural, caddie-style
   language. Deliberately last among functional milestones — see
   [adr/0001-deterministic-strategy-engine.md](adr/0001-deterministic-strategy-engine.md).
-  Requires human approval to select an LLM provider.
+  Requires human approval to select an LLM provider. If the LLM is
+  cloud-based, unreachability must degrade to the structured deterministic
+  recommendation, never withhold a recommendation (`AGENTS.md` §2.2, see
+  [ADR 0005](adr/0005-offline-first-active-round-architecture.md)).
 
 - **M9 — On-device inference research**
   Exploratory research into on-device inference for the M8 explanation
-  layer (not the decision engine). Not committed scope.
+  layer (not the decision engine). Not committed scope. The offline-first
+  active-round principle (`AGENTS.md` §2.2) does not require pulling this
+  forward: a cloud-only M8 that degrades gracefully to the structured
+  recommendation when unreachable already satisfies that principle.
 
 LLM integration is deliberately kept late: the deterministic engine must be
 correct and trustworthy on its own before any natural-language layer is

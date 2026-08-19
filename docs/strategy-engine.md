@@ -36,6 +36,13 @@ UI package, directly or transitively, and must never call an LLM to make a
 golf decision. An LLM may only read a finished `strategy` recommendation to
 phrase it in natural language (M8+).
 
+`strategy` and `simulation` are also **active-round core functionality**
+(`AGENTS.md` §2.2): they must be able to produce a recommendation using only
+locally available course/player/statistics data, with no network request on
+the critical path. Neither module may take on a mandatory network dependency
+(e.g. a remote scoring/reference service) for the recommendation path — see
+[ADR 0005](adr/0005-offline-first-active-round-architecture.md).
+
 ## Planned responsibilities
 
 ### `simulation` (M4)

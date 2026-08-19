@@ -12,7 +12,8 @@ for when an ADR is required and the format to use.
 | [0002](0002-gps-local-projection-without-shapely.md) | GPS local projection without Shapely | Accepted |
 | [0003](0003-course-boundary-geometry.md) | Course boundary geometry | Accepted |
 | [0004](0004-distance-query-local-frame.md) | Distance query local frame | Accepted |
+| [0005](0005-offline-first-active-round-architecture.md) | Offline-first active-round architecture | Accepted |
 
 ## Next available number
 
-`0005`
+`0006`

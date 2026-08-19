@@ -43,5 +43,10 @@ For each shot, the decision journal will eventually record:
 - No storage technology is selected. Selecting one (file-based, embedded, or
   hosted database) is a decision deferred to M6 and requires an ADR plus
   human approval per `AGENTS.md` §14 (database/infrastructure selection is
-  an escalation trigger).
+  an escalation trigger). Whatever is chosen must support a local write path
+  for recording decisions/outcomes, since that is active-round core
+  functionality (`AGENTS.md` §2.2, see
+  [ADR 0005](adr/0005-offline-first-active-round-architecture.md)); any
+  round-history synchronisation to a remote store is connectivity-enhanced,
+  never a prerequisite for recording during a round.
 - No implementation of recording, querying, or persistence exists yet.
