@@ -112,6 +112,39 @@
   forward: a cloud-only M8 that degrades gracefully to the structured
   recommendation when unreachable already satisfies that principle.
 
+- **M10 — Mobile software prototype (real-round validation)**
+  A software-only mobile prototype, built on the M7 GPS/mobile integration
+  (and, if landed, the M8 LLM explanation layer), run on existing consumer
+  mobile devices per the M5.5 research spike's runtime findings — no
+  dedicated hardware. Purpose: prove CaddAI can actually be used during
+  real, on-course rounds before any dedicated hardware is designed. Field
+  validates the deterministic recommendation and offline-first active-round
+  behaviour (`AGENTS.md` §2.2) under real conditions (real GPS signal
+  quality, real battery drain, real between-shot workflow). Its findings —
+  not assumptions made now — are the evidence base for whether dedicated
+  hardware (M11) is worth building, and for that milestone's actual sensor,
+  compute, UX, latency, and battery requirements.
+
+- **M11 — Hardware / on-device intelligence research**
+  Exploratory research into dedicated CaddAI hardware and on-device
+  sensing, deliberately sequenced after M10: dedicated hardware must not be
+  committed to until the M10 mobile software prototype has been used in
+  real rounds and its actual sensor, compute, UX, latency, and battery
+  requirements are understood from that experience. Candidate hardware
+  inputs include camera-based lie assessment, GNSS location,
+  elevation/barometric data, IMU, compass, other environmental sensors, and
+  microphone/voice input. Any hardware/sensor system explored here must
+  produce canonical CaddAI domain inputs, never golf strategy logic of its
+  own — e.g. camera/manual input -> `Lie`, GNSS -> `Position`,
+  barometer/course data -> elevation, weather/manual/sensor -> `Wind` —
+  leaving the deterministic `strategy`/`simulation` engine ([ADR
+  0001](adr/0001-deterministic-strategy-engine.md)) as the sole source of
+  golf decisions. Not committed scope; a real hardware/sensor adapter
+  design is the trigger for a future ADR (or ADR 0001 amendment) naming
+  hardware/sensor input adapters as a module category, per `AGENTS.md` §13.
+
 LLM integration is deliberately kept late: the deterministic engine must be
 correct and trustworthy on its own before any natural-language layer is
-added on top of it.
+added on top of it. Dedicated hardware is deliberately kept later still —
+not committed to until the M10 mobile software prototype has proven the
+experience holds up in real rounds.

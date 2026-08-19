@@ -10,6 +10,30 @@ first public API is published.
 
 ### Added
 
+- Roadmap and product documentation update for the approved long-term
+  product direction: two new roadmap milestones appended after M9 — M10
+  "Mobile software prototype (real-round validation)" (software-only,
+  existing consumer devices, field-proves real-round usability before any
+  dedicated hardware) and M11 "Hardware / on-device intelligence research"
+  (exploratory only; hardware inputs — camera lie assessment, GNSS, IMU,
+  compass, barometer, microphone — must produce canonical domain inputs
+  such as `Lie`/`Position`/elevation/`Wind`, never golf strategy logic;
+  dedicated hardware must not be committed to until M10 has validated
+  real-round usage). New PRD "Product & commercial principles" section:
+  the core product should remain usable without an ongoing subscription;
+  recurring cloud costs should preferentially be recovered via optional
+  paid rounds, prepaid usage credits, or optional premium cloud features,
+  not by gating core GPS/strategy functionality behind a subscription; no
+  prices or payment infrastructure selected. Reinforced that cloud LLM
+  functionality is optional enrichment whose failure/exhaustion must never
+  prevent a deterministic recommendation (already established by
+  [ADR 0001](docs/adr/0001-deterministic-strategy-engine.md) and
+  [ADR 0005](docs/adr/0005-offline-first-active-round-architecture.md); no
+  new ADR required — confirmed with the CaddAI Architect). Documentation
+  updated across `docs/roadmap.md`, `docs/prd.md`, `docs/architecture.md`
+  (new "Future hardware/sensor adapters" section), `docs/vision.md`,
+  `docs/backlog.md`, and `AGENTS.md`. No production code changed.
+
 - Offline-first active-round architectural principle: network connectivity
   is optional during an active round; active-round core functionality
   (positioning, course geometry access, player profile access, distance
@@ -32,6 +56,7 @@ first public API is published.
   `docs/player-model.md`, `docs/decision-journal.md`, `docs/vision.md`,
   `docs/development-workflow.md`, and the custom agent definitions under
   `.github/agents/`. No production code changed.
+
 
 - Point-to-feature distance queries (M2.5, issue #7):
   `caddai.course.distance` adds `GreenDistances`,

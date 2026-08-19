@@ -25,6 +25,18 @@
   escalation trigger).
 - Investigate on-device inference feasibility for the M8 explanation layer
   (feeds M9; research only, not committed scope).
+- Decide the target mobile devices/OS versions for the M10 real-round
+  validation prototype (feeds M10; no dedicated hardware, reuses M7's
+  platform decision).
+- Decide whether/which hardware/sensor inputs (camera lie assessment, GNSS,
+  IMU, compass, barometer, microphone) warrant dedicated hardware (feeds
+  M11; research only — not committed scope until M10 real-round validation
+  is complete; a concrete hardware/sensor adapter design requires a future
+  ADR per `AGENTS.md` §13).
+- Decide the payment/billing mechanism (if any) for optional paid rounds,
+  prepaid usage credits, or premium cloud features (feeds the subscription-
+  independent core principle in [docs/prd.md](prd.md); requires ADR + human
+  approval — new paid/cloud service selection is an escalation trigger).
 - Add regression test coverage for a line-of-play exactly overlapping a
   polygon boundary edge in `caddai.course.distance` (feeds M2 follow-up).
 - Add regression test coverage directly targeting `caddai.course.distance`'s

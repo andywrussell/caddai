@@ -227,7 +227,7 @@ A change is done when:
 | [docs/vision.md](docs/vision.md) | Why CaddAI exists, who it's for |
 | [docs/prd.md](docs/prd.md) | Product requirements |
 | [docs/architecture.md](docs/architecture.md) | System structure, boundaries, dependency direction |
-| [docs/roadmap.md](docs/roadmap.md) | Milestones M0–M9, plus a Runtime & Offline Architecture research spike (M5.5) |
+| [docs/roadmap.md](docs/roadmap.md) | Milestones M0–M11, plus a Runtime & Offline Architecture research spike (M5.5) |
 | [docs/development-workflow.md](docs/development-workflow.md) | Request → pull request workflow |
 | [docs/domain-model.md](docs/domain-model.md) | Core golf domain concepts and entities |
 | [docs/course-engine.md](docs/course-engine.md) | Course/GPS subsystem design |

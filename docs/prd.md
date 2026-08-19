@@ -35,8 +35,38 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 - **Natural-language explanation** (M8): an LLM explains the deterministic
   recommendation in caddie-style language — never generates it.
 - **On-device inference research** (M9): exploratory, not committed scope.
+- **Mobile software prototype** (M10): field-validate CaddAI on existing
+  consumer mobile devices during real rounds, before any dedicated
+  hardware is designed.
+- **Hardware / on-device intelligence research** (M11): exploratory
+  research into dedicated hardware and on-device sensing; not committed
+  scope until M10 has validated real-round usability and its actual
+  sensor, compute, UX, latency, and battery requirements are understood.
 
-## 4. Non-functional requirements
+## 4. Product & commercial principles
+
+- **Subscription-independent core.** CaddAI should aim to keep its core
+  product (GPS/course access, player/club model, deterministic
+  strategy/recommendation) functional without requiring an ongoing
+  subscription. Where recurring cloud costs exist (e.g. course-data hosting,
+  optional cloud LLM enrichment), they should preferentially be recovered
+  through mechanisms such as optional paid rounds, prepaid cloud/caddie
+  usage credits, or optional premium cloud features — not by making core
+  GPS/strategy functionality itself subscription-dependent. No prices or
+  payment infrastructure are decided here; a specific payment/billing
+  mechanism is a future decision requiring an ADR and human approval per
+  `AGENTS.md` §14 ("adding a cloud service or a paid external service").
+- **Cloud LLM is optional enrichment, never a gate.** Per
+  [ADR 0001](adr/0001-deterministic-strategy-engine.md) and
+  [ADR 0005](adr/0005-offline-first-active-round-architecture.md), any
+  cloud-based LLM functionality (M8+) is optional enrichment layered on top
+  of the deterministic recommendation. Failure, unreachability, or
+  exhaustion of cloud LLM functionality (including any future usage-credit
+  exhaustion under the principle above) must never prevent a deterministic
+  shot recommendation — the system always degrades to the structured
+  recommendation, never to no recommendation.
+
+## 5. Non-functional requirements
 
 - **Determinism & explainability**: every recommendation must be traceable
   to specific inputs (geometry, statistics, simulation parameters). No
@@ -59,7 +89,7 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 - **Dependency discipline**: only approved libraries (see `AGENTS.md`)
   without an ADR.
 
-## 5. Out of scope for now
+## 6. Out of scope for now
 
 - Any production LLM integration (deliberately deferred to M8).
 - Cloud services, hosted databases, or paid external APIs (require ADR +
@@ -68,7 +98,7 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 - Course *discovery*/import from third-party providers — early milestones
   use local GeoJSON only.
 
-## 6. Success signals (directional, not committed metrics)
+## 7. Success signals (directional, not committed metrics)
 
 - A recommendation for a simple, well-defined scenario (e.g. a straight
   approach shot with no hazards) is produced deterministically and matches
@@ -78,7 +108,7 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 - Golf-domain assumptions encoded in `strategy`/`simulation` are traceable to
   a specific doc or ADR, not implicit.
 
-## 7. Open questions (track in `docs/decision-journal.md` / raise via
+## 8. Open questions (track in `docs/decision-journal.md` / raise via
    `NEEDS_DECISION` when they block implementation)
 
 - What data source(s) will provide real course geometry beyond local
@@ -95,3 +125,12 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
   rules in `AGENTS.md`. Whatever is chosen, the deterministic recommendation
   must remain fully available without it — cloud LLM unreachability degrades
   to the structured recommendation, never to no recommendation.)
+- What, if any, dedicated hardware should CaddAI build? (Deferred — see
+  roadmap M11. Must not be committed to until the M10 mobile software
+  prototype has been validated in real rounds and its actual sensor,
+  compute, UX, latency, and battery requirements are understood from that
+  experience.)
+- What payment/billing mechanism (if any) recovers recurring cloud costs
+  (optional paid rounds, prepaid usage credits, premium cloud features)?
+  (Deferred — no prices or payment infrastructure selected; requires an ADR
+  and human approval per `AGENTS.md` §14 before any implementation.)

@@ -116,6 +116,24 @@ pre-scaffolded as empty placeholders (see `AGENTS.md` §3).
   the other. Shared concepts (e.g. a point-in-space type used by both) live
   in a neutral shared-domain module, not duplicated or cross-imported.
 
+## Future hardware/sensor adapters
+
+Roadmap M11 (see [roadmap.md](roadmap.md)) explores dedicated CaddAI
+hardware and on-device sensing (camera-based lie assessment, GNSS, IMU,
+compass, barometer, other environmental sensors, microphone/voice) as
+research only, not committed scope, and not before roadmap M10 validates
+the mobile software prototype in real rounds. Architecturally, any such
+hardware/sensor input system is just another adapter, subject to the same
+rule as `api`/`cli`/`llm`: it must produce canonical domain inputs already
+defined in [domain-model.md](domain-model.md) — e.g. camera/manual input ->
+`Lie`, GNSS -> `Position`, barometer/course data -> elevation,
+weather/manual/sensor -> `Wind` — and must never itself contain golf
+strategy logic. `strategy`/`simulation` remain the sole source of golf
+decisions ([ADR 0001](adr/0001-deterministic-strategy-engine.md)). A
+concrete hardware/sensor adapter design (real module boundaries, not
+research) is the trigger for a future ADR, or an amendment to ADR 0001
+naming this adapter category explicitly, per `AGENTS.md` §13.
+
 ## Module ownership
 
 See `AGENTS.md` §4 and the [development-workflow.md](development-workflow.md)
