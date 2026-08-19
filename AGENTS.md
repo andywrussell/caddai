@@ -40,7 +40,7 @@ summary, planned subsystems under `src/caddai/`:
 
 | Subsystem | Owns | Depends on |
 |---|---|---|
-| `course` | course geometry, holes, hazards, GeoJSON | domain types only |
+| `course` | course geometry, holes, hazards, GeoJSON | domain types, `gps` |
 | `gps` | coordinates, GPS calculations | domain types only |
 | `player` | players, clubs, tendencies | domain types, `statistics` |
 | `statistics` | carry distributions, dispersion, round stats | domain types |

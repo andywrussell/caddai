@@ -10,6 +10,21 @@ first public API is published.
 
 ### Added
 
+- Course/hole/feature domain models (M2.3, issue #5): a new `caddai.course`
+  subsystem (`__init__.py`, `models.py`) with `FeatureType` (a `StrEnum` of
+  `TEE`, `FAIRWAY`, `GREEN`, `BUNKER`, `WATER`, `OUT_OF_BOUNDS`,
+  `LANDING_AREA`), `Feature` (a point-position course feature built on
+  `caddai.gps.models.Coordinate`), `Hole` (`number`/`par`/ordered
+  `features`), and `Course` (`name`/ordered `holes`) — all Pydantic v2
+  models with full strict type hints. Feature geometry is point-based only
+  for now; polygon/boundary geometry backed by Shapely is deferred per
+  [ADR 0002](docs/adr/0002-gps-local-projection-without-shapely.md).
+  `course` depends only on `caddai.gps` (`Coordinate`), consistent with the
+  `COURSE --> GPS` edge in `docs/architecture.md` and `AGENTS.md` §4's Course
+  Engineer ownership of both subsystems; `AGENTS.md` §3's `course`
+  dependency cell was corrected to say `gps` explicitly.
+  `tests/test_architecture_boundaries.py` gained a `course` entry
+  restricting it to `caddai.course`/`caddai.gps` imports only.
 - Course-local planar coordinate projection (M2.2, issue #4):
   `caddai.gps.projection` (`LocalPoint`, `to_local`, `to_coordinate`), a
   small-area equirectangular/tangent-plane affine transform between a
