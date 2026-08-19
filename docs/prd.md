@@ -2,7 +2,10 @@
 
 > Status: describes intended product scope for the roadmap. Only M0
 > (repository bootstrap) is currently implemented — see
-> [roadmap.md](roadmap.md) for what exists today versus what's planned.
+> [roadmap.md](roadmap.md) for what exists today versus what's planned. For
+> the long-term customer/product vision this scope is derived from, see
+> [docs/prfaq.md](prfaq.md); this PRD defines what the product must do at
+> each milestone, not the full aspirational experience.
 
 ## 1. Problem statement
 

@@ -222,8 +222,23 @@ A change is done when:
 
 ## 12. Documentation map
 
+CaddAI keeps four questions deliberately separate, each answered by a
+different document: the PRFAQ answers *what customer/product experience are
+we trying to create?*; the PRD answers *what must the product do?*;
+architecture.md and the ADRs answer *how must the system be designed?*; and
+the roadmap answers *when are capabilities built?* Agents proposing
+significant new product functionality should check that it advances, or
+remains consistent with, the customer experience and product principles in
+[docs/prfaq.md](docs/prfaq.md). The PRFAQ is aspirational north-star vision
+— it must never override an explicit ADR or architectural constraint (in
+particular §2.1 and §2.2 above). If a proposal seems to require choosing
+between the PRFAQ and an ADR/architectural constraint, escalate
+(`NEEDS_DECISION`, [§14](#14-escalation-rules)) rather than guessing which
+wins.
+
 | Doc | Purpose |
 |---|---|
+| [docs/prfaq.md](docs/prfaq.md) | PRFAQ: long-term customer experience and product principles (north star, not current implementation status) |
 | [docs/vision.md](docs/vision.md) | Why CaddAI exists, who it's for |
 | [docs/prd.md](docs/prd.md) | Product requirements |
 | [docs/architecture.md](docs/architecture.md) | System structure, boundaries, dependency direction |

@@ -4,7 +4,8 @@
 > are complete. Milestones are directional, not date-committed. **M5.5** is
 > a numbered insertion between M5 and M6 (an architecture/research spike,
 > not a functional milestone) chosen to avoid renumbering M6–M9; it does not
-> imply a fractional level of completeness.
+> imply a fractional level of completeness. See [docs/prfaq.md](prfaq.md)
+> for the long-term product vision this sequencing works towards.
 
 - **M0 — Agent development platform and repository foundation** *(complete)*
   Repository structure, documentation set, VS Code multi-agent development

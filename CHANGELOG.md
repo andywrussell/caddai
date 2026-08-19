@@ -10,6 +10,16 @@ first public API is published.
 
 ### Added
 
+- Added the approved CaddAI PRFAQ v0.1 as a first-class product document,
+  [docs/prfaq.md](docs/prfaq.md) — the long-term customer-experience and
+  product-principles north star. Documentation-only change; no production
+  code modified. Updated `AGENTS.md` §12 documentation map, condensed
+  cross-references in [docs/prd.md](docs/prd.md) and
+  [docs/roadmap.md](docs/roadmap.md), a discoverability link in
+  [README.md](README.md), and a concise instruction in
+  `.github/copilot-instructions.md` to check significant product decisions
+  against the PRFAQ. The PRFAQ never overrides an explicit ADR or
+  architectural constraint; conflicts are escalated, not silently resolved.
 - Roadmap and product documentation update for the approved long-term
   product direction: two new roadmap milestones appended after M9 — M10
   "Mobile software prototype (real-round validation)" (software-only,
