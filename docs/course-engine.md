@@ -11,9 +11,10 @@
 > geometry is now implemented (M2.4.5, issue #22): `Feature.boundary`
 > (single exterior ring only, no interior rings/holes) and
 > `polygon_centroid`, backed by Shapely — see
-> [ADR 0003](adr/0003-course-boundary-geometry.md). Hazard-carry and
-> front/centre/back distance *queries* against that geometry remain
-> planned (M2.5, issue #7).
+> [ADR 0003](adr/0003-course-boundary-geometry.md). Distance-to-feature
+> queries are now implemented (M2.5, issue #7):
+> `src/caddai/course/distance.py`'s `green_front_centre_back_distances` and
+> `hazard_carry_distance` — see [ADR 0004](adr/0004-distance-query-local-frame.md).
 
 ## Purpose
 
@@ -36,13 +37,14 @@ Course Engineer (see `.github/agents/course-engineer.agent.md`).
   Polygon geometry on course features (a `Feature`'s optional `boundary`,
   single exterior ring only) uses Shapely, activated in M2.4.5 (issue #22,
   see [ADR 0003](adr/0003-course-boundary-geometry.md)).
-- Distance calculations: point-to-point, point-to-feature (e.g. distance to
-  the front/centre/back of the green), and along-line-of-play distances
-  remain planned (M2.5, issue #7).
+- Distance calculations: point-to-point (`gps.distance`) and
+  point-to-feature/along-line-of-play distances
+  (`caddai.course.distance`, M2.5, issue #7) are implemented — see
+  "Distance-to-feature queries" below.
 - Hazard carry/lay-up distance queries (e.g. "distance to carry the
-  fairway bunker on this line") as pure geometric queries remain planned
-  (M2.5, issue #7) — the strategy engine decides what to do with that
-  information.
+  fairway bunker on this line") as pure geometric queries are implemented
+  (`caddai.course.distance.hazard_carry_distance`, M2.5, issue #7) — the
+  strategy engine decides what to do with that information.
 
 ## Explicit non-goals
 
@@ -94,6 +96,36 @@ Course data is represented as a GeoJSON `FeatureCollection` with a
   `boundary`).
 - See `tests/fixtures/sample_course.geojson` for a documented example
   fixture, including a green and a bunker polygon feature.
+
+## Distance-to-feature queries
+
+`src/caddai/course/distance.py` (M2.5, issue #7) implements pure geometric
+point-to-feature distance queries against `Feature.boundary` geometry — no
+strategic decision-making, which remains the Strategy Engineer's job (M5+).
+See [ADR 0004](adr/0004-distance-query-local-frame.md) for the full design.
+
+- `GreenDistances(front_metres, centre_metres, back_metres)` and
+  `green_front_centre_back_distances(player_position, green)` return signed
+  distances, in metres, from `player_position` to a green's front/centre/
+  back, measured along the player-to-green-centroid line of play. A
+  negative value means the player has already passed that point.
+- `hazard_carry_distance(player_position, aim_point, hazard)` returns the
+  signed carry distance, in metres, to clear a hazard along the
+  `player_position`-to-`aim_point` line of play, or `None` if that line
+  never crosses the hazard at all.
+- **Frame-consistency invariant**: every query re-projects
+  `player_position` (the shared local-metre-frame origin), the aim point,
+  and every `boundary` vertex together, fresh, per call, via
+  `caddai.gps.projection.to_local`. This is independent of, and never mixed
+  with, `caddai.course.models._local_polygon`'s unrelated per-feature
+  origin (`boundary[0]`), which exists only for a feature's own centroid/
+  validity computation. See ADR 0004 for why.
+- **Scope limits**: "centre" means the green polygon's centroid (per ADR
+  0003), **not** a pin/flag location — no `Hole.pin_position` concept
+  exists yet. The nearest/farthest-crossing simplification used for front/
+  back/carry is only a complete answer for a convex `boundary`; a concave
+  ring can yield more than two crossings, which is an explicit, documented
+  non-goal rather than a silently wrong answer.
 
 ## Units
 
