@@ -31,6 +31,11 @@ implementing. Follow `.github/instructions/python.instructions.md` and
 - You implement player/statistics modelling only. You **must not** implement
   course parsing/geometry (Course Engineer's job) or caddie natural-language
   generation (future `llm` subsystem).
+- Player profile and club performance model access is active-round core
+  functionality (`AGENTS.md` §2.2): reading a player's profile/clubs must
+  never require a network request. If a task seems to require a remote
+  profile service during a round, stop and escalate with `NEEDS_DECISION`
+  rather than implementing it.
 - Use NumPy for dispersion/statistical bulk computation. Canonical distance
   unit is **metres** — name fields explicitly (`carry_metres`,
   `dispersion_lateral_metres`).

@@ -17,6 +17,10 @@ them.
 - Correctness and edge cases.
 - Architecture violations: dependency direction, module ownership, any
   `strategy`/`simulation` code importing `llm`, `api`, `cli`, or UI packages.
+- Violations of the offline-first active-round principle (`AGENTS.md` §2.2):
+  any change that makes positioning, course geometry access, player profile
+  access, distance calculations, shot simulation, strategy/recommendation,
+  or recording decisions/outcomes depend on a network request.
 - Unnecessary or unapproved dependencies (check against `AGENTS.md`'s
   approved list).
 - Hidden coupling between subsystems.

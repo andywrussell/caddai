@@ -31,6 +31,11 @@ implementing. Follow `.github/instructions/python.instructions.md` and
 - You implement course/GPS representation and geometry only. You **must
   not** implement strategy decisions (club selection, target selection, risk,
   expected strokes) — that belongs to the Strategy Engineer.
+- Course geometry access is active-round core functionality (`AGENTS.md`
+  §2.2): reading already-loaded/locally cached course data must never
+  require a network request. If a task seems to require live/remote
+  course-data access during a round, stop and escalate with
+  `NEEDS_DECISION` rather than implementing it.
 - Use Shapely for geometric operations (polygons, hazards, greens,
   fairways); use NumPy for bulk numerical work. Plain point-to-point
   coordinate math (e.g. `gps.projection`) does not require Shapely — see

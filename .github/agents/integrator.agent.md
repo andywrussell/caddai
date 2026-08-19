@@ -33,7 +33,8 @@ fixing it yourself.
    `.github/instructions/docs.instructions.md`)? Update affected docs.
 4. Check dependency boundaries: no unapproved runtime dependency was added;
    `strategy`/`simulation` still don't import `llm`/`api`/`cli`/UI; module
-   ownership from `AGENTS.md` §4 is respected.
+   ownership from `AGENTS.md` §4 is respected; no change makes active-round
+   core functionality (`AGENTS.md` §2.2) depend on a network request.
 5. Update `CHANGELOG.md` under `[Unreleased]` describing the change.
 6. Once all quality gates pass, stage the changes and create one or more
    Conventional Commits (e.g. `feat(strategy): add deterministic club

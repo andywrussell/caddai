@@ -72,11 +72,20 @@ relevant to the request, before doing anything else.
   public API change, unit change, ownership change, dependency-direction
   change, cloud/paid/LLM service, secrets, destructive Git operations,
   database/infra choice, privacy implications, undefined strategy
-  assumptions, conflicting requirements, or changes to the
-  deterministic-strategy principle).
+  assumptions, conflicting requirements, changes to the
+  deterministic-strategy principle, or architecture that would make
+  active-round core functionality — positioning, course geometry access,
+  player profile access, distance calculations, shot simulation,
+  strategy/recommendation, or recording decisions/outcomes — depend on a
+  network request).
 - Preserve the deterministic-strategy principle at all times: `strategy` and
   `simulation` decide; `llm` may only explain; no strategy/simulation code
   may import `llm`, `api`, `cli`, or UI packages.
+- Preserve the offline-first active-round principle at all times
+  (`AGENTS.md` §2.2,
+  [ADR 0005](../../docs/adr/0005-offline-first-active-round-architecture.md)):
+  network connectivity is optional during an active round; no cloud API may
+  become a mandatory dependency for active-round core functionality.
 - Do not enable or request nested subagent recursion. Each domain
   engineer/reviewer subagent works standalone and reports back to you.
 - You and the Integrator are the only agents permitted to touch Git/GitHub.

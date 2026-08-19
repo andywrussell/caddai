@@ -27,6 +27,13 @@ then return recommendations to the orchestrator.
 - Spot hidden coupling: subsystems reaching into each other's internals,
   circular imports, or `strategy`/`simulation` depending on `llm`/`api`/
   `cli`/UI.
+- Spot proposed architecture that would make active-round core functionality
+  (positioning, course geometry access, player profile access, distance
+  calculations, shot simulation, strategy/recommendation, recording
+  decisions/outcomes) depend on a network request, violating the
+  offline-first active-round principle (`AGENTS.md` §2.2,
+  [ADR 0005](../../docs/adr/0005-offline-first-active-round-architecture.md)).
+  Flag this as requiring escalation, not silent design.
 - Identify work that should require an ADR per
   `.github/skills/architecture-decision/SKILL.md`, and say so explicitly.
 

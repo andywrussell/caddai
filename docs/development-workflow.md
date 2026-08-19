@@ -144,10 +144,11 @@ At any step, if the work requires a decision listed in `AGENTS.md` §14
 (new dependency, public API change, unit change, ownership change,
 dependency-direction change, cloud/paid/LLM service, secrets, destructive
 Git operations, infra/database choice, privacy implications, an undefined
-golf-strategy assumption, conflicting requirements, or a change to the
-deterministic-strategy principle), the Orchestrator stops and outputs
-`NEEDS_DECISION` with Context, Options, Recommendation, and Consequences,
-instead of guessing.
+golf-strategy assumption, conflicting requirements, a change to the
+deterministic-strategy principle, or architecture that would make
+active-round core functionality depend on a network request), the
+Orchestrator stops and outputs `NEEDS_DECISION` with Context, Options,
+Recommendation, and Consequences, instead of guessing.
 
 ## Parallelism rules
 

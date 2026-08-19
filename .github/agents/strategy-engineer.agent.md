@@ -32,8 +32,15 @@ Read `AGENTS.md`, `docs/strategy-engine.md`, and
 **You must never call an LLM to make a golf decision.** `strategy` and
 `simulation` must remain fully independent of `llm`, `api`, `cli`, and any UI
 package — no imports from those, directly or transitively, ever. This is the
-non-negotiable architectural principle of CaddAI (see `AGENTS.md` §2). If a
+non-negotiable architectural principle of CaddAI (see `AGENTS.md` §2.1). If a
 task seems to require it, stop and escalate to the orchestrator with
+`NEEDS_DECISION` rather than implementing it.
+
+`strategy`/`simulation` are also active-round core functionality
+(`AGENTS.md` §2.2): shot simulation and the deterministic recommendation
+must be producible from locally available course/player/statistics data,
+with no network request on the critical path. If a task seems to require a
+remote/cloud call to produce a recommendation, stop and escalate with
 `NEEDS_DECISION` rather than implementing it.
 
 ## Other constraints

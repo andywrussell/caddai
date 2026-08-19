@@ -10,6 +10,29 @@ first public API is published.
 
 ### Added
 
+- Offline-first active-round architectural principle: network connectivity
+  is optional during an active round; active-round core functionality
+  (positioning, course geometry access, player profile access, distance
+  calculations, shot simulation, strategy/recommendation, recording
+  decisions/outcomes) must remain capable of local execution, while
+  connectivity-enhanced functionality (course-data downloads, profile/
+  round-history sync, cloud analytics, weather refresh, optional cloud LLM
+  enhancement, etc.) may degrade gracefully offline but never become a
+  prerequisite. Recorded in new
+  [ADR 0005](docs/adr/0005-offline-first-active-round-architecture.md),
+  complementary to (not a replacement for)
+  [ADR 0001](docs/adr/0001-deterministic-strategy-engine.md). `AGENTS.md`
+  §2 is now "Non-negotiable architectural principles" with §2.1
+  (deterministic strategy) and §2.2 (offline-first active round); a new
+  roadmap milestone, M5.5 "Runtime & Offline Architecture" (research spike,
+  not implementation), is added between M5 and M6. Documentation updated
+  across `AGENTS.md`, `.github/copilot-instructions.md`,
+  `docs/architecture.md`, `docs/prd.md`, `docs/roadmap.md`,
+  `docs/strategy-engine.md`, `docs/course-engine.md`,
+  `docs/player-model.md`, `docs/decision-journal.md`, `docs/vision.md`,
+  `docs/development-workflow.md`, and the custom agent definitions under
+  `.github/agents/`. No production code changed.
+
 - Point-to-feature distance queries (M2.5, issue #7):
   `caddai.course.distance` adds `GreenDistances`,
   `green_front_centre_back_distances`, and `hazard_carry_distance` — signed

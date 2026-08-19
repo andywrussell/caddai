@@ -135,7 +135,7 @@ def test_subsystem_module_does_not_import_forbidden_subsystems(
 
     assert not forbidden_imports, (
         f"{source_path} imports forbidden module(s) {forbidden_imports}; "
-        "strategy/simulation may never import llm, api, cli, or UI packages (AGENTS.md §2)."
+        "strategy/simulation may never import llm, api, cli, or UI packages (AGENTS.md §2.1)."
     )
 
 
