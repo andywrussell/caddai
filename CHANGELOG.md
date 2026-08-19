@@ -10,6 +10,22 @@ first public API is published.
 
 ### Added
 
+- Integrated `docs/prfaq.md` into the agent context system with selective,
+  role-appropriate consultation rules (no code change). `AGENTS.md` now
+  documents an explicit hierarchy — PRFAQ (customer/product experience),
+  PRD (requirements/scope), roadmap (sequencing), architecture.md + ADRs
+  (technical design), AGENTS.md (operating rules) — plus a "read only the
+  documentation necessary for the task" context-efficiency principle.
+  `.github/copilot-instructions.md` gained a matching concise note.
+  `.github/agents/orchestrator.agent.md`, `architect.agent.md`, and
+  `reviewer.agent.md` each gained explicit, role-specific triggers for when
+  to consult the PRFAQ (and, for the Orchestrator, responsibility for
+  routing documentation to specialists). `course-engineer.agent.md`,
+  `player-engineer.agent.md`, `strategy-engineer.agent.md`, and
+  `qa-engineer.agent.md` each gained a narrow rule confirming they do not
+  read the PRFAQ by default. The PRFAQ still must never silently override
+  an explicit ADR, architectural constraint, or accepted issue
+  requirements — conflicts are escalated, not resolved silently.
 - Added the approved CaddAI PRFAQ v0.1 as a first-class product document,
   [docs/prfaq.md](docs/prfaq.md) — the long-term customer-experience and
   product-principles north star. Documentation-only change; no production

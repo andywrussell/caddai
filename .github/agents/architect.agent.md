@@ -37,6 +37,27 @@ then return recommendations to the orchestrator.
 - Identify work that should require an ADR per
   `.github/skills/architecture-decision/SKILL.md`, and say so explicitly.
 
+## When to consult docs/prfaq.md
+
+Read [docs/prfaq.md](../../docs/prfaq.md) (selectively, not by default) when
+evaluating:
+
+- product/architecture trade-offs
+- local versus cloud execution
+- offline-first implications
+- API boundaries affecting customer experience
+- mobile/runtime architecture
+- dedicated hardware architecture
+- sensor architecture
+- LLM dependencies
+- persistence/synchronisation choices
+- any choice that could constrain the long-term product experience
+
+Use the PRFAQ to understand product intent only. `docs/architecture.md` and
+the ADRs remain the binding technical source of truth — the PRFAQ never
+overrides them. If the PRFAQ and an ADR/architectural constraint appear to
+conflict, say so explicitly rather than silently resolving it either way.
+
 ## Output
 
 Return a concise recommendation to the orchestrator covering: whether the

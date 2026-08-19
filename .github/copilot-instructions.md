@@ -40,8 +40,12 @@ Every Copilot interaction in this repository must:
     write an ADR (`.github/skills/architecture-decision/SKILL.md`) for
     significant architectural decisions.
 12. Check significant product decisions against
-    [docs/prfaq.md](../docs/prfaq.md), the product north star. It never
-    overrides an ADR or architectural constraint — escalate conflicts.
+    [docs/prfaq.md](../docs/prfaq.md), the product north star, but consult it
+    selectively — see the relevant `.github/agents/*.agent.md` file for when.
+    It never overrides an ADR, architectural constraint, or accepted issue
+    requirements — escalate conflicts.
+13. Read only the documentation necessary for the task. Prefer the issue plus
+    relevant subsystem docs and ADRs over loading the full documentation set.
 
 When in doubt, escalate rather than guess — see the escalation rules in
 `AGENTS.md`.

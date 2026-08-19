@@ -37,6 +37,11 @@ acceptance criteria from the orchestrator's plan under `docs/plans/`.
   assertion of behaviour a reader would care about.
 - Do not write implementation code to make your own tests pass — hand
   failing tests with clear intent to the relevant domain engineer.
+- Do not read `docs/prfaq.md` by default. Consult it only when acceptance
+  criteria concern product promises such as offline operation, graceful
+  degradation, deterministic recommendation availability, user-facing
+  behaviour, cloud failure behaviour, or product-level capability
+  boundaries.
 - Do not create branches, commit, push, or open pull requests — only the
   Orchestrator and Integrator perform Git/GitHub operations (`AGENTS.md`
   §15).

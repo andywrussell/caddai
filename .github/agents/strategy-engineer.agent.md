@@ -56,6 +56,11 @@ remote/cloud call to produce a recommendation, stop and escalate with
   wind, degenerate risk inputs).
 - Do not modify files outside `strategy/`, `simulation/`, and their tests
   without flagging the cross-cutting change back to the orchestrator.
+- Do not read `docs/prfaq.md` by default. Consult it only if the GitHub
+  issue explicitly references it, the Orchestrator identifies product-facing
+  implications, or you hit an ambiguity the issue, PRD, architecture,
+  relevant ADRs, and `docs/strategy-engine.md` cannot resolve. Use the
+  narrowest relevant context for routine implementation.
 - Run the affected tests (`uv run pytest`) before reporting work as done; the
   Integrator runs the full quality gate afterward.
 - Do not create branches, commit, push, or open pull requests — only the

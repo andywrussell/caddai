@@ -253,6 +253,28 @@ wins.
 | [docs/plans/](docs/plans/) | Per-feature implementation plans written by the Orchestrator |
 | [docs/adr/](docs/adr/) | Architecture Decision Records |
 
+### Document hierarchy and reading documentation efficiently
+
+The documents above form an explicit hierarchy: the PRFAQ is product/customer
+vision (not a technical specification); the PRD narrows that vision into
+concrete requirements and scope; architecture.md and the ADRs are the binding
+technical source of truth for how the system is built; the roadmap sequences
+when capabilities are delivered; and this file (`AGENTS.md`) is the
+agent/development operating rulebook. The PRFAQ must not silently override an
+explicit ADR, an architecture constraint, or accepted issue requirements — if
+these sources materially conflict, agents must escalate (`NEEDS_DECISION`,
+[§14](#14-escalation-rules)) rather than silently choosing one.
+
+Agents should **read only the documentation necessary for the task**. Do not
+load the full documentation set (PRFAQ, PRD, architecture, every ADR,
+roadmap, every subsystem doc) into every agent's context by default; prefer
+the issue plus the relevant subsystem docs and ADRs. Each agent definition
+under `.github/agents/` states which documents that role reads by default
+and the specific conditions under which it should additionally consult
+[docs/prfaq.md](docs/prfaq.md) — the **CaddAI Orchestrator** is responsible
+for routing the right subset of documentation to each specialist for a given
+task, not for every specialist reading everything.
+
 ## 13. ADR requirements
 
 An ADR is required for: a new runtime dependency, a public API contract
