@@ -222,8 +222,23 @@ A change is done when:
 
 ## 12. Documentation map
 
+CaddAI keeps four questions deliberately separate, each answered by a
+different document: the PRFAQ answers *what customer/product experience are
+we trying to create?*; the PRD answers *what must the product do?*;
+architecture.md and the ADRs answer *how must the system be designed?*; and
+the roadmap answers *when are capabilities built?* Agents proposing
+significant new product functionality should check that it advances, or
+remains consistent with, the customer experience and product principles in
+[docs/prfaq.md](docs/prfaq.md). The PRFAQ is aspirational north-star vision
+— it must never override an explicit ADR or architectural constraint (in
+particular §2.1 and §2.2 above). If a proposal seems to require choosing
+between the PRFAQ and an ADR/architectural constraint, escalate
+(`NEEDS_DECISION`, [§14](#14-escalation-rules)) rather than guessing which
+wins.
+
 | Doc | Purpose |
 |---|---|
+| [docs/prfaq.md](docs/prfaq.md) | PRFAQ: long-term customer experience and product principles (north star, not current implementation status) |
 | [docs/vision.md](docs/vision.md) | Why CaddAI exists, who it's for |
 | [docs/prd.md](docs/prd.md) | Product requirements |
 | [docs/architecture.md](docs/architecture.md) | System structure, boundaries, dependency direction |
@@ -237,6 +252,28 @@ A change is done when:
 | [docs/backlog.md](docs/backlog.md) | Candidate work items beyond the current milestone |
 | [docs/plans/](docs/plans/) | Per-feature implementation plans written by the Orchestrator |
 | [docs/adr/](docs/adr/) | Architecture Decision Records |
+
+### Document hierarchy and reading documentation efficiently
+
+The documents above form an explicit hierarchy: the PRFAQ is product/customer
+vision (not a technical specification); the PRD narrows that vision into
+concrete requirements and scope; architecture.md and the ADRs are the binding
+technical source of truth for how the system is built; the roadmap sequences
+when capabilities are delivered; and this file (`AGENTS.md`) is the
+agent/development operating rulebook. The PRFAQ must not silently override an
+explicit ADR, an architecture constraint, or accepted issue requirements — if
+these sources materially conflict, agents must escalate (`NEEDS_DECISION`,
+[§14](#14-escalation-rules)) rather than silently choosing one.
+
+Agents should **read only the documentation necessary for the task**. Do not
+load the full documentation set (PRFAQ, PRD, architecture, every ADR,
+roadmap, every subsystem doc) into every agent's context by default; prefer
+the issue plus the relevant subsystem docs and ADRs. Each agent definition
+under `.github/agents/` states which documents that role reads by default
+and the specific conditions under which it should additionally consult
+[docs/prfaq.md](docs/prfaq.md) — the **CaddAI Orchestrator** is responsible
+for routing the right subset of documentation to each specialist for a given
+task, not for every specialist reading everything.
 
 ## 13. ADR requirements
 

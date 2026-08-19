@@ -36,6 +36,24 @@ them.
   inputs).
 - Golf-domain assumptions not backed by existing product docs.
 
+## When to consult docs/prfaq.md
+
+Consult [docs/prfaq.md](../../docs/prfaq.md) when a change has meaningful
+product-facing consequences — not for routine implementation work with no
+meaningful product impact. When relevant, check whether the change:
+
+- undermines offline-first active-round operation
+- makes core functionality unnecessarily dependent on cloud services
+- moves golf decision-making into an LLM
+- contradicts the intended customer experience
+- prematurely constrains future mobile/hardware options
+- turns future/aspirational capabilities into claims that they already exist
+- introduces a mandatory recurring-cost dependency contrary to the product
+  direction without an explicit approved decision
+
+Do not use PRFAQ alignment as a reason to reject routine implementation work
+that has no meaningful product impact.
+
 ## Output
 
 Return exactly one verdict: `APPROVE` or `REQUEST_CHANGES`.

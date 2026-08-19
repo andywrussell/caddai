@@ -49,7 +49,8 @@ every pull request targeting `main` and on every push to `main`.
 ## Documentation
 
 Start with [AGENTS.md](AGENTS.md) (the engineering handbook), then
-[docs/vision.md](docs/vision.md), [docs/architecture.md](docs/architecture.md),
+[docs/vision.md](docs/vision.md), [docs/prfaq.md](docs/prfaq.md) (the
+long-term product north star), [docs/architecture.md](docs/architecture.md),
 and [docs/roadmap.md](docs/roadmap.md).
 
 ## Development workflow

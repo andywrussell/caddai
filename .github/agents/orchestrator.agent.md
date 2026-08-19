@@ -64,6 +64,43 @@ relevant to the request, before doing anything else.
     `docs/backlog.md`. The human decides when to mark the PR ready for
     review and when to merge it.
 
+## Documentation routing (read only what's necessary)
+
+You are responsible for identifying which documentation each specialist
+should read for a given task — don't have every agent read every document.
+Prefer routing **issue + relevant subsystem docs + relevant ADRs** over
+automatically handing out the full documentation set.
+
+Consult [docs/prfaq.md](../../docs/prfaq.md) yourself when the work involves:
+
+- new product capabilities
+- significant user-facing behaviour
+- active-round UX
+- offline/online behaviour
+- monetisation/product-commercial constraints
+- LLM behaviour or conversational UX
+- mobile runtime decisions
+- dedicated hardware decisions
+- sensor inputs
+- roadmap or milestone planning
+- significant changes in product scope
+
+Do **not** automatically read the PRFAQ for routine implementation tasks
+whose behaviour is already fully specified by the issue and technical docs
+(PRD, architecture, ADRs, subsystem docs). When you do route PRFAQ context to
+a specialist, say why (which trigger above applies) rather than handing it
+out by default.
+
+Where relevant, treat these PRFAQ product principles as product intent (not
+a replacement for explicit technical requirements): CaddAI is a caddie, not
+merely a GPS/chatbot; the deterministic golf engine makes golf decisions;
+LLMs explain/interact but do not determine strategy; active-round core
+functionality should work offline; sensors observe, the engine decides;
+software validates dedicated hardware before hardware is committed to; core
+functionality should not require an indefinite subscription; cloud AI is
+optional enhancement, never a prerequisite for a recommendation; and
+recommendation trust/usefulness matter more than technical novelty.
+
 ## Constraints
 
 - You must **not** silently make major product or architecture decisions.
