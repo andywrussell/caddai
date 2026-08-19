@@ -10,6 +10,29 @@ first public API is published.
 
 ### Added
 
+- Polygon/boundary course geometry and GeoJSON `Polygon` support (M2.4.5,
+  issue #22): `caddai.course.models.Feature` gains an optional `boundary:
+  tuple[Coordinate, ...] | None` field (a single exterior polygon ring,
+  e.g. for a green or a bunker), with `position` enforced as its centroid
+  via a new `Feature` `model_validator` (rejects a mismatched `position`,
+  or a self-intersecting/degenerate ring, with a 0.01 m tolerance matching
+  ADR 0002's stated round-trip accuracy) regardless of how the `Feature`
+  is constructed. A new `polygon_centroid` helper computes a boundary
+  ring's centroid via a transient, per-feature, ad hoc local-projection
+  origin (the ring's own first vertex; a durable shared course-/hole-level
+  origin is deferred to M2.5). `caddai.course.geojson.load_course` now
+  also accepts `geometry.type == "Polygon"`: a single exterior ring only
+  (interior rings/holes are explicitly rejected), with ring-closure and
+  minimum-vertex-count checked as GeoJSON-structural concerns
+  (`ValueError`), and geometric validity/degeneracy and the
+  `position`/`boundary` centroid invariant checked as domain-model
+  concerns (`pydantic.ValidationError`) by `Feature` itself.
+  `tests/fixtures/sample_course.geojson` gained a green polygon on hole 1
+  and a bunker polygon on hole 2. New [ADR 0003](docs/adr/0003-course-boundary-geometry.md)
+  records this decision — it extends, and does not supersede, ADR 0002,
+  and is the first real activation of Shapely. `docs/course-engine.md` is
+  updated accordingly. This unblocks M2.5 (issue #7)'s distance-to-feature
+  queries.
 - Local GeoJSON course fixture parsing (M2.4, issue #6): `caddai.course.geojson`'s
   `load_course` (parses an already-decoded `FeatureCollection` dict) and
   `load_course_from_file` (reads and JSON-decodes a fixture file, then
@@ -17,13 +40,14 @@ first public API is published.
   a documented example fixture. Parses a `caddai`-specific GeoJSON
   `properties` schema (top-level `name`/`holes` metadata carrying `number`
   and `par` once per hole, per-feature `hole`/`feature_type` properties)
-  into `Course`/`Hole`/`Feature` domain models. Only `geometry.type ==
-  "Point"` is supported; polygon/boundary geometry remains deferred. Raises
-  `ValueError` for structural problems (missing top-level `properties`,
-  wrong `type` discriminators, unsupported `geometry.type`, duplicate hole
-  numbers in the top-level `holes` metadata, or a feature referencing an
-  undeclared hole number) and `pydantic.ValidationError` for field-level
-  problems (e.g. an unrecognized `feature_type`). `tests/test_architecture_boundaries.py`'s
+  into `Course`/`Hole`/`Feature` domain models. `geometry.type == "Point"`
+  was the only supported geometry at the time; `"Polygon"` support was
+  added later (M2.4.5, issue #22). Raises `ValueError` for structural
+  problems (missing top-level `properties`, wrong `type` discriminators,
+  unsupported `geometry.type`, duplicate hole numbers in the top-level
+  `holes` metadata, or a feature referencing an undeclared hole number)
+  and `pydantic.ValidationError` for field-level problems (e.g. an
+  unrecognized `feature_type`). `tests/test_architecture_boundaries.py`'s
   `course` boundary now also covers `geojson.py`, and `docs/course-engine.md`
   documents the schema.
 - Course/hole/feature domain models (M2.3, issue #5): a new `caddai.course`
@@ -32,8 +56,9 @@ first public API is published.
   `LANDING_AREA`), `Feature` (a point-position course feature built on
   `caddai.gps.models.Coordinate`), `Hole` (`number`/`par`/ordered
   `features`), and `Course` (`name`/ordered `holes`) — all Pydantic v2
-  models with full strict type hints. Feature geometry is point-based only
-  for now; polygon/boundary geometry backed by Shapely is deferred per
+  models with full strict type hints. Feature geometry was point-based
+  only at the time; polygon/boundary geometry backed by Shapely was added
+  later (M2.4.5, issue #22) per
   [ADR 0002](docs/adr/0002-gps-local-projection-without-shapely.md).
   `course` depends only on `caddai.gps` (`Coordinate`), consistent with the
   `COURSE --> GPS` edge in `docs/architecture.md` and `AGENTS.md` §4's Course

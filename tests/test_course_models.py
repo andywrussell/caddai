@@ -4,12 +4,19 @@ See GitHub issue #5 ("M2.3 — Course/hole/hazard domain models") for the
 acceptance criteria these tests are derived from: models must validate
 required fields (positive `par`, non-empty `holes`/`features` lists), and a
 2-hole fixture course must construct successfully.
+
+See GitHub issue #22 ("M2.4.5 — Polygon/boundary course geometry and GeoJSON
+Polygon support") for the additional acceptance criteria covered here:
+`Feature.boundary` accepts a valid exterior polygon ring whose centroid
+matches `position`, and rejects too-few vertices, a mismatched `position`,
+or a self-intersecting/degenerate ring — while `Feature` without `boundary`
+remains fully backward compatible.
 """
 
 import pytest
 from pydantic import ValidationError
 
-from caddai.course.models import Course, Feature, FeatureType, Hole
+from caddai.course.models import Course, Feature, FeatureType, Hole, polygon_centroid
 from caddai.gps.models import Coordinate
 
 
@@ -48,6 +55,140 @@ def test_feature_constructs_with_valid_data() -> None:
 
     assert feature.feature_type == FeatureType.TEE
     assert feature.position == position
+
+
+def _square_boundary() -> tuple[Coordinate, ...]:
+    """A small, axis-aligned square ring: 4 distinct vertices, no duplicated closing vertex."""
+    return (
+        Coordinate(latitude=51.5000, longitude=-0.1000),
+        Coordinate(latitude=51.5000, longitude=-0.0990),
+        Coordinate(latitude=51.5010, longitude=-0.0990),
+        Coordinate(latitude=51.5010, longitude=-0.1000),
+    )
+
+
+_BOWTIE_BOUNDARY = (
+    Coordinate(latitude=51.5000, longitude=-0.1000),
+    Coordinate(latitude=51.5010, longitude=-0.0990),
+    Coordinate(latitude=51.5010, longitude=-0.1000),
+    Coordinate(latitude=51.5000, longitude=-0.0990),
+)
+"""A self-intersecting (bowtie) quadrilateral ring: edges A-B and C-D cross."""
+
+
+def test_feature_accepts_valid_boundary_with_matching_centroid_position() -> None:
+    """A `Feature` accepts a simple, non-degenerate `boundary` with its exact
+    centroid `position` (issue #22).
+
+    The expected centroid is hand-computed as the arithmetic mean of the
+    square's 4 corners (a parallelogram's centroid is the average of all its
+    corners), independently of `polygon_centroid` under test — this catches a
+    real bug in `polygon_centroid` (wrong Shapely property, swapped x/y, wrong
+    origin) that a self-referential expected value would not.
+    """
+    boundary = _square_boundary()
+    position = Coordinate(latitude=51.5005, longitude=-0.0995)
+
+    feature = Feature(feature_type=FeatureType.GREEN, position=position, boundary=boundary)
+
+    assert feature.boundary == boundary
+    assert feature.position.latitude == pytest.approx(position.latitude)
+    assert feature.position.longitude == pytest.approx(position.longitude)
+
+    # Secondary cross-check: also matches `polygon_centroid`'s own output.
+    computed_centroid = polygon_centroid(boundary)
+    assert feature.position.latitude == pytest.approx(computed_centroid.latitude)
+    assert feature.position.longitude == pytest.approx(computed_centroid.longitude)
+
+
+def test_feature_rejects_boundary_with_fewer_than_three_vertices() -> None:
+    """A `boundary` with only 2 vertices violates the ring's `min_length=3`
+    constraint (issue #22).
+    """
+    boundary = (
+        Coordinate(latitude=51.5000, longitude=-0.1000),
+        Coordinate(latitude=51.5000, longitude=-0.0990),
+    )
+
+    with pytest.raises(ValidationError):
+        Feature(
+            feature_type=FeatureType.GREEN,
+            position=Coordinate(latitude=51.5000, longitude=-0.0995),
+            boundary=boundary,
+        )
+
+
+def test_feature_rejects_position_not_matching_boundary_centroid() -> None:
+    """A `position` that isn't `boundary`'s centroid (here, one of its own
+    vertices) is rejected (issue #22).
+    """
+    boundary = _square_boundary()
+
+    with pytest.raises(ValidationError):
+        Feature(feature_type=FeatureType.GREEN, position=boundary[0], boundary=boundary)
+
+
+def test_feature_rejects_degenerate_collinear_boundary() -> None:
+    """A `boundary` of three collinear points has zero area and is rejected (issue #22)."""
+    boundary = (
+        Coordinate(latitude=51.5000, longitude=-0.1000),
+        Coordinate(latitude=51.5000, longitude=-0.0995),
+        Coordinate(latitude=51.5000, longitude=-0.0990),
+    )
+
+    with pytest.raises(ValidationError):
+        Feature(
+            feature_type=FeatureType.GREEN,
+            position=Coordinate(latitude=51.5000, longitude=-0.0995),
+            boundary=boundary,
+        )
+
+
+def test_feature_rejects_self_intersecting_bowtie_boundary() -> None:
+    """A self-intersecting (bowtie) quadrilateral ring is geometrically invalid
+    and rejected (issue #22).
+    """
+    with pytest.raises(ValidationError):
+        Feature(
+            feature_type=FeatureType.GREEN,
+            position=Coordinate(latitude=51.5005, longitude=-0.0995),
+            boundary=_BOWTIE_BOUNDARY,
+        )
+
+
+def test_feature_rejects_boundary_with_coincident_duplicate_vertex() -> None:
+    """A `boundary` with a duplicate/coincident vertex pair among its 4
+    vertices collapses toward a degenerate triangle with a zero-length edge
+    and is rejected, regardless of `position` (issue #22; see
+    tests.instructions.md's "coincident points" degenerate-geometry
+    edge-case guidance).
+    """
+    boundary = (
+        Coordinate(latitude=51.5000, longitude=-0.1000),
+        Coordinate(latitude=51.5000, longitude=-0.1000),  # duplicate of the first vertex
+        Coordinate(latitude=51.5010, longitude=-0.0990),
+        Coordinate(latitude=51.5010, longitude=-0.1000),
+    )
+
+    with pytest.raises(ValidationError):
+        Feature(
+            feature_type=FeatureType.GREEN,
+            position=Coordinate(latitude=51.5005, longitude=-0.0995),
+            boundary=boundary,
+        )
+
+
+def test_feature_without_boundary_behaves_exactly_as_before() -> None:
+    """Regression: a `Feature` with `boundary=None` (the default) constructs
+    exactly as pre-issue #22.
+    """
+    position = Coordinate(latitude=51.5074, longitude=-0.1278)
+
+    feature = Feature(feature_type=FeatureType.TEE, position=position)
+
+    assert feature.feature_type == FeatureType.TEE
+    assert feature.position == position
+    assert feature.boundary is None
 
 
 def test_hole_constructs_with_valid_data() -> None:

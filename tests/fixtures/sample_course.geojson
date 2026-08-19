@@ -37,6 +37,37 @@
       "type": "Feature",
       "geometry": { "type": "Point", "coordinates": [-0.1160, 51.5150] },
       "properties": { "hole": 2, "feature_type": "green" }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-0.1225, 51.5100],
+            [-0.1215, 51.5100],
+            [-0.1215, 51.5110],
+            [-0.1225, 51.5110],
+            [-0.1225, 51.5100]
+          ]
+        ]
+      },
+      "properties": { "hole": 1, "feature_type": "green" }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-0.1175, 51.5140],
+            [-0.1165, 51.5140],
+            [-0.1165, 51.5150],
+            [-0.1175, 51.5140]
+          ]
+        ]
+      },
+      "properties": { "hole": 2, "feature_type": "bunker" }
     }
   ]
 }
