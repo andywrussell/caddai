@@ -120,12 +120,21 @@ See [ADR 0004](adr/0004-distance-query-local-frame.md) for the full design.
   with, `caddai.course.models._local_polygon`'s unrelated per-feature
   origin (`boundary[0]`), which exists only for a feature's own centroid/
   validity computation. See ADR 0004 for why.
-- **Scope limits**: "centre" means the green polygon's centroid (per ADR
-  0003), **not** a pin/flag location — no `Hole.pin_position` concept
-  exists yet. The nearest/farthest-crossing simplification used for front/
-  back/carry is only a complete answer for a convex `boundary`; a concave
-  ring can yield more than two crossings, which is an explicit, documented
-  non-goal rather than a silently wrong answer.
+- **Scope limits**: see [Known limitations](#known-limitations) below.
+
+## Known limitations
+
+- No pin/flag position concept — `Hole.pin_position` doesn't exist;
+  "centre" (in `green_front_centre_back_distances`) means the green
+  polygon's own centroid (per [ADR 0003](adr/0003-course-boundary-geometry.md)),
+  not a golf pin/flag location.
+- The nearest/farthest-crossing simplification used for front/back/carry
+  distances (see [ADR 0004](adr/0004-distance-query-local-frame.md)) is
+  only a complete answer for a convex (simple) polygon boundary; a concave
+  ring can produce more than two line-of-play crossings, which is an
+  explicit, documented non-goal rather than a silently wrong answer.
+- No interior rings (holes) are supported in a `Feature.boundary` polygon
+  ([ADR 0003](adr/0003-course-boundary-geometry.md) explicit non-goal).
 
 ## Units
 

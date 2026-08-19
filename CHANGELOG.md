@@ -125,6 +125,22 @@ first public API is published.
 
 ### Changed
 
+- Course-engine documentation consolidation for the now-complete M2
+  milestone (M2.6, issue #8): `docs/roadmap.md`'s M2 entry is marked
+  `*(complete)*` with a summary linking to `docs/course-engine.md` and
+  ADRs 0002–0004; `docs/architecture.md`'s status banner is corrected for
+  both the M2 staleness (it claimed `course`/`gps` weren't implemented)
+  and the pre-existing M1 staleness (it claimed only the bootstrap
+  package existed); `docs/backlog.md`'s completed GeoJSON-schema
+  candidate item is removed and two new M2.5 test-coverage-gap follow-up
+  items are added (line-of-play/polygon-edge overlap, and the `1e-6` m
+  Shapely precision-snap boundary); `docs/course-engine.md` gains a new
+  `## Known limitations` section consolidating the three permanent M2.5
+  design limitations (no pin/flag position, convex/simple-polygon
+  assumption with no concave multi-crossing support, no interior
+  rings/holes), with redundant inline restatements trimmed to a pointer.
+  Documentation-only — no new production code, tests, or ADR. This
+  completes milestone M2 (M2.1–M2.5, M2.4.5, M2.6 all done).
 - Migrated CI/collaboration infrastructure from GitLab to GitHub: removed
   `.gitlab-ci.yml`; updated `AGENTS.md`, `README.md`,
   `docs/development-workflow.md`, `.github/copilot-instructions.md`, and the

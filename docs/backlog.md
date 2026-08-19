@@ -6,7 +6,6 @@
 
 ## Candidate items
 
-- Define the GeoJSON `properties` schema for course features (feeds M2).
 - Define the parametric form of carry/dispersion distributions (feeds M3).
 - Decide the expected-strokes model / baseline data source used by
   `strategy` (feeds M5; likely needs an ADR if it requires external
@@ -20,6 +19,10 @@
   escalation trigger).
 - Investigate on-device inference feasibility for the M8 explanation layer
   (feeds M9; research only, not committed scope).
+- Add regression test coverage for a line-of-play exactly overlapping a
+  polygon boundary edge in `caddai.course.distance` (feeds M2 follow-up).
+- Add regression test coverage directly targeting `caddai.course.distance`'s
+  `1e-6` m Shapely precision-snap boundary itself (feeds M2 follow-up).
 
 ## Process
 
