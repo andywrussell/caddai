@@ -10,6 +10,26 @@ first public API is published.
 
 ### Added
 
+- Point-to-feature distance queries (M2.5, issue #7):
+  `caddai.course.distance` adds `GreenDistances`,
+  `green_front_centre_back_distances`, and `hazard_carry_distance` — signed
+  distance queries (green front/centre/back, and hazard carry distance
+  along a line of play) computed by projecting the player position, the
+  aim point, and the feature's `boundary` into one common local-metre
+  frame, freshly, per call, via `caddai.gps.projection.to_local`, anchored
+  at `player_position` — never mixed with `caddai.course.models
+  ._local_polygon`'s per-feature, ad hoc origin from M2.4.5. Degenerate
+  cases are explicit: a player already past the feature yields negative
+  signed distances; a player standing on the boundary yields a near-zero
+  (not exact-zero) distance; a line of play that misses a hazard entirely
+  returns `None`; a tangent line returns a single value for both
+  front/back or the carry distance. The nearest/farthest-crossing
+  simplification used for front/back/carry is only a complete answer for a
+  convex boundary — a concave ring can yield more than two crossings,
+  which is a documented scope limitation, not a silently wrong answer.
+  New [ADR 0004](docs/adr/0004-distance-query-local-frame.md) records the
+  local-frame decision — it extends, and does not supersede, ADR 0002/
+  0003. `docs/course-engine.md` is updated accordingly.
 - Polygon/boundary course geometry and GeoJSON `Polygon` support (M2.4.5,
   issue #22): `caddai.course.models.Feature` gains an optional `boundary:
   tuple[Coordinate, ...] | None` field (a single exterior polygon ring,
