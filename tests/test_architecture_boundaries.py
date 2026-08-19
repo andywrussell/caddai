@@ -73,6 +73,7 @@ SUBSYSTEM_BOUNDARIES = [
         source_files=(
             REPO_ROOT / "src/caddai/course/__init__.py",
             REPO_ROOT / "src/caddai/course/models.py",
+            REPO_ROOT / "src/caddai/course/geojson.py",
         ),
         allowed_caddai_prefixes=("caddai.course", "caddai.gps"),
         plan_reference='GitHub issue #5 ("M2.3 — Course/hole/hazard domain models")',

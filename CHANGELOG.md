@@ -10,6 +10,22 @@ first public API is published.
 
 ### Added
 
+- Local GeoJSON course fixture parsing (M2.4, issue #6): `caddai.course.geojson`'s
+  `load_course` (parses an already-decoded `FeatureCollection` dict) and
+  `load_course_from_file` (reads and JSON-decodes a fixture file, then
+  delegates to `load_course`), plus `tests/fixtures/sample_course.geojson`,
+  a documented example fixture. Parses a `caddai`-specific GeoJSON
+  `properties` schema (top-level `name`/`holes` metadata carrying `number`
+  and `par` once per hole, per-feature `hole`/`feature_type` properties)
+  into `Course`/`Hole`/`Feature` domain models. Only `geometry.type ==
+  "Point"` is supported; polygon/boundary geometry remains deferred. Raises
+  `ValueError` for structural problems (missing top-level `properties`,
+  wrong `type` discriminators, unsupported `geometry.type`, duplicate hole
+  numbers in the top-level `holes` metadata, or a feature referencing an
+  undeclared hole number) and `pydantic.ValidationError` for field-level
+  problems (e.g. an unrecognized `feature_type`). `tests/test_architecture_boundaries.py`'s
+  `course` boundary now also covers `geojson.py`, and `docs/course-engine.md`
+  documents the schema.
 - Course/hole/feature domain models (M2.3, issue #5): a new `caddai.course`
   subsystem (`__init__.py`, `models.py`) with `FeatureType` (a `StrEnum` of
   `TEE`, `FAIRWAY`, `GREEN`, `BUNKER`, `WATER`, `OUT_OF_BOUNDS`,

@@ -1,0 +1,42 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "name": "Fixture Links",
+    "holes": [
+      { "number": 1, "par": 4 },
+      { "number": 2, "par": 3 }
+    ]
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.1278, 51.5074] },
+      "properties": { "hole": 1, "feature_type": "tee" }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.1250, 51.5090] },
+      "properties": { "hole": 1, "feature_type": "fairway" }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.1220, 51.5105] },
+      "properties": { "hole": 1, "feature_type": "green" }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.1200, 51.5120] },
+      "properties": { "hole": 2, "feature_type": "tee" }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.1180, 51.5135] },
+      "properties": { "hole": 2, "feature_type": "fairway" }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.1160, 51.5150] },
+      "properties": { "hole": 2, "feature_type": "green" }
+    }
+  ]
+}

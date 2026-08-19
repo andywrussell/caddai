@@ -4,9 +4,12 @@
 > `src/caddai/gps/` is now implemented (M2.1, issue #3): `Coordinate`,
 > `haversine_distance_metres`, and `initial_bearing_degrees`. `src/caddai/course/`
 > is now implemented (M2.3, issue #5): `Course`, `Hole`, `Feature`, and
-> `FeatureType` — point-position feature models only. GeoJSON parsing,
-> Shapely polygon geometry, and hazard carry queries remain planned and are
-> not yet implemented.
+> `FeatureType` — point-position feature models only. GeoJSON parsing is
+> now implemented (M2.4, issue #6): `src/caddai/course/geojson.py`'s
+> `load_course`/`load_course_from_file` parse a `caddai`-specific GeoJSON
+> `FeatureCollection` into `Course`/`Hole`/`Feature`. Shapely polygon
+> geometry and hazard carry queries remain planned and are not yet
+> implemented.
 
 ## Purpose
 
@@ -42,12 +45,36 @@ Course Engineer (see `.github/agents/course-engineer.agent.md`).
 - No live/remote course-data fetching in early milestones — local GeoJSON
   only. Any future third-party course-data integration requires an ADR.
 
-## Data format (planned)
+## Data format
 
-Course data is represented as GeoJSON `FeatureCollection`s with a
-`caddai`-specific `properties` schema (feature type: tee/fairway/green/
-bunker/water/OB/landing-area; hole number; par). The exact schema will be
-defined and versioned when M2 begins.
+Course data is represented as a GeoJSON `FeatureCollection` with a
+`caddai`-specific `properties` schema, parsed by
+`src/caddai/course/geojson.py`'s `load_course`/`load_course_from_file`:
+
+- Top-level object:
+  `{"type": "FeatureCollection", "properties": {"name": <course name>,
+  "holes": [{"number": <int>, "par": <int>}, ...]}, "features": [...]}`.
+  `par` lives once per hole in this top-level metadata (single source of
+  truth), not repeated across every point feature on that hole. `name` has
+  no natural per-feature home, so it lives at the top-level `properties`
+  only.
+- Each feature is a GeoJSON `Point`:
+  `{"type": "Feature", "geometry": {"type": "Point", "coordinates":
+  [<longitude>, <latitude>]}, "properties": {"hole": <int>, "feature_type":
+  "<FeatureType value>"}}`. `feature_type` is one of `FeatureType`'s values
+  (tee/fairway/green/bunker/water/out_of_bounds/landing_area).
+- GeoJSON coordinate order is `[longitude, latitude]`; this is mapped
+  explicitly to `Coordinate(latitude=coordinates[1],
+  longitude=coordinates[0])` — do not assume `[latitude, longitude]`.
+- Only `geometry.type == "Point"` is supported; polygon/boundary geometry
+  is deferred (see the module docstring in `course/models.py`).
+- The loader raises `ValueError` for structural problems (missing
+  top-level `properties`, wrong `type` discriminators, unsupported
+  `geometry.type`, a feature referencing a hole number absent from the
+  top-level `holes` metadata) and `pydantic.ValidationError` for
+  field-level problems (e.g. an unrecognized `feature_type`).
+- See `tests/fixtures/sample_course.geojson` for a documented example
+  fixture.
 
 ## Units
 
