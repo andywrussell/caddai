@@ -3,7 +3,13 @@
 See docs/course-engine.md for the documented GeoJSON schema. Coordinate
 extraction is plain dict access, not `shapely.geometry.shape` — no geometric
 operation is performed here, matching the precedent of
-docs/adr/0002-gps-local-projection-without-shapely.md.
+docs/adr/0002-gps-local-projection-without-shapely.md. `geometry.type` may
+be `"Point"` or `"Polygon"` (single exterior ring only; interior rings/holes
+are rejected). Ring closure and minimum vertex count are checked here as
+GeoJSON-structural concerns (`ValueError`); geometric validity (non-
+self-intersecting, non-degenerate) and the `position`/`boundary` centroid
+invariant are enforced by `Feature`'s own validators, not here — see
+docs/adr/0003-course-boundary-geometry.md.
 """
 
 import json
@@ -12,7 +18,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from caddai.course.models import Course, Feature, FeatureType, Hole
+from caddai.course.models import Course, Feature, FeatureType, Hole, polygon_centroid
 from caddai.gps.models import Coordinate
 
 
@@ -114,18 +120,53 @@ def _parse_feature(raw_feature: object, index: int) -> tuple[Feature, int]:
     if not isinstance(geometry, dict):
         raise ValueError(f"feature at index {index} is missing a 'geometry' object")
 
-    if geometry.get("type") != "Point":
+    geometry_type = geometry.get("type")
+    boundary: tuple[Coordinate, ...] | None = None
+
+    if geometry_type == "Point":
+        coordinates = geometry.get("coordinates")
+        if not isinstance(coordinates, list) or len(coordinates) < 2:
+            raise ValueError(f"feature at index {index} has invalid Point 'coordinates'")
+
+        position = Coordinate(latitude=coordinates[1], longitude=coordinates[0])
+    elif geometry_type == "Polygon":
+        rings = geometry.get("coordinates")
+        if not isinstance(rings, list) or len(rings) == 0:
+            raise ValueError(
+                f"feature at index {index} has invalid Polygon 'coordinates': expected a "
+                "list containing exactly one exterior ring, got none"
+            )
+        if len(rings) > 1:
+            raise ValueError(
+                f"feature at index {index} has a Polygon with {len(rings)} rings; interior "
+                "rings (holes) are not supported, only a single exterior ring"
+            )
+
+        ring = rings[0]
+        if not isinstance(ring, list) or len(ring) < 4:
+            raise ValueError(
+                f"feature at index {index} has a Polygon ring with fewer than 4 positions; "
+                "at least 3 distinct vertices plus a closing duplicate are required"
+            )
+        if ring[0] != ring[-1]:
+            raise ValueError(
+                f"feature at index {index} has a Polygon ring that is not closed: "
+                "the first and last positions must be equal"
+            )
+
+        boundary = tuple(
+            Coordinate(latitude=vertex[1], longitude=vertex[0]) for vertex in ring[:-1]
+        )
+        position = polygon_centroid(boundary)
+    else:
         raise ValueError(
             f"feature at index {index} has unsupported geometry.type "
-            f"{geometry.get('type')!r}; only 'Point' is supported"
+            f"{geometry_type!r}; only 'Point' and 'Polygon' are supported"
         )
-
-    coordinates = geometry.get("coordinates")
-    if not isinstance(coordinates, list) or len(coordinates) < 2:
-        raise ValueError(f"feature at index {index} has invalid Point 'coordinates'")
-
-    position = Coordinate(latitude=coordinates[1], longitude=coordinates[0])
 
     properties = _FeatureProperties.model_validate(raw_feature.get("properties"))
 
-    return Feature(feature_type=properties.feature_type, position=position), properties.hole
+    return (
+        Feature(feature_type=properties.feature_type, position=position, boundary=boundary),
+        properties.hole,
+    )
