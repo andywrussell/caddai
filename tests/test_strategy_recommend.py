@@ -26,9 +26,9 @@ def _three_club_player() -> Player:
     return Player(
         name="Ada",
         clubs=[
-            Club(name="Wedge", expected_carry_metres=100.0),
-            Club(name="8 Iron", expected_carry_metres=120.0),
-            Club(name="6 Iron", expected_carry_metres=140.0),
+            Club.with_expected_carry(name="Wedge", expected_carry_metres=100.0),
+            Club.with_expected_carry(name="8 Iron", expected_carry_metres=120.0),
+            Club.with_expected_carry(name="6 Iron", expected_carry_metres=140.0),
         ],
     )
 
@@ -37,7 +37,9 @@ def _single_club_player(expected_carry_metres: float) -> Player:
     """A player with a single club, useful for isolating the confidence formula."""
     return Player(
         name="Ada",
-        clubs=[Club(name="Test Club", expected_carry_metres=expected_carry_metres)],
+        clubs=[
+            Club.with_expected_carry(name="Test Club", expected_carry_metres=expected_carry_metres)
+        ],
     )
 
 
@@ -246,8 +248,8 @@ def test_tied_distance_gap_is_broken_by_club_list_order() -> None:
     player = Player(
         name="Ada",
         clubs=[
-            Club(name="Short Club", expected_carry_metres=100.0),
-            Club(name="Long Club", expected_carry_metres=140.0),
+            Club.with_expected_carry(name="Short Club", expected_carry_metres=100.0),
+            Club.with_expected_carry(name="Long Club", expected_carry_metres=140.0),
         ],
     )
     request = _request(
