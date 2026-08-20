@@ -14,7 +14,10 @@
 > defines `CarryDistribution` (mean + stddev, metres) as a leaf subsystem
 > with no dependency on other `caddai.*` modules. As of M3.2, the same file
 > also defines `DirectionalDispersion` (lateral stddev + signed lateral
-> bias, metres). Performance history and round statistics below remain
+> bias, metres). As of M3.4, `Club` requires a `category: ClubCategory`
+> field (`DRIVER`, `FAIRWAY_WOOD`, `HYBRID`, `IRON`, `WEDGE`, `PUTTER`,
+> `OTHER`); it is metadata only — no strategy behaviour depends on it yet
+> (see issue #29). Performance history and round statistics below remain
 > **planned**.
 
 ## Purpose
