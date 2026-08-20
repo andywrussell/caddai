@@ -10,6 +10,12 @@ first public API is published.
 
 ### Added
 
+- Added the `caddai.statistics` subsystem (M3.1, GitHub issue #26): a new
+  leaf module [src/caddai/statistics/](src/caddai/statistics/) with
+  `CarryDistribution` (`mean_metres` gt 0, `stddev_metres` ge 0), depending
+  on no other `caddai.*` module. Added its architecture-boundary coverage
+  to `tests/test_architecture_boundaries.py` and updated
+  [docs/player-model.md](docs/player-model.md)'s status note accordingly.
 - Integrated `docs/prfaq.md` into the agent context system with selective,
   role-appropriate consultation rules (no code change). `AGENTS.md` now
   documents an explicit hierarchy — PRFAQ (customer/product experience),

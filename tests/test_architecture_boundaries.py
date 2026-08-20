@@ -79,6 +79,16 @@ SUBSYSTEM_BOUNDARIES = [
         allowed_caddai_prefixes=("caddai.course", "caddai.gps"),
         plan_reference='GitHub issue #5 ("M2.3 — Course/hole/hazard domain models")',
     ),
+    SubsystemBoundary(
+        name="statistics",
+        source_files=(
+            REPO_ROOT / "src/caddai/statistics/__init__.py",
+            REPO_ROOT / "src/caddai/statistics/models.py",
+        ),
+        # statistics is a leaf domain module: zero other caddai.* imports permitted.
+        allowed_caddai_prefixes=("caddai.statistics",),
+        plan_reference='GitHub issue #26 ("M3.1 — Carry distribution model")',
+    ),
 ]
 
 
