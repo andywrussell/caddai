@@ -3,9 +3,26 @@
 See docs/player-model.md for the full planned design of this subsystem.
 """
 
+from enum import StrEnum
+
 from pydantic import BaseModel, Field, computed_field
 
 from caddai.statistics import CarryDistribution, DirectionalDispersion
+
+
+class ClubCategory(StrEnum):
+    """The broad category a club belongs to.
+
+    Metadata only — no strategy behaviour keys off this yet.
+    """
+
+    DRIVER = "driver"
+    FAIRWAY_WOOD = "fairway_wood"
+    HYBRID = "hybrid"
+    IRON = "iron"
+    WEDGE = "wedge"
+    PUTTER = "putter"
+    OTHER = "other"
 
 
 class Club(BaseModel):
@@ -14,6 +31,7 @@ class Club(BaseModel):
     name: str = Field(min_length=1)
     carry_distribution: CarryDistribution
     dispersion: DirectionalDispersion
+    category: ClubCategory
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -22,7 +40,12 @@ class Club(BaseModel):
         return self.carry_distribution.mean_metres
 
     @classmethod
-    def with_expected_carry(cls, name: str, expected_carry_metres: float) -> "Club":
+    def with_expected_carry(
+        cls,
+        name: str,
+        expected_carry_metres: float,
+        category: ClubCategory = ClubCategory.OTHER,
+    ) -> "Club":
         """Build a club from a bare expected-carry scalar.
 
         Returns a placeholder/degenerate (zero-variance, zero-bias) carry
@@ -35,6 +58,7 @@ class Club(BaseModel):
                 mean_metres=expected_carry_metres, stddev_metres=0.0
             ),
             dispersion=DirectionalDispersion(lateral_stddev_metres=0.0, lateral_bias_metres=0.0),
+            category=category,
         )
 
 

@@ -1,14 +1,19 @@
-"""Tests for the player domain model: ``Club`` and ``Player``.
+"""Tests for the player domain model: ``Club``, ``ClubCategory``, and ``Player``.
 
-See GitHub issue #28 for the acceptance criteria these tests are derived
-from (composing ``Club`` from ``CarryDistribution`` and
-``DirectionalDispersion`` rather than a bare expected-carry scalar).
+See GitHub issue #28 for the acceptance criteria covering composing
+``Club`` from ``CarryDistribution`` and ``DirectionalDispersion`` rather
+than a bare expected-carry scalar.
+
+See GitHub issue #29 for the acceptance criteria covering ``ClubCategory``
+and the required ``Club.category`` field: parametrized construction across
+every category, rejection of an out-of-enum category string, and the
+``with_expected_carry`` category default/override behaviour.
 """
 
 import pytest
 from pydantic import ValidationError
 
-from caddai.player.models import Club, Player
+from caddai.player.models import Club, ClubCategory, Player
 from caddai.statistics import CarryDistribution, DirectionalDispersion
 
 
@@ -17,11 +22,17 @@ def test_club_constructs_with_valid_data() -> None:
     carry_distribution = CarryDistribution(mean_metres=140.0, stddev_metres=8.5)
     dispersion = DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0)
 
-    club = Club(name="7 Iron", carry_distribution=carry_distribution, dispersion=dispersion)
+    club = Club(
+        name="7 Iron",
+        carry_distribution=carry_distribution,
+        dispersion=dispersion,
+        category=ClubCategory.IRON,
+    )
 
     assert club.name == "7 Iron"
     assert club.carry_distribution == carry_distribution
     assert club.dispersion == dispersion
+    assert club.category == ClubCategory.IRON
 
 
 def test_club_expected_carry_metres_reflects_carry_distribution_mean() -> None:
@@ -30,6 +41,7 @@ def test_club_expected_carry_metres_reflects_carry_distribution_mean() -> None:
         name="7 Iron",
         carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
         dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+        category=ClubCategory.IRON,
     )
 
     assert club.expected_carry_metres == pytest.approx(140.0)
@@ -54,6 +66,7 @@ def test_club_expected_carry_metres_independent_of_dispersion(
             lateral_stddev_metres=lateral_stddev_metres,
             lateral_bias_metres=lateral_bias_metres,
         ),
+        category=ClubCategory.IRON,
     )
 
     assert club.expected_carry_metres == pytest.approx(150.0)
@@ -65,6 +78,7 @@ def test_club_rejects_missing_carry_distribution() -> None:
         Club(
             name="7 Iron",
             dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category=ClubCategory.IRON,
         )
 
 
@@ -74,6 +88,7 @@ def test_club_rejects_missing_dispersion() -> None:
         Club(
             name="7 Iron",
             carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
+            category=ClubCategory.IRON,
         )
 
 
@@ -84,6 +99,7 @@ def test_club_rejects_bare_scalar_carry_distribution() -> None:
             name="7 Iron",
             carry_distribution=140.0,
             dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category=ClubCategory.IRON,
         )
 
 
@@ -93,6 +109,7 @@ def test_club_coerces_nested_dicts_into_models() -> None:
         name="7 Iron",
         carry_distribution={"mean_metres": 140.0, "stddev_metres": 8.5},
         dispersion={"lateral_stddev_metres": 4.5, "lateral_bias_metres": -2.0},
+        category=ClubCategory.IRON,
     )
 
     assert isinstance(club.carry_distribution, CarryDistribution)
@@ -111,6 +128,7 @@ def test_club_rejects_invalid_nested_carry_distribution(mean_metres: float) -> N
             name="7 Iron",
             carry_distribution={"mean_metres": mean_metres, "stddev_metres": 8.5},
             dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category=ClubCategory.IRON,
         )
 
 
@@ -121,6 +139,45 @@ def test_club_rejects_empty_name() -> None:
             name="",
             carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
             dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category=ClubCategory.IRON,
+        )
+
+
+@pytest.mark.parametrize(
+    "category",
+    [
+        ClubCategory.DRIVER,
+        ClubCategory.FAIRWAY_WOOD,
+        ClubCategory.HYBRID,
+        ClubCategory.IRON,
+        ClubCategory.WEDGE,
+        ClubCategory.PUTTER,
+        ClubCategory.OTHER,
+    ],
+)
+def test_club_category_members_construct_valid_club(category: ClubCategory) -> None:
+    """Every ``ClubCategory`` member is a ``str`` subclass and constructs a valid ``Club``."""
+    assert isinstance(category, str)
+    assert category == category.value
+
+    club = Club(
+        name="7 Iron",
+        carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
+        dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+        category=category,
+    )
+
+    assert club.category == category
+
+
+def test_club_rejects_invalid_category_string() -> None:
+    """A ``category`` string outside ``ClubCategory``'s values is rejected."""
+    with pytest.raises(ValidationError):
+        Club(
+            name="7 Iron",
+            carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
+            dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category="mid-iron",
         )
 
 
@@ -161,6 +218,22 @@ def test_club_with_expected_carry_rejects_empty_name() -> None:
 def test_club_with_expected_carry_is_deterministic() -> None:
     """Two clubs built from the same arguments are equal — load-bearing for demo determinism."""
     assert Club.with_expected_carry("7 Iron", 140.0) == Club.with_expected_carry("7 Iron", 140.0)
+
+
+def test_club_with_expected_carry_defaults_category_to_other() -> None:
+    """Without an explicit ``category``, the convenience constructor defaults to ``OTHER``."""
+    club = Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)
+
+    assert club.category == ClubCategory.OTHER
+
+
+def test_club_with_expected_carry_accepts_explicit_category() -> None:
+    """An explicit ``category`` argument overrides the ``ClubCategory.OTHER`` default."""
+    club = Club.with_expected_carry(
+        name="Driver", expected_carry_metres=230.0, category=ClubCategory.DRIVER
+    )
+
+    assert club.category == ClubCategory.DRIVER
 
 
 def test_player_constructs_with_valid_data() -> None:
