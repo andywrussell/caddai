@@ -10,6 +10,22 @@ first public API is published.
 
 ### Added
 
+- Added `ClubCategory` taxonomy (M3.4, GitHub issue #29) in
+  [src/caddai/player/models.py](src/caddai/player/models.py): a `StrEnum`
+  with members `DRIVER`, `FAIRWAY_WOOD`, `HYBRID`, `IRON`, `WEDGE`,
+  `PUTTER`, `OTHER`. `Club` gains a required `category: ClubCategory`
+  field (no default, consistent with every other domain `StrEnum` field in
+  the codebase), and `Club.with_expected_carry(...)` gains an optional
+  `category: ClubCategory = ClubCategory.OTHER` parameter so existing call
+  sites in `strategy/demo.py` and the test suite remain unchanged.
+  `ClubCategory` is exported from `caddai.player.__init__`. Category is
+  metadata only — no `caddai.strategy` behaviour keys off it in this
+  change; no ADR required (Architect review). Added parametrized
+  construction tests for every `ClubCategory` value, an invalid-category
+  `ValidationError` test, and default/override tests for
+  `with_expected_carry(...)` to
+  [tests/test_player_models.py](tests/test_player_models.py). Updated
+  [docs/player-model.md](docs/player-model.md)'s status note accordingly.
 - Evolved `Club` (M3.3, GitHub issue #28) in
   [src/caddai/player/models.py](src/caddai/player/models.py) to compose a
   `CarryDistribution` and a `DirectionalDispersion` (both from
