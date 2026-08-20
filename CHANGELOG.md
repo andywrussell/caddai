@@ -10,6 +10,17 @@ first public API is published.
 
 ### Added
 
+- Added `caddai.statistics.DirectionalDispersion` (M3.2, GitHub issue #27):
+  a new model in [src/caddai/statistics/models.py](src/caddai/statistics/models.py)
+  alongside `CarryDistribution`, with `lateral_stddev_metres` (`ge=0`) and
+  a signed, unconstrained `lateral_bias_metres`. Adopts permanently the
+  lateral-offset sign convention: negative is left of the intended target
+  line, zero is on-line, and positive is right of the intended target
+  line, independent of player handedness. `statistics` remains a leaf
+  subsystem with no dependency on other `caddai.*` modules; no ADR
+  required (Architect review). Updated
+  [docs/player-model.md](docs/player-model.md)'s status note and
+  "Directional dispersion" bullet to document the sign convention.
 - Added the `caddai.statistics` subsystem (M3.1, GitHub issue #26): a new
   leaf module [src/caddai/statistics/](src/caddai/statistics/) with
   `CarryDistribution` (`mean_metres` gt 0, `stddev_metres` ge 0), depending
