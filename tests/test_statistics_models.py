@@ -1,15 +1,22 @@
-"""Tests for the M3.1 carry distribution model: ``CarryDistribution``.
+"""Tests for the carry distribution and directional dispersion models.
 
 See GitHub issue #26 ("M3.1 — Carry distribution model") and
-docs/plans/m3.1-carry-distribution-model.plan.md Task 1 for the acceptance
-criteria these tests are derived from: ``mean_metres`` must be strictly
-positive (``gt=0``) and ``stddev_metres`` must be non-negative (``ge=0``).
+docs/plans/m3.1-carry-distribution-model.plan.md Task 1 for the
+``CarryDistribution`` acceptance criteria these tests are derived from:
+``mean_metres`` must be strictly positive (``gt=0``) and ``stddev_metres``
+must be non-negative (``ge=0``).
+
+See also GitHub issue #27 ("M3.2 — Directional dispersion model") and
+docs/plans/m3.2-directional-dispersion-model.plan.md Task 1 for the
+``DirectionalDispersion`` acceptance criteria: ``lateral_stddev_metres``
+must be non-negative (``ge=0``) and ``lateral_bias_metres`` is signed and
+unconstrained.
 """
 
 import pytest
 from pydantic import ValidationError
 
-from caddai.statistics.models import CarryDistribution
+from caddai.statistics.models import CarryDistribution, DirectionalDispersion
 
 
 def test_carry_distribution_constructs_with_typical_values() -> None:
@@ -39,3 +46,39 @@ def test_carry_distribution_rejects_negative_stddev(stddev_metres: float) -> Non
     """A negative standard deviation is not a valid dispersion measure."""
     with pytest.raises(ValidationError):
         CarryDistribution(mean_metres=140.0, stddev_metres=stddev_metres)
+
+
+def test_directional_dispersion_constructs_with_typical_values() -> None:
+    """A directional dispersion with a positive bias and typical spread is accepted."""
+    dispersion = DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=2.1)
+
+    assert dispersion.lateral_stddev_metres == pytest.approx(4.5)
+    assert dispersion.lateral_bias_metres == pytest.approx(2.1)
+
+
+def test_directional_dispersion_accepts_zero_lateral_stddev() -> None:
+    """A lateral stddev of exactly zero is valid — no measured spread yet."""
+    dispersion = DirectionalDispersion(lateral_stddev_metres=0.0, lateral_bias_metres=0.0)
+
+    assert dispersion.lateral_stddev_metres == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("lateral_bias_metres", [-4.2, 0.0, 4.2])
+def test_directional_dispersion_accepts_any_lateral_bias_sign(
+    lateral_bias_metres: float,
+) -> None:
+    """Lateral bias is signed and round-trips unchanged, not normalized or clamped."""
+    dispersion = DirectionalDispersion(
+        lateral_stddev_metres=4.5, lateral_bias_metres=lateral_bias_metres
+    )
+
+    assert dispersion.lateral_bias_metres == pytest.approx(lateral_bias_metres)
+
+
+@pytest.mark.parametrize("lateral_stddev_metres", [-0.0001, -1.0, -6.0])
+def test_directional_dispersion_rejects_negative_lateral_stddev(
+    lateral_stddev_metres: float,
+) -> None:
+    """A negative lateral standard deviation is not a valid dispersion measure."""
+    with pytest.raises(ValidationError):
+        DirectionalDispersion(lateral_stddev_metres=lateral_stddev_metres, lateral_bias_metres=2.1)

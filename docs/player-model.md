@@ -6,8 +6,10 @@
 > distribution) and `Player`. As of M3.1,
 > [src/caddai/statistics/models.py](../src/caddai/statistics/models.py)
 > defines `CarryDistribution` (mean + stddev, metres) as a leaf subsystem
-> with no dependency on other `caddai.*` modules. Directional dispersion,
-> performance history, and round statistics below remain **planned**.
+> with no dependency on other `caddai.*` modules. As of M3.2, the same file
+> also defines `DirectionalDispersion` (lateral stddev + signed lateral
+> bias, metres). Performance history and round statistics below remain
+> **planned**.
 
 ## Purpose
 
@@ -25,8 +27,12 @@ Player Engineer (see `.github/agents/player-engineer.agent.md`).
 - **Club** domain model: club identifier/type and its carry distribution.
 - **Carry distribution**: statistical model of distance (metres) achieved
   with a club, including variance — informs Monte Carlo simulation in M4.
-- **Directional dispersion**: lateral/directional bias and spread for a
-  club/player combination.
+- **Directional dispersion** (implemented as `DirectionalDispersion`):
+  lateral/directional bias and spread for a club/player combination.
+  Adopts a fixed sign convention for `lateral_bias_metres`: negative is
+  left of the intended target line, zero is on-line with the intended
+  target, and positive is right of the intended target line — independent
+  of player handedness.
 - **Performance history**: historical shot/round data feeding into
   statistical estimates (data model only at this stage — no storage
   technology selected; storage design is deferred to M6, see
