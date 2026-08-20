@@ -89,6 +89,17 @@ SUBSYSTEM_BOUNDARIES = [
         allowed_caddai_prefixes=("caddai.statistics",),
         plan_reference='GitHub issue #26 ("M3.1 — Carry distribution model")',
     ),
+    SubsystemBoundary(
+        name="player",
+        source_files=(
+            REPO_ROOT / "src/caddai/player/__init__.py",
+            REPO_ROOT / "src/caddai/player/models.py",
+        ),
+        allowed_caddai_prefixes=("caddai.player", "caddai.statistics"),
+        plan_reference=(
+            'GitHub issue #28 ("M3.3 — Evolve Club/Player to carry distribution + dispersion")'
+        ),
+    ),
 ]
 
 

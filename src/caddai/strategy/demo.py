@@ -16,11 +16,11 @@ def build_demo_request() -> RecommendationRequest:
     player = Player(
         name="Demo Golfer",
         clubs=[
-            Club(name="7 Iron", expected_carry_metres=145.0),
-            Club(name="6 Iron", expected_carry_metres=155.0),
-            Club(name="5 Iron", expected_carry_metres=165.0),
-            Club(name="Hybrid", expected_carry_metres=180.0),
-            Club(name="3 Wood", expected_carry_metres=210.0),
+            Club.with_expected_carry(name="7 Iron", expected_carry_metres=145.0),
+            Club.with_expected_carry(name="6 Iron", expected_carry_metres=155.0),
+            Club.with_expected_carry(name="5 Iron", expected_carry_metres=165.0),
+            Club.with_expected_carry(name="Hybrid", expected_carry_metres=180.0),
+            Club.with_expected_carry(name="3 Wood", expected_carry_metres=210.0),
         ],
     )
     return RecommendationRequest(
