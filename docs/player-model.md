@@ -3,9 +3,11 @@
 > Status: a minimal M1 vertical slice now exists —
 > [src/caddai/player/models.py](../src/caddai/player/models.py) defines
 > `Club` (with a single scalar `expected_carry_metres` placeholder, not a
-> distribution) and `Player`. The full carry-distribution/dispersion
-> statistics design below remains **planned** for milestone M3;
-> `src/caddai/statistics/` does not exist yet.
+> distribution) and `Player`. As of M3.1,
+> [src/caddai/statistics/models.py](../src/caddai/statistics/models.py)
+> defines `CarryDistribution` (mean + stddev, metres) as a leaf subsystem
+> with no dependency on other `caddai.*` modules. Directional dispersion,
+> performance history, and round statistics below remain **planned**.
 
 ## Purpose
 
