@@ -10,6 +10,24 @@ first public API is published.
 
 ### Added
 
+- Evolved `Club` (M3.3, GitHub issue #28) in
+  [src/caddai/player/models.py](src/caddai/player/models.py) to compose a
+  `CarryDistribution` and a `DirectionalDispersion` (both from
+  `caddai.statistics`) instead of a bare `expected_carry_metres` scalar.
+  `Club.expected_carry_metres` is now a computed field derived from
+  `carry_distribution.mean_metres`, so existing readers (`recommend_club()`)
+  are unchanged. Added `Club.with_expected_carry(name,
+  expected_carry_metres)`, a convenience constructor that builds a
+  degenerate (zero-variance, zero-bias) distribution and dispersion for
+  call sites without a measured distribution yet — used by
+  `strategy/demo.py` and the existing player/strategy tests.
+  `recommend_club()` itself (`src/caddai/strategy/recommend.py`) was not
+  modified; its behaviour for equivalent inputs is unchanged. Added a
+  `player` `SubsystemBoundary` entry to
+  `tests/test_architecture_boundaries.py`
+  (`allowed_caddai_prefixes=("caddai.player", "caddai.statistics")`).
+  Updated [docs/player-model.md](docs/player-model.md)'s status note to
+  describe the new `Club` shape.
 - Added `caddai.statistics.DirectionalDispersion` (M3.2, GitHub issue #27):
   a new model in [src/caddai/statistics/models.py](src/caddai/statistics/models.py)
   alongside `CarryDistribution`, with `lateral_stddev_metres` (`ge=0`) and
