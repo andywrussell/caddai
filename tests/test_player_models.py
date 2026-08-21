@@ -13,6 +13,12 @@ See GitHub issue #30 for the acceptance criteria covering ``ShotRecord``
 and ``Player.shot_history``: a data-model-only, manually entered, observed
 shot outcome, with no derivation/fitting of ``CarryDistribution``/
 ``DirectionalDispersion`` from history.
+
+See GitHub issue #38 ("M3.x — Enforce finite values in statistical domain
+models") for the acceptance criteria covering nested-validation
+propagation: a non-finite value in a ``Club``'s nested
+``carry_distribution``/``dispersion`` fields must raise ``ValidationError``
+through ``Club``, not just when constructing the nested model directly.
 """
 
 import pytest
@@ -133,6 +139,61 @@ def test_club_rejects_invalid_nested_carry_distribution(mean_metres: float) -> N
             name="7 Iron",
             carry_distribution={"mean_metres": mean_metres, "stddev_metres": 8.5},
             dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category=ClubCategory.IRON,
+        )
+
+
+@pytest.mark.parametrize("mean_metres", [float("nan"), float("inf"), float("-inf")])
+def test_club_rejects_non_finite_nested_carry_distribution_mean(mean_metres: float) -> None:
+    """Issue #38: a non-finite nested ``carry_distribution.mean_metres`` raises through ``Club``."""
+    with pytest.raises(ValidationError):
+        Club(
+            name="7 Iron",
+            carry_distribution={"mean_metres": mean_metres, "stddev_metres": 1.0},
+            dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category=ClubCategory.IRON,
+        )
+
+
+@pytest.mark.parametrize("stddev_metres", [float("nan"), float("inf"), float("-inf")])
+def test_club_rejects_non_finite_nested_carry_distribution_stddev(stddev_metres: float) -> None:
+    """Issue #38: a non-finite nested ``carry_distribution.stddev_metres`` raises via ``Club``."""
+    with pytest.raises(ValidationError):
+        Club(
+            name="7 Iron",
+            carry_distribution={"mean_metres": 140.0, "stddev_metres": stddev_metres},
+            dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+            category=ClubCategory.IRON,
+        )
+
+
+@pytest.mark.parametrize("lateral_stddev_metres", [float("nan"), float("inf"), float("-inf")])
+def test_club_rejects_non_finite_nested_dispersion_lateral_stddev(
+    lateral_stddev_metres: float,
+) -> None:
+    """Issue #38: a non-finite nested ``dispersion.lateral_stddev_metres`` raises via ``Club``."""
+    with pytest.raises(ValidationError):
+        Club(
+            name="7 Iron",
+            carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
+            dispersion={
+                "lateral_stddev_metres": lateral_stddev_metres,
+                "lateral_bias_metres": -2.0,
+            },
+            category=ClubCategory.IRON,
+        )
+
+
+@pytest.mark.parametrize("lateral_bias_metres", [float("nan"), float("inf"), float("-inf")])
+def test_club_rejects_non_finite_nested_dispersion_lateral_bias(
+    lateral_bias_metres: float,
+) -> None:
+    """Issue #38: a non-finite nested ``dispersion.lateral_bias_metres`` raises through ``Club``."""
+    with pytest.raises(ValidationError):
+        Club(
+            name="7 Iron",
+            carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
+            dispersion={"lateral_stddev_metres": 4.5, "lateral_bias_metres": lateral_bias_metres},
             category=ClubCategory.IRON,
         )
 

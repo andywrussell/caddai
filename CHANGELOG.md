@@ -8,6 +8,26 @@ first public API is published.
 
 ## [Unreleased]
 
+### Fixed
+
+- Reject non-finite values in `caddai.statistics` domain models (M3.x,
+  GitHub issue #38) in
+  [src/caddai/statistics/models.py](src/caddai/statistics/models.py):
+  `CarryDistribution.mean_metres`/`stddev_metres` and
+  `DirectionalDispersion.lateral_stddev_metres`/`lateral_bias_metres` now
+  use a `field_validator` (`math.isfinite`) to reject NaN and `+inf`/`-inf`,
+  which previously satisfied the existing `gt=0`/`ge=0` numeric constraints
+  and could otherwise reach future `simulation`/`strategy` code undetected.
+  No change to field names, types, or existing constraints for valid finite
+  input. Added parametrized NaN/`+inf`/`-inf` rejection tests for all four
+  fields in
+  [tests/test_statistics_models.py](tests/test_statistics_models.py) and
+  nested-validation-propagation tests through `Club` in
+  [tests/test_player_models.py](tests/test_player_models.py). Architect
+  confirmed no ADR is required — `caddai.statistics` remains a leaf module
+  with no new `caddai.*` imports. See
+  [docs/plans/m3.x-enforce-finite-statistics-values.plan.md](docs/plans/m3.x-enforce-finite-statistics-values.plan.md).
+
 ### Added
 
 - Extended the developer demo (M3.7, GitHub issue #31) in
