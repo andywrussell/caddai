@@ -11,6 +11,13 @@ docs/plans/m3.2-directional-dispersion-model.plan.md Task 1 for the
 ``DirectionalDispersion`` acceptance criteria: ``lateral_stddev_metres``
 must be non-negative (``ge=0``) and ``lateral_bias_metres`` is signed and
 unconstrained.
+
+See also GitHub issue #38 ("M3.x — Enforce finite values in statistical
+domain models") and
+docs/plans/m3.x-enforce-finite-statistics-values.plan.md Task 1: all four
+fields (``mean_metres``, ``stddev_metres``, ``lateral_stddev_metres``,
+``lateral_bias_metres``) must reject NaN and +/-infinity, since ``+inf``
+otherwise passes both the ``gt=0`` and ``ge=0`` constraints.
 """
 
 import pytest
@@ -82,3 +89,35 @@ def test_directional_dispersion_rejects_negative_lateral_stddev(
     """A negative lateral standard deviation is not a valid dispersion measure."""
     with pytest.raises(ValidationError):
         DirectionalDispersion(lateral_stddev_metres=lateral_stddev_metres, lateral_bias_metres=2.1)
+
+
+@pytest.mark.parametrize("mean_metres", [float("nan"), float("inf"), float("-inf")])
+def test_carry_distribution_rejects_non_finite_mean(mean_metres: float) -> None:
+    """Issue #38: NaN/+inf/-inf are rejected even though ``+inf`` satisfies ``gt=0``."""
+    with pytest.raises(ValidationError):
+        CarryDistribution(mean_metres=mean_metres, stddev_metres=8.5)
+
+
+@pytest.mark.parametrize("stddev_metres", [float("nan"), float("inf"), float("-inf")])
+def test_carry_distribution_rejects_non_finite_stddev(stddev_metres: float) -> None:
+    """Issue #38: NaN/+inf/-inf are rejected even though ``+inf`` satisfies ``ge=0``."""
+    with pytest.raises(ValidationError):
+        CarryDistribution(mean_metres=140.0, stddev_metres=stddev_metres)
+
+
+@pytest.mark.parametrize("lateral_stddev_metres", [float("nan"), float("inf"), float("-inf")])
+def test_directional_dispersion_rejects_non_finite_lateral_stddev(
+    lateral_stddev_metres: float,
+) -> None:
+    """Issue #38: NaN/+inf/-inf are rejected even though ``+inf`` satisfies ``ge=0``."""
+    with pytest.raises(ValidationError):
+        DirectionalDispersion(lateral_stddev_metres=lateral_stddev_metres, lateral_bias_metres=2.1)
+
+
+@pytest.mark.parametrize("lateral_bias_metres", [float("nan"), float("inf"), float("-inf")])
+def test_directional_dispersion_rejects_non_finite_lateral_bias(
+    lateral_bias_metres: float,
+) -> None:
+    """Issue #38: lateral bias is unconstrained in sign but must still be finite."""
+    with pytest.raises(ValidationError):
+        DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=lateral_bias_metres)
