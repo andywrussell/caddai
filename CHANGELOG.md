@@ -10,6 +10,33 @@ first public API is published.
 
 ### Added
 
+- Extended the developer demo (M3.7, GitHub issue #31) in
+  [src/caddai/strategy/demo.py](src/caddai/strategy/demo.py):
+  `build_demo_request()` now constructs each demo `Club` directly (rather
+  than via `Club.with_expected_carry()`), giving every club a realistic,
+  non-degenerate `CarryDistribution` (non-zero `stddev_metres`), a
+  realistic `DirectionalDispersion` (non-zero `lateral_stddev_metres` and
+  `lateral_bias_metres`, including a negative/left bias on the 5 Iron —
+  the club the fixed demo scenario selects), and a real `ClubCategory`
+  (`IRON`/`HYBRID`/`FAIRWAY_WOOD`) instead of `OTHER`. `main()` now prints
+  an additional, clearly separated
+  "Player-model context (informational only — not used in club
+  selection):" section after `Reasons:`, showing the selected club's
+  category, expected carry, carry variability (stddev), lateral
+  dispersion (stddev), and lateral bias (with an explicit `+`/`-` sign and
+  a "left"/"right" label preserving the established sign convention).
+  **`recommend_club()` was not modified** — selection, confidence, and
+  reasons logic is untouched; the new lines are purely informational
+  presentation output and are not used by the decision logic. Added
+  test-first coverage (already present in
+  [tests/test_strategy_demo.py](tests/test_strategy_demo.py)) asserting
+  the new output against the real `recommend_club(build_demo_request())`
+  result, never hardcoded numbers. Added `caddai.statistics` to
+  `strategy`'s `allowed_caddai_prefixes` in
+  [tests/test_architecture_boundaries.py](tests/test_architecture_boundaries.py)
+  for `demo.py`'s new `CarryDistribution`/`DirectionalDispersion` import
+  (Architect-approved, no ADR required — no dependency, API, unit, or
+  ownership change).
 - Added `ShotRecord` (M3.5, GitHub issue #30) in
   [src/caddai/player/models.py](src/caddai/player/models.py): a new
   data-model-only, manually entered, observed shot outcome with
