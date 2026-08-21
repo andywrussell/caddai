@@ -10,6 +10,31 @@ first public API is published.
 
 ### Added
 
+- Added `ShotRecord` (M3.5, GitHub issue #30) in
+  [src/caddai/player/models.py](src/caddai/player/models.py): a new
+  data-model-only, manually entered, observed shot outcome with
+  `club_name` (non-empty string, a plain snapshot rather than an embedded
+  `Club`), `achieved_carry_metres` (`ge=0`, so a whiffed/topped shot is
+  representable, unlike `CarryDistribution.mean_metres`), a signed
+  `lateral_offset_metres` (same sign convention as
+  `DirectionalDispersion.lateral_bias_metres`: negative is left of the
+  intended target line, zero is on-line, positive is right — independent
+  of player handedness), and optional free-text `notes` (defaulting to
+  `None`). `Player` gains `shot_history: list[ShotRecord]` defaulting to
+  an empty list, with no cross-validation against `Player.clubs`. This
+  change introduces no aggregation, distribution/dispersion fitting, or
+  persistence — `shot_history` is in-memory only; deriving statistics from
+  it is deferred to a future round-history/learning milestone (see
+  `docs/backlog.md`). No ADR required (Architect review): the change adds
+  no dependency, doesn't cross a module-ownership or dependency-direction
+  boundary, and doesn't touch canonical units or a public API contract.
+  `ShotRecord` is exported from `caddai.player.__init__`. Added
+  construction, defaulting, validation (rejecting a negative
+  `achieved_carry_metres`, an empty/missing `club_name`, and missing
+  required fields), and `Player.shot_history` ordering/coercion/
+  independence tests to
+  [tests/test_player_models.py](tests/test_player_models.py). Updated
+  [docs/player-model.md](docs/player-model.md)'s status note accordingly.
 - Added `ClubCategory` taxonomy (M3.4, GitHub issue #29) in
   [src/caddai/player/models.py](src/caddai/player/models.py): a `StrEnum`
   with members `DRIVER`, `FAIRWAY_WOOD`, `HYBRID`, `IRON`, `WEDGE`,
