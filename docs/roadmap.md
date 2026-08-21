@@ -1,7 +1,8 @@
 # Roadmap
 
-> Status: milestone sequencing for planned work. **M0**, **M1**, and **M2**
-> are complete. Milestones are directional, not date-committed. **M5.5** is
+> Status: milestone sequencing for planned work. **M0**, **M1**, **M2**, and
+> **M3** are complete. Milestones are directional, not date-committed.
+> **M5.5** is
 > a numbered insertion between M5 and M6 (an architecture/research spike,
 > not a functional milestone) chosen to avoid renumbering M6–M9; it does not
 > imply a fractional level of completeness. See [docs/prfaq.md](prfaq.md)
@@ -37,7 +38,7 @@
   design, data format, and known limitations:
   [docs/course-engine.md](course-engine.md).
 
-- **M3 — Player model, clubs and shot dispersion**
+- **M3 — Player model, clubs and shot dispersion** *(complete)*
   `player`/`statistics` subsystems: carry distribution model (M3.1, issue
   #26), directional dispersion model (M3.2, issue #27) — adopting a
   permanent lateral-offset sign convention (negative left, zero on-line,
@@ -45,13 +46,15 @@
   evolving `Club`/`Player` to carry these instead of a bare scalar (M3.3,
   issue #28), club identity/category (M3.4, issue #29), a manually entered
   performance-history data model (M3.5, issue #30), a richer developer demo
-  (M3.7, issue #31), and a documentation/status update (M3.8, issue #32).
-  Player tendencies are represented for M3 by carry distribution +
-  directional dispersion + systematic lateral bias — no separate
-  player-tendency model. Deriving/fitting distributions from historical
-  `ShotRecord` samples is explicitly deferred to a future round-history/
-  learning milestone (see [docs/backlog.md](backlog.md)); M3 uses only
-  manually supplied statistical parameters. Tracking issue: #9.
+  (M3.7, issue #31), finite-value hardening of `CarryDistribution`/
+  `DirectionalDispersion`/`ShotRecord` (issues #38 and #43), and a
+  documentation/status update (M3.8, issue #32). Player tendencies are
+  represented for M3 by carry distribution + directional dispersion +
+  systematic lateral bias — no separate player-tendency model. Deriving/
+  fitting distributions from historical `ShotRecord` samples is explicitly
+  deferred to a future round-history/learning milestone (see
+  [docs/backlog.md](backlog.md)); M3 uses only manually supplied
+  statistical parameters. Tracking issue: #9.
 
 - **M4 — Candidate-shot generation and Monte Carlo simulation**
   `simulation` subsystem: shot candidate generation, seeded Monte Carlo
