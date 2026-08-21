@@ -8,12 +8,17 @@ See GitHub issue #29 for the acceptance criteria covering ``ClubCategory``
 and the required ``Club.category`` field: parametrized construction across
 every category, rejection of an out-of-enum category string, and the
 ``with_expected_carry`` category default/override behaviour.
+
+See GitHub issue #30 for the acceptance criteria covering ``ShotRecord``
+and ``Player.shot_history``: a data-model-only, manually entered, observed
+shot outcome, with no derivation/fitting of ``CarryDistribution``/
+``DirectionalDispersion`` from history.
 """
 
 import pytest
 from pydantic import ValidationError
 
-from caddai.player.models import Club, ClubCategory, Player
+from caddai.player.models import Club, ClubCategory, Player, ShotRecord
 from caddai.statistics import CarryDistribution, DirectionalDispersion
 
 
@@ -258,3 +263,157 @@ def test_player_rejects_empty_clubs_list() -> None:
     """A player must own at least one club — an empty bag is invalid, not silently accepted."""
     with pytest.raises(ValidationError):
         Player(name="Ada", clubs=[])
+
+
+def test_shot_record_constructs_with_valid_data() -> None:
+    """A shot record with all four fields round-trips."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        notes="firm fairway, into wind",
+    )
+
+    assert shot_record.club_name == "7 Iron"
+    assert shot_record.achieved_carry_metres == pytest.approx(142.5)
+    assert shot_record.lateral_offset_metres == pytest.approx(-3.0)
+    assert shot_record.notes == "firm fairway, into wind"
+
+
+def test_shot_record_notes_defaults_to_none() -> None:
+    """Omitting ``notes`` gives ``None``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron", achieved_carry_metres=142.5, lateral_offset_metres=-3.0
+    )
+
+    assert shot_record.notes is None
+
+
+def test_shot_record_notes_accepts_explicit_string() -> None:
+    """An explicit ``notes`` string round-trips."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        notes="wet rough",
+    )
+
+    assert shot_record.notes == "wet rough"
+
+
+@pytest.mark.parametrize("lateral_offset_metres", [-15.5, 0.0, 12.0])
+def test_shot_record_accepts_negative_zero_and_positive_lateral_offset(
+    lateral_offset_metres: float,
+) -> None:
+    """Negative (left), zero (on-line), and positive (right) offsets are all accepted."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=lateral_offset_metres,
+    )
+
+    assert shot_record.lateral_offset_metres == pytest.approx(lateral_offset_metres)
+
+
+def test_shot_record_achieved_carry_metres_accepts_zero() -> None:
+    """``0.0`` is accepted — a whiffed/topped shot, unlike ``CarryDistribution.mean_metres``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron", achieved_carry_metres=0.0, lateral_offset_metres=0.0
+    )
+
+    assert shot_record.achieved_carry_metres == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("achieved_carry_metres", [-0.1, -1.0, -140.0])
+def test_shot_record_rejects_negative_achieved_carry_metres(achieved_carry_metres: float) -> None:
+    """A negative achieved carry distance is physically meaningless."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=achieved_carry_metres,
+            lateral_offset_metres=0.0,
+        )
+
+
+def test_shot_record_rejects_empty_club_name() -> None:
+    """An empty club name violates the non-empty-name invariant, consistent with ``Club.name``."""
+    with pytest.raises(ValidationError):
+        ShotRecord(club_name="", achieved_carry_metres=142.5, lateral_offset_metres=-3.0)
+
+
+def test_shot_record_rejects_missing_club_name() -> None:
+    """A shot record without a ``club_name`` is not valid."""
+    with pytest.raises(ValidationError):
+        ShotRecord(achieved_carry_metres=142.5, lateral_offset_metres=-3.0)  # type: ignore[call-arg]
+
+
+def test_shot_record_rejects_missing_achieved_carry_metres() -> None:
+    """A shot record without an ``achieved_carry_metres`` is not valid."""
+    with pytest.raises(ValidationError):
+        ShotRecord(club_name="7 Iron", lateral_offset_metres=-3.0)  # type: ignore[call-arg]
+
+
+def test_shot_record_rejects_missing_lateral_offset_metres() -> None:
+    """A shot record without a ``lateral_offset_metres`` is not valid — it has no default."""
+    with pytest.raises(ValidationError):
+        ShotRecord(club_name="7 Iron", achieved_carry_metres=142.5)  # type: ignore[call-arg]
+
+
+def test_player_shot_history_defaults_to_empty_list() -> None:
+    """A player built without ``shot_history`` has an empty list, not a required field."""
+    clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
+
+    player = Player(name="Ada", clubs=clubs)
+
+    assert player.shot_history == []
+
+
+def test_player_shot_history_accepts_constructed_shot_records_and_preserves_order() -> None:
+    """``Player.shot_history`` preserves the given list order."""
+    clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
+    shot_history = [
+        ShotRecord(club_name="7 Iron", achieved_carry_metres=138.0, lateral_offset_metres=-2.0),
+        ShotRecord(club_name="7 Iron", achieved_carry_metres=141.0, lateral_offset_metres=1.5),
+        ShotRecord(club_name="7 Iron", achieved_carry_metres=144.0, lateral_offset_metres=0.0),
+    ]
+
+    player = Player(name="Ada", clubs=clubs, shot_history=shot_history)
+
+    assert player.shot_history == shot_history
+
+
+def test_player_shot_history_coerces_nested_dicts_into_shot_records() -> None:
+    """Nested dicts for ``shot_history`` entries are coerced into real ``ShotRecord`` models."""
+    clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
+
+    player = Player(
+        name="Ada",
+        clubs=clubs,
+        shot_history=[
+            {"club_name": "7 Iron", "achieved_carry_metres": 138.0, "lateral_offset_metres": -2.0}
+        ],
+    )
+
+    assert isinstance(player.shot_history[0], ShotRecord)
+    assert player.shot_history[0].club_name == "7 Iron"
+    assert player.shot_history[0].achieved_carry_metres == pytest.approx(138.0)
+    assert player.shot_history[0].lateral_offset_metres == pytest.approx(-2.0)
+
+
+def test_player_shot_history_independent_of_clubs() -> None:
+    """``clubs`` and ``shot_history`` impose no constraints on each other.
+
+    A populated ``clubs`` with empty ``shot_history`` and the reverse both
+    construct validly — ``club_name`` on a ``ShotRecord`` is not looked up
+    or cross-referenced against ``Player.clubs``.
+    """
+    clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
+    shot_history = [
+        ShotRecord(club_name="Driver", achieved_carry_metres=210.0, lateral_offset_metres=5.0)
+    ]
+
+    player_with_empty_history = Player(name="Ada", clubs=clubs, shot_history=[])
+    player_with_history_only = Player(name="Ada", clubs=clubs, shot_history=shot_history)
+
+    assert player_with_empty_history.shot_history == []
+    assert player_with_history_only.shot_history == shot_history

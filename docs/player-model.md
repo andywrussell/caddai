@@ -17,8 +17,17 @@
 > bias, metres). As of M3.4, `Club` requires a `category: ClubCategory`
 > field (`DRIVER`, `FAIRWAY_WOOD`, `HYBRID`, `IRON`, `WEDGE`, `PUTTER`,
 > `OTHER`); it is metadata only — no strategy behaviour depends on it yet
-> (see issue #29). Performance history and round statistics below remain
-> **planned**.
+> (see issue #29). As of M3.5, `Player.shot_history` is a
+> `list[ShotRecord]` (defaulting to an empty list) of manually entered,
+> observed shot outcomes — each a `club_name` snapshot (plain string, not
+> an embedded `Club`), `achieved_carry_metres` (`ge=0`, so a
+> whiffed/topped shot is representable), `lateral_offset_metres` (same
+> sign convention as `DirectionalDispersion.lateral_bias_metres`), and
+> optional free-text `notes`. This is in-memory only — no persistence/
+> storage technology is introduced, and no derivation/fitting of
+> `CarryDistribution` or `DirectionalDispersion` from `shot_history` exists
+> yet; that is deferred to a future round-history/learning milestone (see
+> `docs/backlog.md`). Round statistics below remain **planned**.
 
 ## Purpose
 

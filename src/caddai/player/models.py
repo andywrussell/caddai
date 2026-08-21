@@ -62,8 +62,24 @@ class Club(BaseModel):
         )
 
 
+class ShotRecord(BaseModel):
+    """A single manually entered, observed shot outcome for a club.
+
+    Sign convention for ``lateral_offset_metres``: negative is left of the
+    intended target line, zero is on-line with the intended target, and
+    positive is right of the intended target line — independent of player
+    handedness (same convention as ``DirectionalDispersion.lateral_bias_metres``).
+    """
+
+    club_name: str = Field(min_length=1)
+    achieved_carry_metres: float = Field(ge=0)
+    lateral_offset_metres: float
+    notes: str | None = None
+
+
 class Player(BaseModel):
-    """A player identified by name and their bag of clubs."""
+    """A player identified by name, their bag of clubs, and shot history."""
 
     name: str = Field(min_length=1)
     clubs: list[Club] = Field(min_length=1)
+    shot_history: list[ShotRecord] = Field(default_factory=list)
