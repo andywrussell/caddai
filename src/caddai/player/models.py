@@ -3,11 +3,19 @@
 See docs/player-model.md for the full planned design of this subsystem.
 """
 
+import math
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 from caddai.statistics import CarryDistribution, DirectionalDispersion
+
+
+def _require_finite(value: float) -> float:
+    """Reject NaN/+inf/-inf, which otherwise satisfy ``gt=0``/``ge=0`` constraints."""
+    if not math.isfinite(value):
+        raise ValueError("must be finite")
+    return value
 
 
 class ClubCategory(StrEnum):
@@ -75,6 +83,11 @@ class ShotRecord(BaseModel):
     achieved_carry_metres: float = Field(ge=0)
     lateral_offset_metres: float
     notes: str | None = None
+
+    @field_validator("achieved_carry_metres", "lateral_offset_metres")
+    @classmethod
+    def _validate_finite(cls, value: float) -> float:
+        return _require_finite(value)
 
 
 class Player(BaseModel):
