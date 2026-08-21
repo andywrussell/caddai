@@ -10,6 +10,19 @@ first public API is published.
 
 ### Fixed
 
+- Reject non-finite values in `ShotRecord` measurements (M3.x, GitHub issue
+  #43) in [src/caddai/player/models.py](src/caddai/player/models.py):
+  `ShotRecord.achieved_carry_metres` and `ShotRecord.lateral_offset_metres`
+  now use a `field_validator` (`math.isfinite`) to reject NaN and
+  `+inf`/`-inf`, which previously satisfied the existing `ge=0` constraint
+  on `achieved_carry_metres` and the unconstrained sign of
+  `lateral_offset_metres`. No change to field names, types, or existing
+  constraints for valid finite input. Added parametrized NaN/`+inf`/`-inf`
+  rejection tests for both fields in
+  [tests/test_player_models.py](tests/test_player_models.py). Follow-up to
+  the equivalent hardening of `caddai.statistics` in GitHub issue #38. See
+  [docs/plans/m3.x-reject-non-finite-shotrecord.plan.md](docs/plans/m3.x-reject-non-finite-shotrecord.plan.md).
+
 - Reject non-finite values in `caddai.statistics` domain models (M3.x,
   GitHub issue #38) in
   [src/caddai/statistics/models.py](src/caddai/statistics/models.py):

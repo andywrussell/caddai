@@ -19,6 +19,12 @@ models") for the acceptance criteria covering nested-validation
 propagation: a non-finite value in a ``Club``'s nested
 ``carry_distribution``/``dispersion`` fields must raise ``ValidationError``
 through ``Club``, not just when constructing the nested model directly.
+
+See also GitHub issue #43 ("M3.x — Reject non-finite ``ShotRecord``
+measurements") for the acceptance criteria covering ``ShotRecord`` directly:
+``achieved_carry_metres`` and ``lateral_offset_metres`` must reject NaN and
++/-infinity, since ``+inf`` otherwise satisfies both ``achieved_carry_metres``'s
+``ge=0`` constraint and ``lateral_offset_metres``'s unconstrained sign.
 """
 
 import pytest
@@ -418,6 +424,32 @@ def test_shot_record_rejects_missing_lateral_offset_metres() -> None:
     """A shot record without a ``lateral_offset_metres`` is not valid — it has no default."""
     with pytest.raises(ValidationError):
         ShotRecord(club_name="7 Iron", achieved_carry_metres=142.5)  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("achieved_carry_metres", [float("nan"), float("inf"), float("-inf")])
+def test_shot_record_rejects_non_finite_achieved_carry_metres(
+    achieved_carry_metres: float,
+) -> None:
+    """Issue #43: NaN/+inf/-inf are rejected even though ``+inf`` satisfies ``ge=0``."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=achieved_carry_metres,
+            lateral_offset_metres=0.0,
+        )
+
+
+@pytest.mark.parametrize("lateral_offset_metres", [float("nan"), float("inf"), float("-inf")])
+def test_shot_record_rejects_non_finite_lateral_offset_metres(
+    lateral_offset_metres: float,
+) -> None:
+    """Issue #43: lateral offset is unconstrained in sign but must still be finite."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=142.5,
+            lateral_offset_metres=lateral_offset_metres,
+        )
 
 
 def test_player_shot_history_defaults_to_empty_list() -> None:
