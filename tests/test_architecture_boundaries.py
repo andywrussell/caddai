@@ -53,7 +53,9 @@ SUBSYSTEM_BOUNDARIES = [
             REPO_ROOT / "src/caddai/strategy/recommend.py",
             REPO_ROOT / "src/caddai/strategy/demo.py",
         ),
-        allowed_caddai_prefixes=("caddai.player", "caddai.strategy"),
+        # caddai.statistics added for demo.py's direct Club construction — see
+        # docs/plans/m3.7-demo-player-model.plan.md (Task 3).
+        allowed_caddai_prefixes=("caddai.player", "caddai.statistics", "caddai.strategy"),
         plan_reference="Task 2 of docs/plans/m1-core-domain-vertical-slice.plan.md",
     ),
     SubsystemBoundary(
