@@ -10,6 +10,12 @@
   `ShotRecord` samples (deferred out of M3 — see #9/#30; M3 uses only
   manually supplied statistical parameters; likely lands around the
   round-history/learning milestone, M6+).
+- A more stable club-identity mechanism for `ShotRecord`, if plain
+  `club_name` string snapshots prove insufficient (e.g. a club is renamed
+  or replaced in a player's bag, silently orphaning historical shot
+  records with no referential integrity check today — see
+  `docs/player-model.md`). Research/non-committed; feeds a future
+  round-history milestone if it becomes a real problem in practice.
 - Player-level strategic tendencies (risk preference, aggressiveness) as a
   distinct model, beyond club-level carry distribution/dispersion/bias
   (deferred out of M3; belongs to later strategy/player-preference work).
