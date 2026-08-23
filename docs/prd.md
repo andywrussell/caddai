@@ -30,8 +30,14 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
   fairways, greens, hazards.
 - **Player model** (M3): players, clubs, carry distributions, and shot
   dispersion.
-- **Strategy simulation** (M4–M5): candidate shot generation, Monte Carlo
-  outcome simulation, expected-strokes-based club/target selection.
+- **Probabilistic golfer modelling & shot outcome simulation** (M4.0–M4):
+  research/define a defensible probabilistic representation of the shots a
+  golfer can produce (evidence-based population model + onboarding
+  personalisation + context/environment effects), then candidate shot
+  generation and shot-outcome simulation (Monte Carlo as an initial
+  sampling technique, not the domain abstraction) against that model.
+- **Strategy** (M5): expected-strokes-based club/target selection over the
+  outcomes M4 produces.
 - **Round tracking** (M6): a decision journal recording recommendations,
   player choices, and outcomes.
 - **Mobile/GPS integration** (M7): live GPS position feeding the engine.

@@ -6,6 +6,31 @@
 
 ## Candidate items
 
+- Derive/fit `CarryDistribution`/`DirectionalDispersion` (or a future
+  `PlayerShotDistribution`) from historical `ShotRecord` samples (deferred
+  out of M3 — see #9/#30; M3 uses only manually supplied statistical
+  parameters). M4.0 must define the future-compatible personal-learning
+  mechanism conceptually (Bayesian updating, hierarchical/empirical Bayes,
+  shrinkage, robust incremental statistics) and determine whether actual
+  implementation belongs in M4 or a later milestone — see
+  [roadmap.md](roadmap.md) M4.0/M4.
+- Decide whether M4.0 concludes a higher-level `PlayerShotDistribution`
+  abstraction is needed beyond M3's `CarryDistribution`/
+  `DirectionalDispersion`; if adopted, it requires an ADR (cross-subsystem
+  `player`/`statistics` ↔ `simulation` contract) before M4 implementation
+  begins, per Architect review of the M4 roadmap redefinition.
+- Decide whether M4's initial probabilistic golfer-model representation
+  needs a distributional-modelling library beyond NumPy/Pydantic (e.g.
+  `scipy`); if so, this is a new runtime dependency requiring an ADR and
+  human approval (`AGENTS.md` §9) before M4 implementation begins.
+- Identify and evaluate specific public/legitimately reusable golf-
+  performance datasets or published research (R&A/USGA, academic,
+  launch-monitor) for M4.0's population model, and record licensing/
+  representativeness findings (feeds M4.0 directly; see
+  [roadmap.md](roadmap.md)).
+- Update GitHub tracking issue #10 (currently titled "M4 — Candidate-shot
+  generation and Monte Carlo simulation") to reflect the M4.0/M4 roadmap
+  redefinition once this documentation change is merged.
 - Derive/fit `CarryDistribution`/`DirectionalDispersion` from historical
   `ShotRecord` samples (deferred out of M3 — see #9/#30; M3 uses only
   manually supplied statistical parameters; likely lands around the

@@ -10,6 +10,29 @@ first public API is published.
 
 ### Changed
 
+- Redefined roadmap milestone M4 from a narrow "candidate-shot generation
+  and Monte Carlo simulation" framing to **"M4 — Probabilistic golfer
+  modelling & shot outcome simulation"**, and added a preceding research/
+  architecture milestone, **M4.0 — Research and define the CaddAI
+  probabilistic golfer model**, that must be resolved before the detailed
+  M4 implementation backlog is created. Rationale: shot-outcome sampling
+  (Monte Carlo) is not the fundamental modelling problem — the more
+  important problem is a defensible, evidence-based probabilistic
+  representation of the shots a given golfer is likely to produce,
+  initialised from an evidence-based population model personalised by
+  onboarding information (handicap, self-reported carry, shot shape, common
+  miss), and progressively updated from observed `ShotRecord` data over
+  time. M5's purpose is unchanged. Documentation-only change — no
+  production code, no new dependency, no M4 implementation issues created.
+  Updated [docs/roadmap.md](docs/roadmap.md),
+  [docs/prd.md](docs/prd.md), [docs/strategy-engine.md](docs/strategy-engine.md),
+  [docs/player-model.md](docs/player-model.md), and
+  [docs/backlog.md](docs/backlog.md) for consistency. CaddAI Architect
+  subagent confirmed no ADR is required for this roadmap-level change; any
+  new shared `player`/`statistics` abstraction (e.g.
+  `PlayerShotDistribution`) or new runtime dependency M4.0 identifies as
+  necessary will require its own ADR before M4 implementation begins. See
+  [docs/plans/m4-roadmap-redefinition.plan.md](docs/plans/m4-roadmap-redefinition.plan.md).
 - Reconciled M3 documentation with the completed implementation (M3.8,
   GitHub issue #32). Marked M3 complete in the status banners of
   [docs/roadmap.md](docs/roadmap.md) and

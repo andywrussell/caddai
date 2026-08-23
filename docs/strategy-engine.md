@@ -5,9 +5,10 @@
 > [src/caddai/strategy/recommend.py](../src/caddai/strategy/recommend.py)
 > implement a deliberately primitive closest-expected-carry club selection
 > with placeholder wind/lie adjustment constants, proving the end-to-end
-> architecture. The real expected-value/Monte Carlo model described below
-> remains **planned** for milestones M4–M5; `src/caddai/simulation/` does not
-> exist yet.
+> architecture. The real probabilistic golfer model / shot-outcome
+> simulation / expected-value model described below remains **planned** for
+> milestones M4.0 (research/architecture spike), M4, and M5 — see
+> [roadmap.md](roadmap.md); `src/caddai/simulation/` does not exist yet.
 >
 > Forward pointer: `Wind`/`LieType` are defined in `strategy/models.py` for
 > M1 because no `course`/`gps`/`simulation` package exists yet to own them.
@@ -45,13 +46,21 @@ the critical path. Neither module may take on a mandatory network dependency
 
 ## Planned responsibilities
 
-### `simulation` (M4)
+### `simulation` (M4, following the M4.0 research/architecture spike)
 
+- Consume a `player`/`statistics`-owned probabilistic representation of the
+  shots a golfer is likely to produce — an evidence-based population model
+  personalised from onboarding information and, over time, observed
+  `ShotRecord` data (see [player-model.md](player-model.md) and
+  [roadmap.md](roadmap.md) M4.0/M4) — rather than assuming arbitrary generic
+  dispersion parameters.
 - Generate shot candidates (club + target combinations) for a given
   situation (position, hole geometry, conditions).
-- Run seeded Monte Carlo simulation of shot outcomes using the player's
-  carry/dispersion model (from `player`/`statistics`) against course
-  geometry (from `course`) and conditions (wind, elevation).
+- Run seeded outcome simulation against course geometry (from `course`) and
+  conditions (lie, wind, elevation), transforming the player's shot
+  distribution into a resulting outcome distribution. Monte Carlo is an
+  acceptable initial sampling technique but must not be the only supported
+  one, and must not lock the model to a single probability distribution.
 - Produce a distribution of simulated outcomes (resulting position, lie,
   and any hazard/penalty incurred) per shot candidate.
 
@@ -75,9 +84,9 @@ the critical path. Neither module may take on a mandatory network dependency
 
 ## Reproducibility
 
-Every stochastic component (candidate sampling, Monte Carlo outcome
-simulation) must accept an explicit random seed. Tests must fix seeds so
-strategy decisions are reproducible and regression-testable, per
+Every stochastic component (candidate sampling, seeded outcome simulation)
+must accept an explicit random seed. Tests must fix seeds so strategy
+decisions are reproducible and regression-testable, per
 `.github/instructions/tests.instructions.md`.
 
 ## Units

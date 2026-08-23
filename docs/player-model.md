@@ -44,7 +44,9 @@ Player Engineer (see `.github/agents/player-engineer.agent.md`).
 - **Player** domain model: identity, skill level, and owned clubs.
 - **Club** domain model: club identifier/type and its carry distribution.
 - **Carry distribution**: statistical model of distance (metres) achieved
-  with a club, including variance — informs Monte Carlo simulation in M4.
+  with a club, including variance — feeds the population/personalisation
+  model and shot-outcome simulation in M4.0/M4 (see
+  [roadmap.md](roadmap.md)).
 - **Directional dispersion** (implemented as `DirectionalDispersion`):
   lateral/directional bias and spread for a club/player combination.
   Adopts a fixed sign convention for `lateral_bias_metres`: negative is
