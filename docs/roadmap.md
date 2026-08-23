@@ -1,11 +1,12 @@
 # Roadmap
 
 > Status: milestone sequencing for planned work. **M0**, **M1**, and **M2**
-> are complete. Milestones are directional, not date-committed. **M5.5** is
-> a numbered insertion between M5 and M6 (an architecture/research spike,
-> not a functional milestone) chosen to avoid renumbering M6–M9; it does not
-> imply a fractional level of completeness. See [docs/prfaq.md](prfaq.md)
-> for the long-term product vision this sequencing works towards.
+> are complete. Milestones are directional, not date-committed. **M4.0** and
+> **M5.5** are numbered insertions (architecture/research spikes, not
+> functional milestones) chosen to avoid renumbering later milestones; M4.0
+> precedes the rest of M4 the same way M5.5 precedes M6, and neither implies
+> a fractional level of completeness. See [docs/prfaq.md](prfaq.md) for the
+> long-term product vision this sequencing works towards.
 
 - **M0 — Agent development platform and repository foundation** *(complete)*
   Repository structure, documentation set, VS Code multi-agent development
@@ -53,9 +54,97 @@
   learning milestone (see [docs/backlog.md](backlog.md)); M3 uses only
   manually supplied statistical parameters. Tracking issue: #9.
 
-- **M4 — Candidate-shot generation and Monte Carlo simulation**
-  `simulation` subsystem: shot candidate generation, seeded Monte Carlo
-  outcome simulation against course + player models.
+- **M4.0 — Research and define the CaddAI probabilistic golfer model
+  (research spike)**
+  Architecture/research milestone, not implementation — must be resolved
+  before the rest of M4 is detailed or implemented, the same way the M5.5
+  spike precedes M6 without itself being a functional milestone.
+  Investigates credible existing golf research and legally usable public
+  data that could support an initial CaddAI population model of the shots a
+  golfer of a given ability is likely to produce, including (where evidence
+  exists): the relationship between handicap/ability and shot dispersion;
+  carry variability and lateral dispersion by skill level; variability by
+  club/club category; systematic miss patterns and carry/lateral-miss
+  correlation; frequency and magnitude of severe/outlier shots; shot-shape
+  behaviour; lie, wind, and elevation/air-density/temperature effects; and
+  competitive-pressure or other contextual effects. For each candidate
+  factor, M4.0 must distinguish effects with good enough evidence for an
+  initial model, plausible effects that should merely be represented for
+  future learning, and effects deferred for weak evidence or low
+  implementation value — it must not assume every listed factor should be
+  implemented. It explicitly evaluates whether public/legitimately reusable
+  datasets (e.g. published R&A/USGA research, academic golf-performance
+  datasets, publicly available launch-monitor datasets) can fit all or part
+  of an initial population model — considering available variables, sample
+  size, player-ability information, clubs represented, raw-observation vs.
+  aggregate-only availability, representativeness/bias, and licensing/
+  permitted use — without assuming access to proprietary datasets (ShotLink,
+  Arccos, Golfmetrics, commercial TrackMan data, etc.); where raw data is
+  insufficient, it defines how published aggregate statistics can still
+  provide evidence-based priors or fitted/interpolated relationships,
+  introducing a statistical or ML population model only where justified, not
+  for sophistication's own sake. It defines conceptually how onboarding
+  information (handicap index, self-reported per-club carry, normal shot
+  shape, common miss direction) should personalise the population model into
+  an initial per-golfer model — including which properties are primarily
+  golfer-reported versus population-inferred. It evaluates the initial
+  probabilistic representation (independent Gaussian, correlated/
+  multivariate, heavy-tailed, mixture-of-normal-and-severe-miss, empirical,
+  or another appropriately simple representation) and determines whether
+  M3's `CarryDistribution`/`DirectionalDispersion` remain sufficient
+  primitives or a higher-level `PlayerShotDistribution` abstraction is
+  needed — if adopted, it must live in `player`/`statistics` (consumed by
+  `simulation`), preserving the existing dependency direction. It defines
+  the future-compatible mechanism (Bayesian updating, hierarchical/empirical
+  Bayes, shrinkage, robust incremental statistics — evaluated conceptually,
+  not implemented here) by which population priors progressively yield to
+  observed `ShotRecord` data as personal history accumulates, so that
+  `simulation` ultimately depends on a `PlayerShotDistribution`-style
+  contract regardless of whether its parameters came from population
+  priors, onboarding, statistical personalisation, or a future ML model, and
+  determines whether implementing that learning mechanism belongs in M4 or
+  a later milestone. It separates human shot-production uncertainty from
+  environmental transformation, preferring deterministic/physical modelling
+  for effects (e.g. wind, elevation, air density) that are adequately
+  understood physically over learning an opaque relationship without
+  sufficient data; competitive pressure must not receive an arbitrary
+  generic penalty unless research supports a defensible implementation. Any
+  distributional-modelling library beyond NumPy/Pydantic (e.g. `scipy`)
+  identified as necessary is a new-dependency decision requiring an ADR and
+  human approval (`AGENTS.md` §9/§13), not assumed here. Any selected
+  population-model data must resolve to locally embeddable parameters,
+  never a runtime network dependency on the active-round critical path
+  (`AGENTS.md` §2.2). Findings feed a separate future task that creates the
+  detailed M4 implementation backlog; adopting a new shared `player`/
+  `statistics` abstraction or a new dependency identified here requires its
+  own ADR before M4 implementation begins. Tracking issue: #10 (title/scope
+  to be updated to M4.0/M4 once this redefinition is merged).
+
+- **M4 — Probabilistic golfer modelling & shot outcome simulation**
+  Builds on M4.0's conclusions. `player`/`statistics`/`simulation`
+  subsystems, covering four concerns kept clearly separate: (1)
+  **population/player modelling** — what shots a golfer of a given ability
+  is likely to produce, evidence-based per M4.0; (2) **personalisation** —
+  how a golfer's onboarding information (handicap, self-reported carry,
+  shot shape, common miss) transforms the population model into an initial
+  per-golfer model, with population assumptions progressively yielding
+  influence to observed `ShotRecord` data as sufficient high-quality
+  personal history accumulates; (3) **context/environment** — how lie,
+  wind, and elevation transform a player's shot-production uncertainty into
+  a resulting outcome distribution; and (4) **shot-outcome simulation** —
+  generating possible outcomes for a candidate shot from the resulting
+  model. Seeded Monte Carlo remains an acceptable initial sampling
+  technique for (4), but it is not the domain abstraction: the model must
+  not be locked to one probability distribution, deterministic seeded
+  testing must remain possible, and future simulation/evaluation techniques
+  must be able to operate on the same player shot model. Candidate-shot
+  generation for a given situation remains part of this subsystem grouping.
+  Expected-value/expected-strokes optimisation and shot/target selection
+  remain M5, unchanged in purpose — M4 provides the probabilistic outcomes
+  that strategy layer consumes. Detailed M4 implementation issues are
+  deliberately not created until this redefinition has been reviewed; a
+  separate future Orchestrator/Architect task uses M4.0's conclusions and
+  this milestone description to generate that backlog.
 
 - **M5 — Expected-value / expected-strokes strategy model**
   `strategy` subsystem: club/target selection driven by expected strokes and
