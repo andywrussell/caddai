@@ -33,6 +33,25 @@ first public API is published.
   `PlayerShotDistribution`) or new runtime dependency M4.0 identifies as
   necessary will require its own ADR before M4 implementation begins. See
   [docs/plans/m4-roadmap-redefinition.plan.md](docs/plans/m4-roadmap-redefinition.plan.md).
+- Reconciled M3 documentation with the completed implementation (M3.8,
+  GitHub issue #32). Marked M3 complete in the status banners of
+  [docs/roadmap.md](docs/roadmap.md) and
+  [docs/architecture.md](docs/architecture.md), and corrected
+  [docs/domain-model.md](docs/domain-model.md)'s stale "no domain types are
+  implemented yet" line. Rewrote
+  [docs/player-model.md](docs/player-model.md)'s status note to describe
+  every implemented M3 capability — `CarryDistribution`,
+  `DirectionalDispersion`, `Club` (with `category`), `Player.shot_history`,
+  `ShotRecord`, and the finite-value validation added in issues #38 and
+  #43 — and added explicit M3 boundary statements: no fitting/learning of
+  distributions from `shot_history`, no Monte Carlo simulation, `dispersion`/
+  `category` are not read by strategy decisions, and no persistence or
+  runtime technology decision has been made. Added a
+  [docs/backlog.md](docs/backlog.md) item about `ShotRecord.club_name`
+  identity/history semantics (a plain string snapshot with no referential
+  integrity against `Player.clubs`). No source code changes — this is pure
+  documentation reconciliation for M3 completion. See
+  [docs/plans/m3.8-m3-docs-status-completion.plan.md](docs/plans/m3.8-m3-docs-status-completion.plan.md).
 
 ### Fixed
 

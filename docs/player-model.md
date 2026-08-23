@@ -1,33 +1,33 @@
 # Player model
 
-> Status: a minimal M1 vertical slice now exists —
+> Status: M3 is complete — `player`/`statistics` are implemented, not
+> planned. [src/caddai/statistics/models.py](../src/caddai/statistics/models.py)
+> defines `CarryDistribution` (`mean_metres`/`stddev_metres`, finite-value
+> validated per issue #38) and `DirectionalDispersion` (lateral stddev +
+> signed lateral bias, finite-value validated per issue #38, with a fixed
+> sign convention independent of player handedness — negative left, zero
+> on-line, positive right of the intended target line).
 > [src/caddai/player/models.py](../src/caddai/player/models.py) defines
-> `Player` and, as of M3.3,
-> `Club` composed of a `CarryDistribution` and `DirectionalDispersion`
-> (both from `caddai.statistics`) rather than a bare scalar.
-> `Club.expected_carry_metres` is now a computed field derived from
-> `carry_distribution.mean_metres`; `Club.with_expected_carry(...)` builds a
-> placeholder/degenerate (zero-variance, zero-bias) `Club` from a bare
-> expected-carry scalar for callers without a measured distribution yet. As
-> of M3.1,
-> [src/caddai/statistics/models.py](../src/caddai/statistics/models.py)
-> defines `CarryDistribution` (mean + stddev, metres) as a leaf subsystem
-> with no dependency on other `caddai.*` modules. As of M3.2, the same file
-> also defines `DirectionalDispersion` (lateral stddev + signed lateral
-> bias, metres). As of M3.4, `Club` requires a `category: ClubCategory`
-> field (`DRIVER`, `FAIRWAY_WOOD`, `HYBRID`, `IRON`, `WEDGE`, `PUTTER`,
-> `OTHER`); it is metadata only — no strategy behaviour depends on it yet
-> (see issue #29). As of M3.5, `Player.shot_history` is a
-> `list[ShotRecord]` (defaulting to an empty list) of manually entered,
-> observed shot outcomes — each a `club_name` snapshot (plain string, not
-> an embedded `Club`), `achieved_carry_metres` (`ge=0`, so a
-> whiffed/topped shot is representable), `lateral_offset_metres` (same
-> sign convention as `DirectionalDispersion.lateral_bias_metres`), and
-> optional free-text `notes`. This is in-memory only — no persistence/
-> storage technology is introduced, and no derivation/fitting of
-> `CarryDistribution` or `DirectionalDispersion` from `shot_history` exists
-> yet; that is deferred to a future round-history/learning milestone (see
-> `docs/backlog.md`). Round statistics below remain **planned**.
+> `Club` (free-text `name`, a `category: ClubCategory` taxonomy,
+> `carry_distribution`, `dispersion`, a computed `expected_carry_metres`
+> field derived from `carry_distribution.mean_metres`, and a
+> `with_expected_carry(...)` constructor building a placeholder/degenerate
+> zero-variance, zero-bias `Club` from a bare expected-carry scalar for
+> callers without a measured distribution), `Player` (`clubs`,
+> `shot_history`), and `ShotRecord` (a `club_name` snapshot,
+> `achieved_carry_metres`, `lateral_offset_metres`, optional `notes`,
+> finite-value validated per issue #43). `ShotRecord.club_name` is a plain
+> string snapshot only — it is **not** cross-validated against
+> `Player.clubs`; renaming or removing a club from a player's bag does not
+> update or invalidate existing shot records (see `docs/backlog.md`).
+>
+> M3 boundaries: only manually-supplied statistical parameters are stored —
+> no fitting/learning of `CarryDistribution`/`DirectionalDispersion` from
+> `shot_history` exists; no Monte Carlo simulation exists (that's M4);
+> `dispersion`/`category` are not read by strategy decisions —
+> `recommend_club()` only reads `expected_carry_metres`; no persistence/
+> storage technology has been selected; and no mobile/cloud runtime
+> decision has been made.
 
 ## Purpose
 

@@ -2,9 +2,9 @@
 
 > Status: describes intended target architecture for the full roadmap.
 > Implemented so far: `gps`/`course` (M2, complete — see
-> [course-engine.md](course-engine.md)) and a minimal `player`/`strategy`
-> vertical slice (M1 — see [roadmap.md](roadmap.md)). `statistics`,
-> `simulation`, `llm`, `api`, and `cli` do not exist yet.
+> [course-engine.md](course-engine.md)) and `player`/`statistics` (M3,
+> complete — see [player-model.md](player-model.md)). `simulation`, `llm`,
+> `api`, and `cli` do not exist yet.
 
 ## Guiding principle
 

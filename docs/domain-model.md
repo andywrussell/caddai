@@ -1,7 +1,10 @@
 # Domain model
 
 > Status: describes the planned core domain vocabulary for the roadmap
-> (starting at M1). No domain types are implemented yet in `src/caddai/`.
+> (starting at M1). `course`, `gps`, `player`, and `statistics` now have
+> concrete implemented types (see [course-engine.md](course-engine.md) and
+> [player-model.md](player-model.md) for details); `strategy`/`simulation`
+> domain types beyond the M1 vertical slice remain planned.
 
 This document defines the shared vocabulary used across `course`, `gps`,
 `player`, `statistics`, `strategy`, and `simulation`. Concrete types will be
