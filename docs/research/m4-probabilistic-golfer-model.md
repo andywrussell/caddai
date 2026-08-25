@@ -21,7 +21,158 @@ The requested answers are therefore:
 **Scope assumptions.** For V1, “shot distribution” should mean an intended **stock full swing**, represented in coordinates aligned to the intended target line: downrange carry and lateral displacement at carry/landing. Total distance should remain a separate variable because rollout is highly surface-dependent. Pitches, chips, recovery punches, bunker explosions, and putting are behaviorally different shot regimes and should not initially be pooled with stock full swings. A “fade” describes intended curvature and should **not** automatically be interpreted as a right miss; “common miss = right” is the more relevant onboarding observation for endpoint bias.
 
 The evidence supports several hypotheses but rejects or weakens others. Handicap appears useful as a prior predictor of consistency, although it is not a pure ball-striking variable. Self-reported carry is useful information, but the literature does not justify a universal numerical trust weight for ordinary golfers. A single independent Gaussian is too restrictive because real lateral patterns can be skewed/heavy-tailed and carry/lateral dependence can be nonzero. Broadie’s amateur work also emphasizes that a relatively small number of very poor shots are important contributors to high scores. citeturn27search3turn28view1turn0search1
+## Architecture review outcome and final CaddAI recommendation (M4.0)
 
+> This section records the outcome of the CaddAI Architect's review of this
+> report (issue [#47](https://github.com/andywrussell/caddai/issues/47)) and
+> is the authoritative M4.0 conclusion for the remainder of M4. It classifies
+> every provisional conclusion below into one of four categories, per the
+> M4.0 deliverable requirement:
+>
+> - **Evidence-backed** — directly supported by cited primary research.
+> - **Statistical inference** — a defensible inference from cited evidence,
+>   but not itself directly measured (e.g. combining two related findings).
+> - **Provisional CaddAI assumption** — a modelling choice the evidence is
+>   consistent with but does not itself establish; must be visibly
+>   provisional/configurable, not presented as validated fact.
+> - **Unresolved evidence gap** — a quantity CaddAI cannot currently
+>   defend numerically and must not invent; requires CaddAI's own
+>   calibration data before being treated as authoritative.
+
+### Classification of key conclusions
+
+| Conclusion | Classification | Notes |
+|---|---|---|
+| Handicap predicts shot-to-shot production variability (esp. driver) | **Evidence-backed** | Betzler et al. 2012/2014. citeturn27search3turn17search8 |
+| Full-bag handicap × club numeric dispersion surface | **Unresolved evidence gap** | No public source combines handicap, all clubs, and 2-D dispersion at adequate sample size. |
+| Club-category (not one universal scale) should differentiate dispersion | **Statistical inference** | Inferred from clubs being studied and reported separately, not from a single cross-club comparison. |
+| Self-reported carry strongly anchors expected carry | **Provisional CaddAI assumption**, informed by evidence | Robertson & Burnett support accurate self-report only for a small, elite (≈+2.8 handicap) sample. citeturn28view1 |
+| Uncertainty should depend on report provenance (measured/GPS/personal) | **Provisional CaddAI assumption** | Statistically motivated (measured data should have lower noise); no study gives calibrated trust weights per provenance category. |
+| Common miss weakly informs directional bias; shot shape ≠ endpoint bias | **Statistical inference / product-modelling distinction** | Not a direct empirical finding; a defensible interpretation given the sign-convention and onboarding-field design already used for `DirectionalDispersion`. |
+| Bivariate (correlated) rather than independent carry/lateral | **Evidence-backed (exploratory) + statistical inference** | CaddieSet exploratory correlations (−0.34 to +0.56, sign varies); n=8 unlabeled golfers, so treated as falsification evidence against independence, not a fitted population correlation. citeturn15view0 |
+| Heavier-than-Gaussian tails (Student-t) | **Evidence-backed (exploratory) + statistical inference** | 10/11 tested CaddieSet cells rejected lateral normality; Broadie's amateur-scoring work supports tail importance independently. citeturn15view0turn0search1 |
+| No severe-miss mixture in V1 | **Deliberate simplification (evidence-justified)** | Correctly declines to invent a miss-probability parameter unsupported by public evidence. |
+| Numeric ν, covariance scale, correlation-shrinkage strength | **Unresolved evidence gap** | Must ship as configuration, explicitly provisional, pending CaddAI's own calibration study. |
+| Partial-pooling/empirical-Bayes personalisation, differential learning rates by parameter | **Evidence-backed (statistical theory) + statistical inference for golf specifics** | Hierarchical/shrinkage behaviour is well-established statistically; the qualitative ordering (mean fast, variance slower, correlation slower, tails slowest) is reinforced by a golf-specific reliability study (7–10 driver/6-iron swings vs. lateral deviation unreliable at 15). citeturn27search6 |
+| Numeric shrinkage constants/thresholds | **Unresolved evidence gap** | The *ordering* is evidence-backed; specific numeric schedules are not. |
+| Environment (wind/elevation/air density) as physical transform, separate from golfer variability | **Evidence-backed** | Golf-ball aerodynamic drag/lift depend on relative airspeed and air density; validated trajectory/normalization models exist. citeturn28view3turn13search0 |
+| No generic psychological-pressure penalty | **Evidence-backed (absence of consistent effect)** | Controlled studies disagree in direction; individual heterogeneity is itself the documented finding. citeturn11search3turn11search6turn11search12 |
+| Public raw data sufficiency | **Evidence-backed: Partially** | Retained without modification — see "Public dataset audit" above. This is the load-bearing conclusion for the entire V1 recommendation below. |
+
+### Binding decisions (recorded as ADRs)
+
+1. **[ADR 0006](adr/0006-player-shot-distribution-bivariate-student-t.md)** —
+   adopts `PlayerShotDistribution`, a bivariate Student-t shot-production
+   representation, as a new type in `caddai.statistics` (composed by
+   `caddai.player`, later consumed by `caddai.simulation`), living
+   alongside — not replacing — M3's `CarryDistribution`/
+   `DirectionalDispersion`. The **family** (bivariate, correlated,
+   heavy-tailed) is binding for V1; **numeric hyperparameters** (ν,
+   covariance scale, correlation-shrinkage strength) are explicitly
+   provisional/configurable pending CaddAI's own calibration data. No new
+   dependency: bivariate Student-t sampling and moment-based
+   shrinkage/covariance updates are implementable with NumPy alone
+   (`numpy.random.Generator.multivariate_normal` + `.chisquare`,
+   `numpy.cov`/`numpy.corrcoef`).
+2. **[ADR 0007](adr/0007-population-prior-replaceability.md)** — establishes
+   that a `PopulationPrior`-style interface (handicap/club-category →
+   `PlayerShotDistribution` parameters) must be stable and replaceable: its
+   initial evidence-derived/config implementation can later be superseded
+   by a fitted or learned model without changing the contract that
+   `simulation`/`strategy` consume, and any such implementation must
+   resolve to locally embeddable parameters with no runtime network
+   dependency on the active-round critical path
+   ([ADR 0005](adr/0005-offline-first-active-round-architecture.md),
+   `AGENTS.md` §2.2).
+
+No ADR is required for module ownership (already `player`/`statistics`,
+per `docs/roadmap.md` and `docs/architecture.md`), canonical units (still
+metres), or a new dependency (none introduced).
+
+### M4 vs. M5 vs. later boundary
+
+**In scope for M4** (builds on this report): `PlayerShotDistribution` domain
+type; an initial evidence-derived/config `PopulationPrior`; onboarding
+personalisation (reported carry + provenance, common-miss/shot-shape
+fields); a `ShotRecord` measurement-provenance schema extension; a
+closed-form partial-pooling/empirical-Bayes personal updater; `Club`/
+`Player` composition of `PlayerShotDistribution`; a deterministic
+environment/physics transformation layer (wind, elevation, air density);
+seeded Monte Carlo shot-outcome simulation with a pluggable sampling
+technique; competition/tournament context capture (data only, no penalty
+logic).
+
+**Explicitly deferred, not M4:** a severe-miss mixture component; a lateral
+skew parameter; lie-specific (rough/slope/bunker) numeric multipliers; a
+learned/ML population-prior model (replaces the config-based
+`PopulationPrior` behind the same ADR 0007 interface, once justified); a
+generic psychological-pressure penalty (not merely deferred — rejected
+absent new evidence). The handicap × club repeated-shot calibration study
+this report recommends is a data-collection/research activity, not code,
+and is tracked separately from M4 implementation (see "unresolved evidence
+gaps" below and the escalation note on privacy/data-handling implications).
+
+**Remains M5, out of scope here:** expected-value/expected-strokes
+optimisation and club/target selection over the outcome distributions M4
+produces. No modelling decision in this report changes M5's scope.
+
+### Unresolved evidence/calibration gaps
+
+The following must remain visibly provisional/configurable until CaddAI
+collects its own calibration data — none should be hard-coded as if
+validated:
+
+1. Handicap-conditioned, club-category-specific carry/lateral dispersion
+   scale values (σ_C, σ_L) across the full bag.
+2. Carry–lateral correlation (ρ) by handicap/club-category (direction and
+   magnitude vary in this report's own exploratory data).
+3. Degrees-of-freedom (tail heaviness, ν) per club-category.
+4. Self-reported-carry-to-true-carry bias/uncertainty by provenance
+   category (measured/GPS/personal-estimate) for ordinary, non-elite
+   golfers — the strongest primary source located is small and elite.
+5. Severe-miss probability and severity by handicap × club (relevant only
+   once a mixture component is considered, post-V1).
+6. Lateral-skew magnitude by handicap/club.
+7. Lie-specific (rough/slope/bunker) numeric effect sizes on carry, lateral
+   outcome, and dispersion.
+8. The exact numeric shrinkage schedule for personalisation (the *ordering*
+   — mean fast, variance slower, correlation slower, tails slowest — is
+   evidence-backed; specific constants are not).
+
+### Proposed M4 implementation backlog (not yet created as issues)
+
+Ordered by dependency; ADRs 0006/0007 above are treated as already decided
+by M4.0, so the first implementation issue is M4.1 below.
+
+| Issue | Scope | Owner | Depends on |
+|---|---|---|---|
+| M4.1 | `PlayerShotDistribution` domain type (bivariate Student-t, family-tagged, NumPy-only sampling) in `caddai.statistics` | Player Engineer | ADR 0006 |
+| M4.2 | `PopulationPrior` representation (config/lookup-table-backed, handicap band × club category, explicitly provisional) | Player Engineer | M4.1, ADR 0007 |
+| M4.3 | Onboarding personalisation model (reported-carry + provenance, common-miss/shot-shape fields → initial `PlayerShotDistribution`) | Player Engineer | M4.1, M4.2 |
+| M4.4 | `ShotRecord` measurement-provenance schema extension (additive: source, quality flag) | Player Engineer | none (parallel with M4.1–M4.3) |
+| M4.5 | Personal partial-pooling/empirical-Bayes updater (closed-form shrinkage, NumPy-only, per-parameter learning rates) | Player Engineer | M4.1, M4.3, M4.4 |
+| M4.6 | `Club`/`Player` composition of `PlayerShotDistribution` (additive optional field, population→onboarding→personal pipeline) | Player Engineer | M4.3, M4.5 |
+| M4.7 | Environment/physics transformation layer (deterministic wind/elevation/air-density transform; `simulation` module bootstrap) | Strategy Engineer | ADR 0006 (independent of the player-side chain) |
+| M4.8 | Seeded Monte Carlo shot-outcome simulation (samples `PlayerShotDistribution`, applies environment transform, pluggable technique) | Strategy Engineer | M4.6, M4.7 |
+| M4.9 | Docs/status update (`docs/player-model.md`, `docs/strategy-engine.md`, `docs/architecture.md`) | Player Engineer + Strategy Engineer | all above |
+
+**First proposed implementation issue: M4.1 — `PlayerShotDistribution`
+domain type.**
+
+### Escalation notes for the human
+
+- The recommended CaddAI calibration study (recruiting golfers,
+  launch-monitor data collection) has privacy/data-handling and possible
+  cost/vendor implications outside this spike's scope — this should be
+  consciously scoped and approved separately, per `AGENTS.md` §14
+  ("anything with significant privacy implications"), before being treated
+  as planned work.
+- This report's own exploratory CaddieSet statistics (e.g. median lateral
+  skewness ≈0.86, excess kurtosis ≈1.37, correlation range −0.34 to +0.56)
+  are explicitly derived from 8 unlabeled golfers and are
+  **hypothesis-generating only** — they must not be lifted into a
+  `PopulationPrior` config default as if they were validated population
+  values.
 ## Evidence base and synthesis
 
 ### Core research evidence
