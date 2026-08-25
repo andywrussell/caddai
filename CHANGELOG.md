@@ -10,6 +10,37 @@ first public API is published.
 
 ### Added
 
+- Implemented **M4.1 — `PlayerShotDistribution` domain type** (GitHub
+  issue #49), the ADR 0006 bivariate Student-t shot-production
+  representation. Added
+  [src/caddai/statistics/shot_distribution.py](src/caddai/statistics/shot_distribution.py):
+  `ShotDistributionFamily` (`StrEnum`, currently only
+  `BIVARIATE_STUDENT_T`) and `PlayerShotDistribution` (`family`,
+  `carry_location_metres`, `lateral_bias_metres`, `carry_scale_metres`,
+  `lateral_scale_metres`, `correlation`, `degrees_of_freedom`), all
+  finite-value validated via the existing `_require_finite` pattern.
+  `carry_scale_metres`/`lateral_scale_metres` are strictly positive (zero
+  rejected, diverging intentionally from M3's stddev fields),
+  `correlation` is constrained to the open interval `(-1, 1)`, and
+  `degrees_of_freedom` must be strictly greater than 2 — per the CaddAI
+  Architect's confirmed boundary decisions recorded in
+  [docs/plans/m4.1-player-shot-distribution.plan.md](docs/plans/m4.1-player-shot-distribution.plan.md),
+  ADR 0006, and ADR 0007. Added computed properties
+  `implied_covariance_metres_sq`, `implied_carry_stddev_metres`, and
+  `implied_lateral_stddev_metres`, applying the `nu/(nu-2)`
+  covariance-scaling factor, with docstrings explicit that the scale
+  parameters are not standard deviations or a covariance matrix.
+  `PlayerShotDistribution` holds independent joint parameters — it does
+  not compose with or derive from M3's `CarryDistribution`/
+  `DirectionalDispersion` in this issue (Option B; composition is M4.6),
+  and it stores no ADR 0007 provenance/confidence metadata (deferred to
+  the future `PopulationPrior` type, M4.2). No `sample()`, RNG, or Monte
+  Carlo logic — construction remains deterministic and side-effect free,
+  and `caddai.statistics` remains a leaf module with no new runtime
+  dependency. Re-exported from `caddai.statistics.__init__`, added to
+  `tests/test_architecture_boundaries.py`'s `statistics` boundary
+  `source_files`, and documented in
+  [docs/player-model.md](docs/player-model.md).
 - Completed the **M4.0 — Research and define the CaddAI probabilistic
   golfer model** research spike (GitHub issue #47). Added the Deep Research
   report at
