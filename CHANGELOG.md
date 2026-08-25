@@ -8,6 +8,29 @@ first public API is published.
 
 ## [Unreleased]
 
+### Added
+
+- Completed the **M4.0 — Research and define the CaddAI probabilistic
+  golfer model** research spike (GitHub issue #47). Added the Deep Research
+  report at
+  [docs/research/m4-probabilistic-golfer-model.md](docs/research/m4-probabilistic-golfer-model.md),
+  reviewed it with the CaddAI Architect subagent against M3
+  `player`/`statistics`, `docs/roadmap.md`, `docs/architecture.md`,
+  existing ADRs, and `docs/prfaq.md`, and recorded the final CaddAI
+  recommendation in that document: a bivariate Student-t
+  `PlayerShotDistribution` shot-production representation with an
+  evidence-derived but explicitly provisional population prior, onboarding
+  personalisation informed by reported-carry provenance, and partial-
+  pooling/empirical-Bayes personal learning — no new runtime dependency.
+  Added [ADR 0006](docs/adr/0006-player-shot-distribution-bivariate-student-t.md)
+  (bivariate Student-t `PlayerShotDistribution` as the V1 shot-production
+  representation) and [ADR 0007](docs/adr/0007-population-prior-replaceability.md)
+  (population-prior replaceability contract, preserving the offline-first
+  active-round constraint). No production code, no M4 implementation
+  issues created — see the research document's "Proposed M4 implementation
+  backlog" for the follow-up issue breakdown, to be created after this
+  review.
+
 ### Changed
 
 - Redefined roadmap milestone M4 from a narrow "candidate-shot generation
