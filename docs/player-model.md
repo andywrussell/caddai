@@ -28,6 +28,22 @@
 > `recommend_club()` only reads `expected_carry_metres`; no persistence/
 > storage technology has been selected; and no mobile/cloud runtime
 > decision has been made.
+>
+> M4.1 (issue #49) added
+> [src/caddai/statistics/shot_distribution.py](../src/caddai/statistics/shot_distribution.py):
+> `PlayerShotDistribution`, the ADR 0006 bivariate Student-t shot-production
+> domain type (`family: ShotDistributionFamily`, `carry_location_metres`,
+> `lateral_bias_metres`, `carry_scale_metres`, `lateral_scale_metres`,
+> `correlation`, `degrees_of_freedom`, all finite-value validated), plus
+> computed `implied_covariance_metres_sq`/`implied_carry_stddev_metres`/
+> `implied_lateral_stddev_metres` properties applying the `nu/(nu-2)`
+> covariance-scaling factor. It coexists with, and is independent of,
+> `CarryDistribution`/`DirectionalDispersion` — it does not compose with or
+> derive from either M3 type; composition is deferred to M4.6. Its numeric
+> hyperparameters remain provisional pending calibration data per ADR
+> 0006/ADR 0007, and it stores no ADR 0007 provenance/confidence metadata
+> (deferred to the future `PopulationPrior` type, M4.2). No sampling/RNG/
+> Monte Carlo logic exists in this type.
 
 ## Purpose
 
