@@ -87,6 +87,53 @@
 > (`ClubCategorySupportStatus.DEFERRED` vs `NOT_MODELABLE`,
 > `club_category_support_status()`/`CLUB_CATEGORY_SUPPORT_STATUS` expose
 > the mapping for all 7 `ClubCategory` members).
+>
+> M4.3 (issue #51) added
+> [src/caddai/player/onboarding.py](../src/caddai/player/onboarding.py):
+> `personalise_shot_distribution(*, handicap_index, club_category,
+> reported_carry_metres, carry_provenance, common_miss, shot_shape=
+> ShotShape.STRAIGHT) -> OnboardingPersonalisationResult`, the cold-start
+> step that builds a golfer-specific `PlayerShotDistribution` for a single
+> club from `resolve_population_prior` (ADR 0007) plus onboarding
+> information. `carry_location_metres` is set directly from the validated
+> `reported_carry_metres` input (no invented trust-weighted blend — no
+> defensible population carry-location prior exists to blend toward);
+> `lateral_bias_metres` is `common_miss`'s sign (`LEFT`/`NONE`/`RIGHT`)
+> times the provisional dimensionless `ONBOARDING_COMMON_MISS_BIAS_STRENGTH`
+> times the resolved club's `lateral_scale_metres`, so bias magnitude
+> scales with the club/ability-specific lateral scale rather than being a
+> flat metres constant across all clubs; `carry_scale_metres`,
+> `lateral_scale_metres`, `correlation`, and `degrees_of_freedom` are
+> copied verbatim from `resolve_population_prior(...).parameters`. This is
+> the binding aleatoric/epistemic separation the issue requires: a new
+> `CarryProvenance` (`MEASURED`/`GPS_ESTIMATE`/`PERSONAL_ESTIMATE`) enum
+> describes the trustworthiness of a self-reported carry and maps to a
+> `CarryConfidence` (`LOW`/`MODERATE`/`HIGH`) — both metadata-only, never
+> feeding into any `PlayerShotDistribution` scale/correlation/dof field.
+> `ShotShape` (`STRAIGHT`/`DRAW`/`FADE`) is accepted and recorded but not
+> consumed by bias logic in this issue. `resolve_population_prior`'s own
+> `ValueError`/`PopulationPriorUnsupportedCategoryError` (invalid
+> handicap, `PUTTER`=`DEFERRED`, `OTHER`=`NOT_MODELABLE`) propagate
+> unmodified. `OnboardingPersonalisationResult` (`shot_distribution`,
+> `carry_provenance`, `carry_confidence`, `population_prior`,
+> `shot_shape`, `onboarding_config_version`) is a small additive result
+> type, precedented by `PopulationPriorResult`'s "adjacent type" allowance
+> under ADR 0007, rather than nSTRENGTH`/`ONBOARDING_CONFIG_VERSION`
+> (`m4.3-provisional-v2`) are explicitly provisional, unvalidated
+> constants pending calibration data, mirroring
+> `population_prior_config.py`'s own provisional numbers.
+> `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` is dimensionless and carries no
+> fitted/calibrated statistical meaning of its own; it is a convenience
+> heuristic to make bias magnitude scale sensibly with club, nothing more.
+> This creates an intentional intra-`caddai.player` coupling: recalibrating
+> `lateral_scale_metres` in `caddai.statistics`'s population-prior config
+> also changes onboarding bias magnitude for the same `common_miss` input.
+>alidated
+> constants pending calibration data, mirroring
+> `population_prior_config.py`'s own provisional numbers. No RNG,
+> `sample()`, or Monte Carlo logic exists in this module; `caddai.player`
+> remains the only dependent of `caddai.statistics` (unmodified by this
+> issue).
 
 ## Purpose
 

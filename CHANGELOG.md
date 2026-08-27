@@ -10,6 +10,59 @@ first public API is published.
 
 ### Added
 
+- Implemented **M4.3 — Onboarding personalisation of
+  `PlayerShotDistribution`** (GitHub issue #51). Added
+  [src/caddai/player/onboarding.py](src/caddai/player/onboarding.py):
+  `personalise_shot_distribution(*, handicap_index, club_category,
+  reported_carry_metres, carry_provenance, common_miss, shot_shape=
+  ShotShape.STRAIGHT) -> OnboardingPersonalisationResult`, the cold-start
+  step (per `docs/research/m4-probabilistic-golfer-model.md`'s "Cold-start
+  initialization and personal learning" section) that composes
+  `resolve_population_prior` (ADR 0007) with onboarding information to
+  build a golfer-specific `PlayerShotDistribution` (ADR 0006) for a single
+  club. `carry_location_metres` is taken directly from the validated
+  `reported_carry_metres` input; `lateral_bias_metres` is derived as
+  `common_miss`'s sign times a new provisional dimensionless
+  `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` constant times the resolved
+  club's `lateral_scale_metres`, so bias magnitude scales with the
+  club/ability-specific lateral scale rather than being a flat metres
+  constant across all clubs; `carry_scale_metres`,
+  `lateral_scale_metres`, `correlation`, and `degrees_of_freedom` are
+  copied verbatim from `resolve_population_prior(...).parameters` —
+  mechanically enforcing the aleatoric/epistemic separation the issue
+  requires. Added `CarryProvenance` (`MEASURED`/`GPS_ESTIMATE`/
+  `PERSONAL_ESTIMATE`), a self-report-trust axis distinct from
+  `caddai.statistics.population_prior`'s own confidence/provenance enums,
+  mapped internally to a metadata-only `CarryConfidence`
+  (`LOW`/`MODERATE`/`HIGH`) that never feeds into any
+  `PlayerShotDistribution` scale/correlation/dof field. Added `ShotShape`
+  (`STRAIGHT`/`DRAW`/`FADE`), accepted and recorded but not consumed by
+  bias logic in this issue. Added the additive
+  `OnboardingPersonalisationResult` (`shot_distribution`,
+  `carry_provenance`, `carry_confidence`, `population_prior`, `shot_shape`,
+  `onboarding_config_version`), precedented
+  by `PopulationPriorResult`'s ADR 0007 "adjacent type" allowance. Added
+  `ONBOARDING_CONFIG_VERSION` (`m4.3-provisional-v2`) and
+  `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` (dimensionless), both explicitly
+  provisional pending calibration data, mirroring
+  `population_prior_config.py`'s own provisional numbers.
+  `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` has no fitted/calibrated
+  statistical meaning of its own (a convenience heuristic only) and
+  deliberately couples onboarding bias magnitude to `caddai.statistics`'s
+  population-prior `lateral_scale_metres` — recalibrating that config also
+  changes onboarding bias magnitude for the same `common_miss` input.
+  `resolve_population_prior`'s own `ValueError`/
+  `PopulationPriorUnsupportedCategoryError` (`PUTTER`=`DEFERRED`,
+  `OTHER`=`NOT_MODELABLE`) propagate unmodified; invalid/non-finite
+  `reported_carry_metres` raises a plain `ValueError`. No RNG, `sample()`,
+  Monte Carlo logic, or network calls; `caddai.statistics` is untouched and
+  remains a leaf module. Updated
+  [src/caddai/player/__init__.py](src/caddai/player/__init__.py) to export
+  the new public names and
+  [tests/test_architecture_boundaries.py](tests/test_architecture_boundaries.py)
+  to cover the new file. Added
+  [tests/test_player_onboarding.py](tests/test_player_onboarding.py) and
+  documented in [docs/player-model.md](docs/player-model.md).
 - Implemented **M4.2 — `PopulationPrior` population parameter model**
   (GitHub issue #50), the ADR 0007 stable/replaceable handicap/
   club-category population-prior contract. Migrated `ClubCategory`'s
