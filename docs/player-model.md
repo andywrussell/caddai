@@ -199,6 +199,87 @@
 > severe outcome can finish behind the shot's start position;
 > `observed_carry_metres` keeps `ge=0` (a genuine physical carry
 > measurement, not a coordinate).
+>
+> M4.5 (issue #53) added CaddAI's first personal-learning mechanism: a
+> deterministic, closed-form partial-pooling (empirical-Bayes-style
+> shrinkage) update that moves a `PlayerShotDistribution` from its current
+> value (population-prior or onboarding-derived) toward personal
+> `ShotRecord` evidence. Split across two modules per the Architect's
+> review: the pure shrinkage math lives in
+> [src/caddai/statistics/personalisation.py](../src/caddai/statistics/personalisation.py)
+> (`shrink_shot_distribution(baseline_distribution, *, carry_observations,
+> lateral_observations, joint_observations, config) ->
+> ShotDistributionUpdateResult`; a leaf module, no `caddai.player`
+> import), and the `ShotRecord` -> weighted-array glue lives in
+> [src/caddai/player/personalisation.py](../src/caddai/player/personalisation.py)
+> (`build_shot_distribution_update_inputs`,
+> `update_shot_distribution_from_history`, both taking
+> `baseline_distribution` as their first parameter). Each dimension
+> shrinks at its own rate, consistent with the M4.0 research ordering
+> (location fastest, dispersion slower, correlation slower still,
+> degrees-of-freedom never learned): `carry_location_metres`/
+> `lateral_bias_metres` pool the prior value with the weighted sample
+> mean of evidence via a
+> `location_prior_pseudo_count`-weighted convex combination (no minimum-
+> evidence gate beyond zero evidence); `carry_scale_metres`/
+> `lateral_scale_metres` convert to variance via the same `nu/(nu-2)`
+> factor `implied_covariance_metres_sq` uses (Student-t scale is not
+> standard deviation), pool variances via `dispersion_prior_pseudo_count`,
+> and convert back, gated by `dispersion_min_effective_observations`;
+> `correlation` pools a weighted-Pearson-correlation sample statistic via
+> `correlation_prior_pseudo_count`, hard-gated by
+> `correlation_min_effective_observations`, with near-zero-variance legs
+> and a pre-pooling clip protecting against a degenerate or exactly-+/-1
+> result; `degrees_of_freedom` is always retained unchanged
+> (`DimensionUpdateOutcome.HELD_FIXED_BY_POLICY`) — never estimated in V1.
+> Each dimension's outcome (`UPDATED`/`INSUFFICIENT_EVIDENCE`/
+> `NO_EVIDENCE`/`HELD_FIXED_BY_POLICY`) and effective evidence count
+> (`sum(weights)`) are reported on `ShotDistributionUpdateResult` for
+> traceability. Configuration
+> (`PersonalisationConfig`/`DEFAULT_PERSONALISATION_CONFIG`, version
+> `m4.5-provisional-v1`) is explicitly provisional/uncalibrated, mirroring
+> `population_prior_config.py`'s/`onboarding.py`'s own precedent.
+>
+> **Architect Decision A — endpoint lateral vs intrinsic lateral (V1
+> limitation):** `PlayerShotDistribution`'s lateral dimension is, strictly,
+> the ball's *intrinsic* lateral shot production. V1 approximates this
+> with `ShotRecord.lateral_offset_metres` — the lateral offset at the
+> shot's *final resting position*, not its first-landing/carry-point
+> lateral offset — a documented, accepted, replaceable approximation, not
+> a silent substitution: rollout after landing can shift the lateral
+> offset between carry and final position. Carry-space parameters
+> (`carry_location_metres`, `carry_scale_metres`) are never derived from
+> endpoint data, only from genuinely observed `observed_carry_metres`;
+> `final_downrange_metres` is not consumed by this updater at all.
+>
+> **Architect Decision B — measurement-quality weighting:**
+> `caddai.player.personalisation.MEASUREMENT_QUALITY_WEIGHTS` maps each
+> `ShotMeasurementQuality` to an explicit numeric weight (`HIGH=1.0`,
+> `MODERATE=0.6`, `LOW=0.25`, `UNKNOWN=0.0`) applied per-quantity, per-
+> record — not a filter, and not ignored. `UNKNOWN` contributes zero
+> weight, equivalent to that dimension not existing for the record, never
+> discarding the whole record. `ShotMeasurementSource` remains metadata-
+> only in V1 (not a second weighting axis). Evidence selection is
+> dimension-specific per record — a record can contribute to carry,
+> lateral, both, or neither; joint (correlation) evidence requires both
+> legs usable for the same record, weighted by the `min()` of the two leg
+> weights. No ADR was required (no new dependency, public API contract
+> change, unit/ownership/dependency-direction change, or
+> deterministic-strategy-principle change) — see
+> [docs/plans/m4.5-personal-partial-pooling-updater.plan.md](plans/m4.5-personal-partial-pooling-updater.plan.md).
+>
+> **Naming and batch-recompute contract:** the first parameter of all
+> three public functions is named `baseline_distribution` (renamed from an
+> earlier `prior` during pre-merge review) to make explicit that it must
+> always be the same immutable cold-start `PlayerShotDistribution` — the
+> golfer's population-prior or onboarding-derived distribution — never a
+> previously-returned `ShotDistributionUpdateResult.shot_distribution`.
+> All three functions recompute the posterior from scratch on every call
+> (batch recomputation over the *complete* current eligible evidence set);
+> none of them accumulate sufficient statistics incrementally across
+> calls. Incremental/online Bayesian updating (accumulating sufficient
+> statistics call-to-call instead of recomputing from the full history
+> each time) is explicitly deferred — not implemented — in M4.5.
 
 ## Purpose
 

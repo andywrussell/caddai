@@ -9,6 +9,16 @@ from caddai.statistics.models import (
     DirectionalDispersion,
     PopulationPriorParameters,
 )
+from caddai.statistics.personalisation import (
+    DEFAULT_PERSONALISATION_CONFIG,
+    STATISTICS_PERSONALISATION_CONFIG_VERSION,
+    DimensionUpdateOutcome,
+    PersonalisationConfig,
+    ShotDistributionUpdateResult,
+    WeightedJointObservations,
+    WeightedObservations,
+    shrink_shot_distribution,
+)
 from caddai.statistics.population_prior import (
     CLUB_CATEGORY_SUPPORT_STATUS,
     ClubCategorySupportStatus,
@@ -26,10 +36,14 @@ from caddai.statistics.shot_distribution import (
 
 __all__ = [
     "CLUB_CATEGORY_SUPPORT_STATUS",
+    "DEFAULT_PERSONALISATION_CONFIG",
+    "STATISTICS_PERSONALISATION_CONFIG_VERSION",
     "CarryDistribution",
     "ClubCategory",
     "ClubCategorySupportStatus",
+    "DimensionUpdateOutcome",
     "DirectionalDispersion",
+    "PersonalisationConfig",
     "PlayerShotDistribution",
     "PopulationPriorConfidence",
     "PopulationPriorParameters",
@@ -37,6 +51,10 @@ __all__ = [
     "PopulationPriorResult",
     "PopulationPriorUnsupportedCategoryError",
     "ShotDistributionFamily",
+    "ShotDistributionUpdateResult",
+    "WeightedJointObservations",
+    "WeightedObservations",
     "club_category_support_status",
     "resolve_population_prior",
+    "shrink_shot_distribution",
 ]
