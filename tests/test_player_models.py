@@ -78,7 +78,7 @@ from caddai.player.models import (
     ShotMeasurementSource,
     ShotRecord,
 )
-from caddai.statistics import CarryDistribution, DirectionalDispersion
+from caddai.statistics import CarryDistribution, DirectionalDispersion, PlayerShotDistribution
 
 
 def test_club_constructs_with_valid_data() -> None:
@@ -353,6 +353,55 @@ def test_club_with_expected_carry_accepts_explicit_category() -> None:
     )
 
     assert club.category == ClubCategory.DRIVER
+
+
+# --- Club.shot_distribution (issue #54, M4.6) ----------------------------------
+
+
+def test_club_shot_distribution_defaults_to_none() -> None:
+    """Regression: a ``Club`` built with no ``shot_distribution`` argument leaves it ``None`` —
+    every pre-M4.6 construction site remains unaffected by the new additive field."""
+    club = Club(
+        name="7 Iron",
+        carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
+        dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+        category=ClubCategory.IRON,
+    )
+
+    assert club.shot_distribution is None
+
+
+def test_club_with_explicit_shot_distribution_round_trips_through_model_dump() -> None:
+    """An explicit ``shot_distribution`` round-trips through ``model_dump()``/
+    ``model_validate()`` with the nested ``PlayerShotDistribution`` preserved exactly."""
+    shot_distribution = PlayerShotDistribution(
+        carry_location_metres=140.0,
+        lateral_bias_metres=1.5,
+        carry_scale_metres=8.0,
+        lateral_scale_metres=4.0,
+        correlation=0.2,
+        degrees_of_freedom=6.0,
+    )
+    club = Club(
+        name="7 Iron",
+        carry_distribution=CarryDistribution(mean_metres=140.0, stddev_metres=8.5),
+        dispersion=DirectionalDispersion(lateral_stddev_metres=4.5, lateral_bias_metres=-2.0),
+        category=ClubCategory.IRON,
+        shot_distribution=shot_distribution,
+    )
+
+    reconstructed = Club.model_validate(club.model_dump())
+
+    assert reconstructed.shot_distribution == shot_distribution
+    assert reconstructed == club
+
+
+def test_club_with_expected_carry_leaves_shot_distribution_none() -> None:
+    """The convenience constructor still produces ``shot_distribution is None`` — it builds a
+    degenerate M3 carry distribution/dispersion only, never an M4 baseline."""
+    club = Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)
+
+    assert club.shot_distribution is None
 
 
 def test_player_constructs_with_valid_data() -> None:

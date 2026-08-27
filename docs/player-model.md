@@ -280,6 +280,93 @@
 > calls. Incremental/online Bayesian updating (accumulating sufficient
 > statistics call-to-call instead of recomputing from the full history
 > each time) is explicitly deferred — not implemented — in M4.5.
+>
+> M4.6 (issue #54) composed `PlayerShotDistribution` into `Club` without
+> duplicating or coupling to M3's `CarryDistribution`/`DirectionalDispersion`.
+> [src/caddai/player/models.py](../src/caddai/player/models.py) added an
+> additive `Club.shot_distribution: PlayerShotDistribution | None = None`
+> field — every existing `Club(...)` construction site (tests, `demo.py`,
+> `with_expected_carry`) is unaffected by the default, and
+> `with_expected_carry(...)` itself remains unchanged, leaving
+> `shot_distribution` at its `None` default. `shot_distribution` holds only
+> the immutable *baseline* (onboarding/population-prior cold-start
+> distribution) — nothing ever writes a shrinkage posterior back into it.
+> Its `None` value is uniformly "no baseline composed yet": `Club` stores
+> no second marker for *why* (not-yet-onboarded vs. `ClubCategory.PUTTER`
+> deferred vs. `ClubCategory.OTHER` not-modelable) — that distinction is
+> derived on demand from `club.category` via the existing
+> `club_category_support_status()` (`caddai.statistics`), never stored
+> redundantly on `Club` itself.
+>
+> [src/caddai/player/shot_distribution.py](../src/caddai/player/shot_distribution.py)
+> added the two composition/resolution entry points, as plain functions
+> rather than `Club` methods (matching the existing convention —
+> `Club.expected_carry_metres`/`with_expected_carry` remain the two
+> existing method-style exceptions, not a precedent to extend):
+> `compose_club_shot_distribution(*, handicap_index, club_category,
+> reported_carry_metres, carry_provenance, common_miss, club_name,
+> shot_history, shot_shape=ShotShape.STRAIGHT, config=None) ->
+> ClubShotDistributionComposition` is the single M4.2 -> M4.3 -> M4.5
+> composition entry point, called at (re-)onboarding time: it calls
+> `personalise_shot_distribution` itself (the caller supplies raw
+> onboarding inputs, not a pre-built `OnboardingPersonalisationResult`),
+> propagates its `ValueError`/`PopulationPriorUnsupportedCategoryError`
+> unmodified, then calls `update_shot_distribution_from_history` against
+> `shot_history`, and returns `baseline_shot_distribution` (the caller
+> persists this onto `Club.shot_distribution` explicitly — this function
+> never mutates a `Club`), `current_shot_distribution` (immediate-use
+> only, must never be persisted anywhere, including onto
+> `Club.shot_distribution`, or a later call would silently double-count
+> evidence already absorbed into what should be an immutable baseline),
+> `onboarding` (`OnboardingPersonalisationResult`), and `update`
+> (`ShotDistributionUpdateResult`). `resolve_current_shot_distribution(club,
+> shot_history, config=None) -> ClubShotDistributionResolution` is the
+> ongoing read path against an already-baselined `Club` (for
+> `caddai.simulation`, M4.8, and any future `strategy` consumer built
+> against `PlayerShotDistribution`): it never calls
+> `resolve_population_prior`/`personalise_shot_distribution` (onboarding-time
+> only), never mutates `club`/`club.shot_distribution`, and returns
+> `shot_distribution: PlayerShotDistribution | None` plus `support_status:
+> ClubCategorySupportStatus` (reused from `caddai.statistics`, not a new
+> competing enum) — `None`/`SUPPORTED` means "not yet onboarded";
+> `None`/`DEFERRED` means `PUTTER`; `None`/`NOT_MODELABLE` means `OTHER`;
+> present/`SUPPORTED` means resolved and ready to use. `support_status` is
+> always recomputed from `club.category`, independent of whether
+> `shot_distribution` happens to be populated. Two functions, not one: they
+> solve different call patterns (`onboarding inputs -> baseline` vs.
+> `existing Club + fresh history -> current`) — collapsing them would force
+> every M4.8 read-path call to also carry onboarding scalars it doesn't
+> have.
+>
+> **M3-vs-M4 authority note:** M3 (`CarryDistribution`/`DirectionalDispersion`)
+> remains authoritative for unmigrated consumers (`Club.expected_carry_metres`,
+> current `strategy.recommend_club()`, which only reads
+> `expected_carry_metres`). M4 (`PlayerShotDistribution`, via
+> `resolve_current_shot_distribution`) becomes authoritative for any
+> consumer built against it (`caddai.simulation`, M4.8; later `strategy`).
+> No code ties the two together — no validator, computed field, or
+> conversion function links `carry_distribution.mean_metres` to
+> `shot_distribution.carry_location_metres`; they may legitimately hold
+> different numbers for the same club. This is a **documentation**
+> discipline, not a code one (enforcing consistency would itself be the
+> coupling ADR 0006 rejects): once `shot_distribution` is populated for a
+> club, `carry_distribution`/`dispersion` are not read by any
+> `shot_distribution`-aware consumer, by convention — no consumer should
+> read both and blend/average them.
+>
+> **Flagged, not solved, limitation:** `Club.name`/`ShotRecord.club_name`
+> remain plain strings with no uniqueness constraint across a `Player`'s
+> bag (mirroring the existing `ShotRecord.club_name`-not-cross-validated
+> note above). Both `compose_club_shot_distribution` and
+> `resolve_current_shot_distribution` therefore take a specific `Club`
+> object / `club_name` directly, not a `Player` plus a name to look up — no
+> `Player`-level name-lookup convenience function is added, and no
+> duplicate-club-name disambiguation policy is introduced by this issue
+> (see `docs/backlog.md`). No ADR was required (additive, defaulted field;
+> no new dependency; no ownership/dependency-direction change; no
+> `PopulationPrior` replaceability-contract change) — ADR 0006 already
+> names this composition as its deferred M4.6 consequence; see
+> [docs/plans/m4.6-compose-shot-distribution.plan.md](plans/m4.6-compose-shot-distribution.plan.md).
 
 ## Purpose
 

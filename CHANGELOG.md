@@ -73,6 +73,57 @@ first public API is published.
   contract directly (Architect-approved, no ADR required — unreleased,
   unmerged code with zero external consumers).
 
+- Implemented **M4.6 — compose `PlayerShotDistribution` into
+  Club/Player** (GitHub issue #54), wiring the population -> onboarding ->
+  personal pipeline (M4.2 -> M4.3 -> M4.5) into a single composition entry
+  point and a single ongoing read path, without duplicating or coupling to
+  M3's `CarryDistribution`/`DirectionalDispersion`
+  (see [docs/plans/m4.6-compose-shot-distribution.plan.md](docs/plans/m4.6-compose-shot-distribution.plan.md)).
+  [src/caddai/player/models.py](src/caddai/player/models.py) added an
+  additive `Club.shot_distribution: PlayerShotDistribution | None = None`
+  field — every existing `Club(...)` construction site is unaffected by
+  the default, and `with_expected_carry(...)` still leaves it `None`.
+  `shot_distribution` holds only the immutable *baseline*
+  (onboarding/population-prior cold-start distribution); its `None` value
+  is uniformly "no baseline composed yet" — the *why* (not-yet-onboarded
+  vs. `ClubCategory.PUTTER` deferred vs. `ClubCategory.OTHER`
+  not-modelable) is derived on demand from `club.category` via the
+  existing `club_category_support_status()`, never stored redundantly.
+  New [src/caddai/player/shot_distribution.py](src/caddai/player/shot_distribution.py)
+  adds two plain composition/resolution functions (not `Club` methods):
+  `compose_club_shot_distribution(...) -> ClubShotDistributionComposition`
+  — the single M4.2 -> M4.3 -> M4.5 composition entry point, called at
+  (re-)onboarding time, returning `baseline_shot_distribution` (for the
+  caller to persist onto `Club.shot_distribution` explicitly),
+  `current_shot_distribution` (immediate-use only, never persisted), and
+  the raw `onboarding`/`update` result objects — and
+  `resolve_current_shot_distribution(club, shot_history, config=None) ->
+  ClubShotDistributionResolution` — the ongoing read path against an
+  already-baselined `Club` (for `caddai.simulation`, M4.8, and future
+  `strategy` consumers), which never mutates `club`/
+  `club.shot_distribution` and always recomputes `support_status` from
+  `club.category` independent of whether `shot_distribution` is
+  populated. **Baseline vs current is architecturally load-bearing:** a
+  persisted "current" distribution would be indistinguishable from a
+  baseline the next time this module ran, silently violating M4.5's
+  batch-recompute contract — so `current_shot_distribution` is always
+  derived fresh, never stored. **M3-vs-M4 authority note:** M3 remains
+  authoritative for unmigrated consumers (`Club.expected_carry_metres`,
+  current `strategy.recommend_club()`); M4 becomes authoritative for any
+  consumer built against `PlayerShotDistribution` — no code ties the two
+  together, by convention (documented, not enforced). No ADR required
+  (additive, defaulted field; no new dependency; no ownership/dependency-
+  direction change; no `PopulationPrior` replaceability-contract change)
+  — ADR 0006 already names this composition as its deferred M4.6
+  consequence. **Flagged, not solved, limitation:** `Club.name`/
+  `ShotRecord.club_name` remain plain strings with no uniqueness
+  constraint across a `Player`'s bag; both functions take a specific
+  `Club` object/`club_name` directly rather than a `Player` plus a name to
+  look up. Documented in
+  [docs/player-model.md](docs/player-model.md); tests added in
+  [tests/test_player_shot_distribution.py](tests/test_player_shot_distribution.py)
+  and [tests/test_player_models.py](tests/test_player_models.py).
+
 - Implemented **M4.4 — `ShotRecord` provenance and measurement-quality
   fields** (GitHub issue #52), reworked around an evidence-only
   observation contract: normal on-course CaddAI use cannot directly
