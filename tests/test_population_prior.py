@@ -20,14 +20,19 @@ import pytest
 from pydantic import ValidationError
 
 from caddai.statistics import (
+    CLUB_CATEGORY_SUPPORT_STATUS,
     ClubCategory,
+    ClubCategorySupportStatus,
     HandicapBand,
     PlayerShotDistribution,
     PopulationPriorConfidence,
     PopulationPriorParameters,
     PopulationPriorProvenance,
+    PopulationPriorUnsupportedCategoryError,
+    club_category_support_status,
     resolve_population_prior,
 )
+from caddai.statistics.population_prior_config import POPULATION_PRIOR_CONFIG
 
 _SUPPORTED_CLUB_CATEGORIES = (
     ClubCategory.DRIVER,
@@ -127,6 +132,61 @@ def test_rejects_unsupported_club_category(club_category: ClubCategory) -> None:
     """PUTTER/OTHER are not supported full-swing categories and are rejected."""
     with pytest.raises(ValueError, match="club_category"):
         resolve_population_prior(0.0, club_category)
+
+
+def test_putter_raises_deferred_error_not_generic_invalid_message() -> None:
+    """PUTTER is a valid category with a deferred model, not an invalid input — the error
+    must not claim it's an invalid category (e.g. "must be one of")."""
+    with pytest.raises(PopulationPriorUnsupportedCategoryError) as excinfo:
+        resolve_population_prior(0.0, ClubCategory.PUTTER)
+
+    error = excinfo.value
+    assert isinstance(error, ValueError)  # backward compatible with pytest.raises(ValueError)
+    assert error.club_category == ClubCategory.PUTTER
+    assert error.status == ClubCategorySupportStatus.DEFERRED
+    assert "no population-prior model yet" in str(error)
+    assert "must be one of" not in str(error)
+
+
+def test_other_raises_not_modelable_error() -> None:
+    """OTHER is an intentional catch-all with no modelable mechanics."""
+    with pytest.raises(PopulationPriorUnsupportedCategoryError) as excinfo:
+        resolve_population_prior(0.0, ClubCategory.OTHER)
+
+    error = excinfo.value
+    assert isinstance(error, ValueError)
+    assert error.club_category == ClubCategory.OTHER
+    assert error.status == ClubCategorySupportStatus.NOT_MODELABLE
+
+
+@pytest.mark.parametrize("club_category", list(ClubCategory))
+def test_club_category_support_status_covers_every_category(
+    club_category: ClubCategory,
+) -> None:
+    """``club_category_support_status`` resolves every ``ClubCategory`` member."""
+    expected = (
+        ClubCategorySupportStatus.SUPPORTED
+        if club_category in _SUPPORTED_CLUB_CATEGORIES
+        else (
+            ClubCategorySupportStatus.DEFERRED
+            if club_category is ClubCategory.PUTTER
+            else ClubCategorySupportStatus.NOT_MODELABLE
+        )
+    )
+
+    assert club_category_support_status(club_category) == expected
+
+
+def test_club_category_support_status_mapping_covers_every_category() -> None:
+    """``CLUB_CATEGORY_SUPPORT_STATUS`` has no missing ``ClubCategory`` member."""
+    assert set(CLUB_CATEGORY_SUPPORT_STATUS.keys()) == set(ClubCategory)
+
+
+def test_population_prior_config_has_no_putter_entries() -> None:
+    """Putting must not be pooled into the full-swing config table (no PUTTER rows)."""
+    putter_keys = [key for key in POPULATION_PRIOR_CONFIG if key[1] is ClubCategory.PUTTER]
+
+    assert putter_keys == []
 
 
 # --- Compatibility with PlayerShotDistribution ---------------------------------

@@ -52,6 +52,17 @@ first public API is published.
   [tests/test_architecture_boundaries.py](tests/test_architecture_boundaries.py),
   and documented in [docs/player-model.md](docs/player-model.md) and
   [docs/architecture.md](docs/architecture.md).
+  Refined the `PUTTER`/`OTHER` rejection: added
+  `ClubCategorySupportStatus` (`SUPPORTED`/`DEFERRED`/`NOT_MODELABLE`),
+  `CLUB_CATEGORY_SUPPORT_STATUS`, and `club_category_support_status()` to
+  `population_prior.py`, and replaced the previous single generic
+  `ValueError` with `PopulationPriorUnsupportedCategoryError` (a
+  `ValueError` subclass carrying `.club_category`/`.status`) so
+  `ClubCategory.PUTTER` — a valid category whose own model is merely
+  deferred, since putting is a distinct shot regime from full swings — is
+  no longer indistinguishable from `ClubCategory.OTHER`'s genuinely
+  not-modelable catch-all. No `PUTTER` row was added to
+  `POPULATION_PRIOR_CONFIG`.
 - Implemented **M4.1 — `PlayerShotDistribution` domain type** (GitHub
   issue #49), the ADR 0006 bivariate Student-t shot-production
   representation. Added

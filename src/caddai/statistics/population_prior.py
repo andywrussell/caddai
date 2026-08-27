@@ -15,6 +15,18 @@ lookup's. Inventing population defaults for those two fields would be
 exactly the fabrication
 docs/research/m4-probabilistic-golfer-model.md warns against.
 
+``resolve_population_prior`` only models the 5 full-swing club categories
+(``DRIVER``/``FAIRWAY_WOOD``/``HYBRID``/``IRON``/``WEDGE``).
+``ClubCategory.PUTTER`` is a valid category whose own probabilistic model
+is deferred — putting is a distinct shot regime from stock full swings
+(see docs/research/m4-probabilistic-golfer-model.md's scope assumptions)
+and must not be pooled with the full-swing Student-t table.
+``ClubCategory.OTHER`` is an intentional catch-all with no modelable
+mechanics to condition on. Both raise
+``PopulationPriorUnsupportedCategoryError`` (a ``ValueError`` subclass),
+distinguishable via its ``status`` attribute
+(``ClubCategorySupportStatus.DEFERRED`` vs ``NOT_MODELABLE``).
+
 **M3<->M4 pipeline note** (for M4.3's implementer): a future
 ``PlayerShotDistribution`` is built by combining onboarding-derived
 ``carry_location_metres``/``lateral_bias_metres`` (M4.3) with this module's
@@ -29,6 +41,7 @@ free table lookup.
 """
 
 import math
+from collections.abc import Mapping
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -58,16 +71,59 @@ class PopulationPriorProvenance(StrEnum):
     FITTED_MODEL = "fitted_model"
 
 
+class ClubCategorySupportStatus(StrEnum):
+    """Whether resolve_population_prior currently models a club_category."""
+
+    SUPPORTED = "supported"
+    DEFERRED = "deferred"  # valid category, no model yet (e.g. PUTTER)
+    NOT_MODELABLE = "not_modelable"  # catch-all with no defined mechanics (OTHER)
+
+
+class PopulationPriorUnsupportedCategoryError(ValueError):
+    """Raised by resolve_population_prior for a club_category it does not model.
+
+    ``status`` distinguishes a valid category awaiting a dedicated model
+    (``DEFERRED``) from a catch-all with no modelable mechanics
+    (``NOT_MODELABLE``) — see docs/research/m4-probabilistic-golfer-model.md
+    scope assumptions.
+    """
+
+    def __init__(self, club_category: ClubCategory, status: ClubCategorySupportStatus) -> None:
+        self.club_category = club_category
+        self.status = status
+        if status is ClubCategorySupportStatus.DEFERRED:
+            message = (
+                f"club_category {club_category!r} has no population-prior model yet "
+                "(putting is a distinct shot regime from stock full swings — "
+                "see docs/research/m4-probabilistic-golfer-model.md)"
+            )
+        else:
+            message = (
+                f"club_category {club_category!r} is not a modelable full-swing "
+                "category (an intentional catch-all with no defined mechanics "
+                "to condition on)"
+            )
+        super().__init__(message)
+
+
+CLUB_CATEGORY_SUPPORT_STATUS: Mapping[ClubCategory, ClubCategorySupportStatus] = {
+    ClubCategory.DRIVER: ClubCategorySupportStatus.SUPPORTED,
+    ClubCategory.FAIRWAY_WOOD: ClubCategorySupportStatus.SUPPORTED,
+    ClubCategory.HYBRID: ClubCategorySupportStatus.SUPPORTED,
+    ClubCategory.IRON: ClubCategorySupportStatus.SUPPORTED,
+    ClubCategory.WEDGE: ClubCategorySupportStatus.SUPPORTED,
+    ClubCategory.PUTTER: ClubCategorySupportStatus.DEFERRED,
+    ClubCategory.OTHER: ClubCategorySupportStatus.NOT_MODELABLE,
+}
+
+
+def club_category_support_status(club_category: ClubCategory) -> ClubCategorySupportStatus:
+    """Whether resolve_population_prior currently supports club_category."""
+    return CLUB_CATEGORY_SUPPORT_STATUS[club_category]
+
+
 _MIN_HANDICAP_INDEX = -10.0
 _MAX_HANDICAP_INDEX = 54.0
-
-_SUPPORTED_CLUB_CATEGORIES = (
-    ClubCategory.DRIVER,
-    ClubCategory.FAIRWAY_WOOD,
-    ClubCategory.HYBRID,
-    ClubCategory.IRON,
-    ClubCategory.WEDGE,
-)
 
 
 class PopulationPriorResult(BaseModel):
@@ -105,9 +161,13 @@ def resolve_population_prior(
 
     Raises ``ValueError`` if ``handicap_index`` is non-finite or outside the
     WHS Handicap Index practical bounds ``[-10.0, 54.0]`` (plus-handicap
-    golfers are represented as negative values), or if ``club_category`` is
-    not one of the 5 supported full-swing categories (``PUTTER``/``OTHER``
-    are unsupported — see ``population_prior_config.py``).
+    golfers are represented as negative values). Raises
+    ``PopulationPriorUnsupportedCategoryError`` (also a ``ValueError``) if
+    ``club_category`` is not one of the 5 supported full-swing categories:
+    ``ClubCategory.PUTTER`` is a valid category whose own model is deferred
+    (``status=DEFERRED``), and ``ClubCategory.OTHER`` is a catch-all with no
+    modelable mechanics (``status=NOT_MODELABLE``) — see
+    ``population_prior_config.py``.
     """
     if not math.isfinite(handicap_index):
         raise ValueError("handicap_index must be finite")
@@ -116,10 +176,9 @@ def resolve_population_prior(
             f"handicap_index must be in [{_MIN_HANDICAP_INDEX}, {_MAX_HANDICAP_INDEX}], "
             f"got {handicap_index}"
         )
-    if club_category not in _SUPPORTED_CLUB_CATEGORIES:
-        raise ValueError(
-            f"club_category must be one of {_SUPPORTED_CLUB_CATEGORIES}, got {club_category!r}"
-        )
+    support_status = CLUB_CATEGORY_SUPPORT_STATUS[club_category]
+    if support_status is not ClubCategorySupportStatus.SUPPORTED:
+        raise PopulationPriorUnsupportedCategoryError(club_category, support_status)
 
     handicap_band = _resolve_handicap_band(handicap_index)
     parameters = lookup(handicap_band, club_category)

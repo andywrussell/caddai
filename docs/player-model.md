@@ -70,6 +70,17 @@
 > `caddai.statistics.models` (so `caddai.statistics` remains a leaf module)
 > — `caddai.player` still re-exports it unchanged, so every existing import
 > path and serialized value is preserved.
+>
+> `resolve_population_prior` distinguishes `ClubCategory.PUTTER` — a valid
+> category whose own probabilistic model is deferred, since putting is a
+> behaviourally distinct shot regime from full swings — from
+> `ClubCategory.OTHER`, an intentional catch-all with no modelable
+> mechanics. Both raise `PopulationPriorUnsupportedCategoryError` (a
+> `ValueError` subclass, so existing `pytest.raises(ValueError)`-style
+> callers remain compatible), distinguishable via its `status` attribute
+> (`ClubCategorySupportStatus.DEFERRED` vs `NOT_MODELABLE`,
+> `club_category_support_status()`/`CLUB_CATEGORY_SUPPORT_STATUS` expose
+> the mapping for all 7 `ClubCategory` members).
 
 ## Purpose
 
