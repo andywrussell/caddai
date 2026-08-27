@@ -300,6 +300,17 @@ For another:
 > A hybrid may produce a better expected result.
 Risk strategy can eventually take into account both statistical outcomes and player preferences, but the system should clearly distinguish between **ability** and **risk preference**.
 
+Risk preference is also distinct from the strategic situation on a given
+hole. A golfer may generally prefer conservative golf, but still need a
+birdie on a particular hole because of the state of their round. CaddAI
+should be able to explain the trade-off between options and recommend a
+riskier shot when the golfer's objective makes that the rational choice —
+for example, favouring a lower-percentage line that offers a realistic
+birdie when a birdie is needed, rather than always defaulting to the
+statistically safest shot. The underlying model of how the golfer actually
+hits the ball does not change when the objective changes — only the
+strategy layered on top of it does.
+
 ---
 
 ## How does CaddAI know how far I hit each club?
@@ -343,11 +354,24 @@ Player shot distribution
         ↓
 Thousands of simulated outcomes
         ↓
-Green / rough / bunker / water / penalty
+Course-relative outcomes (green / rough / bunker / water / penalty)
         ↓
-Expected result
+Resulting golf states
+        ↓
+Expected strokes / scoring distribution
+        ↓
+Strategy objective (risk preference + situation)
+        ↓
+Recommendation
 ```
 CaddAI can then compare multiple strategies rather than relying on simple rules such as “choose the nearest club distance.”
+
+The simulation should preserve enough detail about each candidate shot's
+outcomes — not just its average result — to support questions such as how
+often a shot finds trouble, how often it produces a very good result, and
+how it compares on scoring terms (e.g. birdie-or-better, par-or-better,
+bogey-or-worse). This lets CaddAI reason about risk and reward, not only
+about the lowest mean expected strokes.
 
 ---
 

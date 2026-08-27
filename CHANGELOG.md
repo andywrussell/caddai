@@ -10,6 +10,17 @@ first public API is published.
 
 ### Added
 
+- Documentation-only clarification of a product/strategy requirement ahead
+  of M5 planning: CaddAI's strategy layer must ultimately support
+  risk/reward evaluation, not only lowest-mean-expected-strokes selection,
+  and risk preference must remain distinct from strategic situation
+  without changing the underlying golfer/shot probability model. Updated
+  [docs/prfaq.md](docs/prfaq.md) ("Will CaddAI tell everyone to play
+  conservatively?" and "How will CaddAI model shots?") and
+  [docs/roadmap.md](docs/roadmap.md) (M5) accordingly. No production code,
+  ADR, or M5 implementation introduced; the concrete utility/risk
+  architecture is deferred to the M5 planning/architecture pass.
+
 - Implemented **M4.3 — Onboarding personalisation of
   `PlayerShotDistribution`** (GitHub issue #51). Added
   [src/caddai/player/onboarding.py](src/caddai/player/onboarding.py):

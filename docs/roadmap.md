@@ -157,7 +157,22 @@
 
 - **M5 — Expected-value / expected-strokes strategy model**
   `strategy` subsystem: club/target selection driven by expected strokes and
-  risk, producing a structured deterministic recommendation.
+  risk, producing a structured deterministic recommendation. The
+  candidate-shot outcome/scoring information M4's simulation produces must
+  be carried through in a distribution-aware form — e.g. outcome/scoring
+  distribution, upside/downside probability, tail/penalty probability —
+  rather than each candidate being reduced immediately to a single scalar
+  expected-strokes value. Initial M5 behaviour may still rank candidates by
+  expected strokes/expected-strokes-gained as its objective. Risk
+  preference (e.g. a general preference for conservative play) and
+  strategic situation (e.g. needing a birdie given current round state) are
+  a distinct concern from the underlying player/shot probability model,
+  which must not change when the strategic objective changes. The concrete
+  utility/risk-preference formula, risk-aversion parameterisation, and any
+  scoring-policy implementation (risk-sensitive ranking, aggressive/
+  conservative preference, target-score/handicap objectives, protecting a
+  score, match-play objectives) are explicitly deferred to the M5
+  planning/architecture pass after M4 closes, not specified here.
 
 - **M5.5 — Runtime & Offline Architecture (research spike)**
   Architecture/research milestone, not implementation. Once `strategy`/
