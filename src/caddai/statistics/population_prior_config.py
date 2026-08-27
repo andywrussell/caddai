@@ -18,11 +18,45 @@ lookup table rather than an empty contract, per the M4.2 plan
 ``provenance=PopulationPriorProvenance.EVIDENCE_INFORMED_PROVISIONAL_CONFIG``
 accordingly, and must be replaced by CaddAI's own calibration data (or a
 fitted/learned model, per ADR 0007) before being treated as authoritative.
+
+``_HandicapBand`` is a private implementation detail of this lookup table
+only — it is not part of the public ``caddai.statistics`` contract.
+``PopulationPriorResult`` (population_prior.py) only ever exposes the
+continuous ``handicap_index`` (float), so a future fitted/learned
+population-prior model (ADR 0007) can consume it directly without
+depending on today's bucket scheme.
 """
 
-from caddai.statistics.models import ClubCategory, HandicapBand, PopulationPriorParameters
+from enum import StrEnum
+
+from caddai.statistics.models import ClubCategory, PopulationPriorParameters
 
 POPULATION_PRIOR_CONFIG_VERSION = "m4.2-provisional-v1"
+
+
+class _HandicapBand(StrEnum):
+    """A coarse WHS Handicap Index band used internally by this lookup table.
+
+    Half-open range containment, no interpolation between bands — see
+    ``_band_for_handicap_index``. Purely an implementation detail: never
+    exposed on the public ``PopulationPriorResult`` contract.
+    """
+
+    PLUS = "plus"
+    LOW = "low"
+    MID = "mid"
+    HIGH = "high"
+
+
+def _band_for_handicap_index(handicap_index: float) -> _HandicapBand:
+    """Map a validated handicap index to its half-open containing band."""
+    if handicap_index < 0.0:
+        return _HandicapBand.PLUS
+    if handicap_index < 9.0:
+        return _HandicapBand.LOW
+    if handicap_index < 18.0:
+        return _HandicapBand.MID
+    return _HandicapBand.HIGH
 
 
 def _params(
@@ -49,10 +83,10 @@ def _params(
 # degrees_of_freedom are held constant across bands within a category where
 # the evidence gives no basis to vary them (research doc items 2-3).
 _DRIVER = {
-    HandicapBand.PLUS: _params(8.0, 6.0, 0.10, 8.0),
-    HandicapBand.LOW: _params(10.0, 8.0, 0.10, 8.0),
-    HandicapBand.MID: _params(13.0, 11.0, 0.10, 6.0),
-    HandicapBand.HIGH: _params(16.0, 14.0, 0.10, 5.0),
+    _HandicapBand.PLUS: _params(8.0, 6.0, 0.10, 8.0),
+    _HandicapBand.LOW: _params(10.0, 8.0, 0.10, 8.0),
+    _HandicapBand.MID: _params(13.0, 11.0, 0.10, 6.0),
+    _HandicapBand.HIGH: _params(16.0, 14.0, 0.10, 5.0),
 }
 
 # FAIRWAY_WOOD and HYBRID share identical provisional values in every band:
@@ -60,27 +94,27 @@ _DRIVER = {
 # separate club-mechanics regimes, so inventing a distinction between them
 # would not be defensible from the evidence available.
 _FAIRWAY_WOOD_HYBRID = {
-    HandicapBand.PLUS: _params(6.0, 5.0, 0.05, 7.0),
-    HandicapBand.LOW: _params(7.5, 6.5, 0.05, 7.0),
-    HandicapBand.MID: _params(9.5, 8.5, 0.05, 5.0),
-    HandicapBand.HIGH: _params(11.5, 10.5, 0.05, 4.5),
+    _HandicapBand.PLUS: _params(6.0, 5.0, 0.05, 7.0),
+    _HandicapBand.LOW: _params(7.5, 6.5, 0.05, 7.0),
+    _HandicapBand.MID: _params(9.5, 8.5, 0.05, 5.0),
+    _HandicapBand.HIGH: _params(11.5, 10.5, 0.05, 4.5),
 }
 
 _IRON = {
-    HandicapBand.PLUS: _params(4.0, 3.5, 0.0, 7.0),
-    HandicapBand.LOW: _params(5.0, 4.5, 0.0, 7.0),
-    HandicapBand.MID: _params(6.5, 6.0, 0.0, 5.0),
-    HandicapBand.HIGH: _params(8.0, 7.5, 0.0, 4.5),
+    _HandicapBand.PLUS: _params(4.0, 3.5, 0.0, 7.0),
+    _HandicapBand.LOW: _params(5.0, 4.5, 0.0, 7.0),
+    _HandicapBand.MID: _params(6.5, 6.0, 0.0, 5.0),
+    _HandicapBand.HIGH: _params(8.0, 7.5, 0.0, 4.5),
 }
 
 _WEDGE = {
-    HandicapBand.PLUS: _params(3.0, 2.5, -0.05, 7.0),
-    HandicapBand.LOW: _params(3.5, 3.0, -0.05, 7.0),
-    HandicapBand.MID: _params(4.5, 4.0, -0.05, 5.0),
-    HandicapBand.HIGH: _params(5.5, 5.0, -0.05, 4.5),
+    _HandicapBand.PLUS: _params(3.0, 2.5, -0.05, 7.0),
+    _HandicapBand.LOW: _params(3.5, 3.0, -0.05, 7.0),
+    _HandicapBand.MID: _params(4.5, 4.0, -0.05, 5.0),
+    _HandicapBand.HIGH: _params(5.5, 5.0, -0.05, 4.5),
 }
 
-POPULATION_PRIOR_CONFIG: dict[tuple[HandicapBand, ClubCategory], PopulationPriorParameters] = {
+POPULATION_PRIOR_CONFIG: dict[tuple[_HandicapBand, ClubCategory], PopulationPriorParameters] = {
     **{(band, ClubCategory.DRIVER): params for band, params in _DRIVER.items()},
     **{(band, ClubCategory.FAIRWAY_WOOD): params for band, params in _FAIRWAY_WOOD_HYBRID.items()},
     **{(band, ClubCategory.HYBRID): params for band, params in _FAIRWAY_WOOD_HYBRID.items()},
@@ -89,14 +123,23 @@ POPULATION_PRIOR_CONFIG: dict[tuple[HandicapBand, ClubCategory], PopulationPrior
 }
 
 
-def lookup(band: HandicapBand, club_category: ClubCategory) -> PopulationPriorParameters:
-    """Look up the config cell for a (band, club_category) pair.
+def lookup(handicap_index: float, club_category: ClubCategory) -> PopulationPriorParameters:
+    """Look up the config cell for a (handicap_index, club_category) pair.
 
-    Callers are responsible for validating ``club_category`` is one of the
-    5 supported full-swing categories before calling this — a ``KeyError``
-    here indicates an unsupported category slipped past that check.
+    Internally maps ``handicap_index`` to its private ``_HandicapBand``
+    bucket before indexing the table. Callers are responsible for
+    validating ``club_category`` is one of the 5 supported full-swing
+    categories before calling this — a ``KeyError`` here indicates an
+    unsupported category slipped past that check.
     """
+    band = _band_for_handicap_index(handicap_index)
     return POPULATION_PRIOR_CONFIG[(band, club_category)]
 
 
-__all__ = ["POPULATION_PRIOR_CONFIG", "POPULATION_PRIOR_CONFIG_VERSION", "lookup"]
+__all__ = [
+    "POPULATION_PRIOR_CONFIG",
+    "POPULATION_PRIOR_CONFIG_VERSION",
+    "_HandicapBand",
+    "_band_for_handicap_index",
+    "lookup",
+]

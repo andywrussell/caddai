@@ -7,7 +7,6 @@ from caddai.statistics.models import (
     CarryDistribution,
     ClubCategory,
     DirectionalDispersion,
-    HandicapBand,
     PopulationPriorParameters,
 )
 from caddai.statistics.population_prior import (
@@ -31,7 +30,6 @@ __all__ = [
     "ClubCategory",
     "ClubCategorySupportStatus",
     "DirectionalDispersion",
-    "HandicapBand",
     "PlayerShotDistribution",
     "PopulationPriorConfidence",
     "PopulationPriorParameters",

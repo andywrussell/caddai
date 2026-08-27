@@ -63,19 +63,6 @@ class DirectionalDispersion(BaseModel):
         return _require_finite(value)
 
 
-class HandicapBand(StrEnum):
-    """A coarse WHS Handicap Index band used for population-prior lookup.
-
-    Half-open range containment, no interpolation between bands — see
-    ``population_prior.resolve_population_prior``.
-    """
-
-    PLUS = "plus"
-    LOW = "low"
-    MID = "mid"
-    HIGH = "high"
-
-
 class PopulationPriorParameters(BaseModel):
     """The scale/correlation/tail parameters a population prior can supply.
 

@@ -24,8 +24,8 @@ first public API is published.
   `PlayerShotDistribution`'s own field bounds), `PopulationPriorConfidence`
   (`StrEnum`: `LOW`/`MODERATE`/`HIGH`), `PopulationPriorProvenance`
   (`StrEnum`: `EVIDENCE_INFORMED_PROVISIONAL_CONFIG`/`CADDAI_CALIBRATION`/
-  `FITTED_MODEL`), `HandicapBand` (`StrEnum`: `PLUS`/`LOW`/`MID`/`HIGH`),
-  `PopulationPriorResult`, and `resolve_population_prior(handicap_index,
+  `FITTED_MODEL`), `PopulationPriorResult`, and
+  `resolve_population_prior(handicap_index,
   club_category) -> PopulationPriorResult`, which validates
   `handicap_index` (finite, in `[-10.0, 54.0]`) and `club_category` (one of
   the 5 supported full-swing categories — `PUTTER`/`OTHER` rejected) and
@@ -63,6 +63,20 @@ first public API is published.
   no longer indistinguishable from `ClubCategory.OTHER`'s genuinely
   not-modelable catch-all. No `PUTTER` row was added to
   `POPULATION_PRIOR_CONFIG`.
+  Pre-merge contract correction: `HandicapBand` is now a private
+  implementation detail of
+  [src/caddai/statistics/population_prior_config.py](src/caddai/statistics/population_prior_config.py)
+  (renamed `_HandicapBand`, alongside a private `_band_for_handicap_index`
+  helper) rather than part of the public `caddai.statistics` contract.
+  `PopulationPriorResult` no longer has a `handicap_band` field —
+  `resolve_population_prior` now passes `handicap_index` straight through
+  to `population_prior_config.lookup(handicap_index, club_category)`,
+  which resolves the internal band itself. `PopulationPriorResult`'s final
+  field list is `parameters`, `confidence`, `provenance`, `config_version`,
+  `club_category`, `handicap_index` — the continuous `handicap_index` is
+  the only handicap-related field a future fitted/learned population-prior
+  model (ADR 0007) needs to consume directly, without depending on today's
+  bucket scheme.
 - Implemented **M4.1 — `PlayerShotDistribution` domain type** (GitHub
   issue #49), the ADR 0006 bivariate Student-t shot-production
   representation. Added

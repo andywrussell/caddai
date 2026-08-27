@@ -23,7 +23,6 @@ from caddai.statistics import (
     CLUB_CATEGORY_SUPPORT_STATUS,
     ClubCategory,
     ClubCategorySupportStatus,
-    HandicapBand,
     PlayerShotDistribution,
     PopulationPriorConfidence,
     PopulationPriorParameters,
@@ -32,7 +31,7 @@ from caddai.statistics import (
     club_category_support_status,
     resolve_population_prior,
 )
-from caddai.statistics.population_prior_config import POPULATION_PRIOR_CONFIG
+from caddai.statistics.population_prior_config import POPULATION_PRIOR_CONFIG, lookup
 
 _SUPPORTED_CLUB_CATEGORIES = (
     ClubCategory.DRIVER,
@@ -44,44 +43,35 @@ _SUPPORTED_CLUB_CATEGORIES = (
 
 _UNSUPPORTED_CLUB_CATEGORIES = (ClubCategory.PUTTER, ClubCategory.OTHER)
 
-# One representative handicap_index per band, strictly inside that band's
-# half-open range.
-_REPRESENTATIVE_HANDICAP_BY_BAND = {
-    HandicapBand.PLUS: -5.0,
-    HandicapBand.LOW: 4.5,
-    HandicapBand.MID: 12.0,
-    HandicapBand.HIGH: 30.0,
-}
+# One representative handicap_index per internal band bucket, strictly
+# inside that bucket's half-open range (PLUS/LOW/MID/HIGH).
+_REPRESENTATIVE_HANDICAP_BY_BAND = [-5.0, 4.5, 12.0, 30.0]
 
-# (handicap_index, expected HandicapBand) at and around every band edge —
-# see population_prior.py's `_resolve_handicap_band`: PLUS for < 0.0, LOW
-# for [0.0, 9.0), MID for [9.0, 18.0), HIGH for [18.0, 54.0].
+# (handicap_index, another handicap_index in the same internal bucket) at
+# and around every band edge — see population_prior_config.py's
+# `_band_for_handicap_index`: PLUS for < 0.0, LOW for [0.0, 9.0), MID for
+# [9.0, 18.0), HIGH for [18.0, 54.0]. Same-bucket pairs must resolve to
+# identical parameters; a boundary-straddling pair must not.
 _BOUNDARY_HANDICAP_CASES = [
-    (-10.0, HandicapBand.PLUS),
-    (-0.01, HandicapBand.PLUS),
-    (0.0, HandicapBand.LOW),
-    (8.99, HandicapBand.LOW),
-    (9.0, HandicapBand.MID),
-    (17.99, HandicapBand.MID),
-    (18.0, HandicapBand.HIGH),
-    (54.0, HandicapBand.HIGH),
+    (-10.0, -0.01),
+    (0.0, 8.99),
+    (9.0, 17.99),
+    (18.0, 54.0),
 ]
 
 
 # --- Valid lookups across every band x supported category -------------------
 
 
-@pytest.mark.parametrize("handicap_band", list(HandicapBand))
+@pytest.mark.parametrize("handicap_index", _REPRESENTATIVE_HANDICAP_BY_BAND)
 @pytest.mark.parametrize("club_category", _SUPPORTED_CLUB_CATEGORIES)
 def test_resolves_every_band_and_supported_category(
-    handicap_band: HandicapBand, club_category: ClubCategory
+    handicap_index: float, club_category: ClubCategory
 ) -> None:
     """Every (band, supported category) combination resolves without error."""
-    handicap_index = _REPRESENTATIVE_HANDICAP_BY_BAND[handicap_band]
-
     result = resolve_population_prior(handicap_index, club_category)
 
-    assert result.handicap_band == handicap_band
+    assert result.parameters == lookup(handicap_index, club_category)
     assert result.club_category == club_category
     assert result.handicap_index == pytest.approx(handicap_index)
 
@@ -89,22 +79,41 @@ def test_resolves_every_band_and_supported_category(
 # --- Boundary handicap values -------------------------------------------------
 
 
-@pytest.mark.parametrize(("handicap_index", "expected_band"), _BOUNDARY_HANDICAP_CASES)
-def test_resolves_correct_band_at_boundary_handicap_values(
-    handicap_index: float, expected_band: HandicapBand
+@pytest.mark.parametrize(("same_bucket_a", "same_bucket_b"), _BOUNDARY_HANDICAP_CASES)
+def test_same_bucket_boundary_handicaps_resolve_to_same_parameters(
+    same_bucket_a: float, same_bucket_b: float
 ) -> None:
-    """Band edges use half-open containment: the lower edge belongs to the higher band."""
-    result = resolve_population_prior(handicap_index, ClubCategory.IRON)
+    """Band edges use half-open containment: both ends of a bucket's range resolve to
+    identical parameters, proving the same lookup bucket without a public handicap_band."""
+    result_a = resolve_population_prior(same_bucket_a, ClubCategory.DRIVER)
+    result_b = resolve_population_prior(same_bucket_b, ClubCategory.DRIVER)
 
-    assert result.handicap_band == expected_band
+    assert result_a.parameters == result_b.parameters
+
+
+@pytest.mark.parametrize(
+    ("lower_handicap", "higher_handicap"),
+    [(-0.01, 0.0), (8.99, 9.0), (17.99, 18.0)],
+)
+def test_boundary_straddling_handicaps_resolve_to_different_parameters(
+    lower_handicap: float, higher_handicap: float
+) -> None:
+    """A handicap just below a band edge and one at the edge fall in different internal
+    buckets and must resolve to different parameters (DRIVER is band-differentiated)."""
+    lower_result = resolve_population_prior(lower_handicap, ClubCategory.DRIVER)
+    higher_result = resolve_population_prior(higher_handicap, ClubCategory.DRIVER)
+
+    assert lower_result.parameters != higher_result.parameters
 
 
 @pytest.mark.parametrize("handicap_index", [-10.0, -5.0, -0.01])
-def test_negative_handicap_resolves_to_plus_band(handicap_index: float) -> None:
-    """Plus-handicap (negative) values resolve to ``HandicapBand.PLUS``, never assumed >= 0."""
+def test_negative_handicap_resolves_same_as_other_plus_handicaps(handicap_index: float) -> None:
+    """Plus-handicap (negative) values all resolve to the same internal bucket, never
+    assumed >= 0."""
     result = resolve_population_prior(handicap_index, ClubCategory.IRON)
+    reference = resolve_population_prior(-5.0, ClubCategory.IRON)
 
-    assert result.handicap_band == HandicapBand.PLUS
+    assert result.parameters == reference.parameters
 
 
 # --- Out-of-range / non-finite handicap ---------------------------------------
@@ -192,14 +201,13 @@ def test_population_prior_config_has_no_putter_entries() -> None:
 # --- Compatibility with PlayerShotDistribution ---------------------------------
 
 
-@pytest.mark.parametrize("handicap_band", list(HandicapBand))
+@pytest.mark.parametrize("handicap_index", _REPRESENTATIVE_HANDICAP_BY_BAND)
 @pytest.mark.parametrize("club_category", _SUPPORTED_CLUB_CATEGORIES)
 def test_resolved_parameters_construct_a_valid_player_shot_distribution(
-    handicap_band: HandicapBand, club_category: ClubCategory
+    handicap_index: float, club_category: ClubCategory
 ) -> None:
     """Every resolved ``PopulationPriorParameters`` satisfies ``PlayerShotDistribution``'s
     own field constraints (positive scales, correlation in (-1, 1), dof > 2)."""
-    handicap_index = _REPRESENTATIVE_HANDICAP_BY_BAND[handicap_band]
     result = resolve_population_prior(handicap_index, club_category)
     parameters = result.parameters
 
@@ -222,14 +230,12 @@ def test_resolved_parameters_construct_a_valid_player_shot_distribution(
 # --- Provenance / confidence metadata ------------------------------------------
 
 
-@pytest.mark.parametrize("handicap_band", list(HandicapBand))
+@pytest.mark.parametrize("handicap_index", _REPRESENTATIVE_HANDICAP_BY_BAND)
 @pytest.mark.parametrize("club_category", _SUPPORTED_CLUB_CATEGORIES)
 def test_provenance_and_confidence_are_uniform(
-    handicap_band: HandicapBand, club_category: ClubCategory
+    handicap_index: float, club_category: ClubCategory
 ) -> None:
     """Every M4.2 cell is uniformly LOW confidence / evidence-informed-provisional-config."""
-    handicap_index = _REPRESENTATIVE_HANDICAP_BY_BAND[handicap_band]
-
     result = resolve_population_prior(handicap_index, club_category)
 
     assert result.confidence == PopulationPriorConfidence.LOW
@@ -259,10 +265,9 @@ def test_config_version_is_identical_across_multiple_calls() -> None:
 
 
 def test_result_echoes_resolved_inputs() -> None:
-    """``handicap_band``/``club_category``/``handicap_index`` echo the resolved inputs."""
+    """``club_category``/``handicap_index`` echo the resolved inputs."""
     result = resolve_population_prior(12.0, ClubCategory.IRON)
 
-    assert result.handicap_band == HandicapBand.MID
     assert result.club_category == ClubCategory.IRON
     assert result.handicap_index == pytest.approx(12.0)
 
@@ -270,13 +275,11 @@ def test_result_echoes_resolved_inputs() -> None:
 # --- FAIRWAY_WOOD / HYBRID alias ------------------------------------------------
 
 
-@pytest.mark.parametrize("handicap_band", list(HandicapBand))
-def test_fairway_wood_and_hybrid_share_identical_parameters(handicap_band: HandicapBand) -> None:
+@pytest.mark.parametrize("handicap_index", _REPRESENTATIVE_HANDICAP_BY_BAND)
+def test_fairway_wood_and_hybrid_share_identical_parameters(handicap_index: float) -> None:
     """FAIRWAY_WOOD and HYBRID are identical in every band: the research doc groups them
     together rather than treating them as separate club-mechanics regimes, so the
     config table intentionally aliases the two rather than inventing a distinction."""
-    handicap_index = _REPRESENTATIVE_HANDICAP_BY_BAND[handicap_band]
-
     fairway_wood_result = resolve_population_prior(handicap_index, ClubCategory.FAIRWAY_WOOD)
     hybrid_result = resolve_population_prior(handicap_index, ClubCategory.HYBRID)
 

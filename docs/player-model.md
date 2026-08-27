@@ -56,8 +56,14 @@
 > (M4.3) that a handicap/club-category lookup alone cannot supply.
 > `PopulationPriorResult` also carries `confidence`
 > (`PopulationPriorConfidence`), `provenance` (`PopulationPriorProvenance`),
-> `config_version`, and the resolved `handicap_band` (`HandicapBand`:
-> `PLUS`/`LOW`/`MID`/`HIGH`) for traceability. Backing data lives in
+> and `config_version` for traceability. Internal handicap banding
+> (`_HandicapBand`) is a private implementation detail of
+> [src/caddai/statistics/population_prior_config.py](../src/caddai/statistics/population_prior_config.py)'s
+> lookup table only — it is not part of the public `caddai.statistics`
+> contract. `PopulationPriorResult` only ever exposes the continuous
+> `handicap_index` (float), so a future fitted/learned population-prior
+> model (ADR 0007) can consume it directly without depending on today's
+> bucket scheme. Backing data lives in
 > [src/caddai/statistics/population_prior_config.py](../src/caddai/statistics/population_prior_config.py)
 > (version `m4.2-provisional-v1`) — a small, explicit, versioned table that
 > is **explicitly provisional CaddAI configuration**, not validated

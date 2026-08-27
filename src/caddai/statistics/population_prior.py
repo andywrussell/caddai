@@ -46,7 +46,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
-from caddai.statistics.models import ClubCategory, HandicapBand, PopulationPriorParameters
+from caddai.statistics.models import ClubCategory, PopulationPriorParameters
 from caddai.statistics.population_prior_config import POPULATION_PRIOR_CONFIG_VERSION, lookup
 
 
@@ -130,28 +130,20 @@ class PopulationPriorResult(BaseModel):
     """A resolved population prior: parameters plus provenance metadata.
 
     Does **not** wrap a ``PlayerShotDistribution`` — see the module
-    docstring. ``handicap_index``, ``handicap_band``, and ``club_category``
-    echo the resolved inputs for traceability only.
+    docstring. ``handicap_index`` and ``club_category`` echo the resolved
+    inputs for traceability only. Internal handicap banding is purely
+    ``population_prior_config.py``'s implementation detail — this public
+    contract only ever exposes the continuous ``handicap_index`` (float),
+    so a future fitted/learned population-prior model (ADR 0007) can
+    consume it directly without depending on today's bucket scheme.
     """
 
     parameters: PopulationPriorParameters
     confidence: PopulationPriorConfidence
     provenance: PopulationPriorProvenance
     config_version: str = Field(min_length=1)
-    handicap_band: HandicapBand
     club_category: ClubCategory
     handicap_index: float
-
-
-def _resolve_handicap_band(handicap_index: float) -> HandicapBand:
-    """Map a validated handicap index to its half-open containing band."""
-    if handicap_index < 0.0:
-        return HandicapBand.PLUS
-    if handicap_index < 9.0:
-        return HandicapBand.LOW
-    if handicap_index < 18.0:
-        return HandicapBand.MID
-    return HandicapBand.HIGH
 
 
 def resolve_population_prior(
@@ -180,15 +172,13 @@ def resolve_population_prior(
     if support_status is not ClubCategorySupportStatus.SUPPORTED:
         raise PopulationPriorUnsupportedCategoryError(club_category, support_status)
 
-    handicap_band = _resolve_handicap_band(handicap_index)
-    parameters = lookup(handicap_band, club_category)
+    parameters = lookup(handicap_index, club_category)
 
     return PopulationPriorResult(
         parameters=parameters,
         confidence=PopulationPriorConfidence.LOW,
         provenance=PopulationPriorProvenance.EVIDENCE_INFORMED_PROVISIONAL_CONFIG,
         config_version=POPULATION_PRIOR_CONFIG_VERSION,
-        handicap_band=handicap_band,
         club_category=club_category,
         handicap_index=handicap_index,
     )
