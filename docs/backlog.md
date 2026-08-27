@@ -83,6 +83,26 @@
   polygon boundary edge in `caddai.course.distance` (feeds M2 follow-up).
 - Add regression test coverage directly targeting `caddai.course.distance`'s
   `1e-6` m Shapely precision-snap boundary itself (feeds M2 follow-up).
+- Decide whether `ShotRecord.achieved_carry_metres` should become optional
+  and/or a new `achieved_total_metres` field should be added to preserve the
+  carry-vs-total distinction — deferred out of M4.4 (issue #52) as a new
+  measurement axis, not provenance/quality metadata; the Architect
+  identified this as a follow-up during that issue's review. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- A player-domain lie/context type for `ShotRecord` (e.g. fairway, rough,
+  bunker, recovery) — deferred out of M4.4 (issue #52), no consumer yet.
+  Must **not** import `caddai.strategy.LieType` (dependency direction:
+  `player` may not depend on `strategy`); open question is whether a shared
+  neutral lie type should live in a subsystem-neutral module and be reused
+  by both, or whether `player` should define its own duplicate enum. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- A penalty/out-of-bounds/lost-ball outcome flag on `ShotRecord` — deferred
+  out of M4.4 (issue #52), no consumer yet. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- Intended-shot-type/target-line context on `ShotRecord` (e.g. intended shot
+  shape, target line, distinct from the achieved outcome) — deferred out of
+  M4.4 (issue #52), no consumer yet. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
 
 ## Process
 

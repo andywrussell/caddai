@@ -134,6 +134,32 @@
 > `sample()`, or Monte Carlo logic exists in this module; `caddai.player`
 > remains the only dependent of `caddai.statistics` (unmodified by this
 > issue).
+>
+> M4.4 (issue #52) added two additive `ShotRecord` fields to
+> [src/caddai/player/models.py](../src/caddai/player/models.py):
+> `measurement_source: ShotMeasurementSource` (`MEASURED`/`GPS_ESTIMATE`/
+> `MANUAL_ESTIMATE`/`UNKNOWN`) and `measurement_quality:
+> ShotMeasurementQuality` (`UNKNOWN`/`LOW`/`MODERATE`/`HIGH`), both
+> defaulting to `UNKNOWN` so existing/backward-compatible `ShotRecord`
+> construction is unaffected. `ShotMeasurementSource` is a new,
+> `ShotRecord`-specific enum, distinct from
+> `caddai.player.onboarding.CarryProvenance` (a one-off onboarding
+> cold-start self-report trust axis, not a historical-shot measurement
+> provenance axis) — reusing `CarryProvenance` would also have created an
+> unwanted `models.py → onboarding.py` dependency.
+> `ShotMeasurementQuality` is independent of, and not derived from,
+> `ShotMeasurementSource`: two `MEASURED` shots can still differ in
+> quality. Both fields are **metadata only** in this issue — they do not
+> affect `achieved_carry_metres`/`lateral_offset_metres` and are not
+> consumed by any `CarryDistribution`/`DirectionalDispersion`/
+> `PlayerShotDistribution` statistics/distribution math yet; whether and
+> how a future personal-learning distribution updater (M4.5+) weights or
+> filters shots by these fields is that updater's decision, not this
+> issue's. `achieved_carry_metres` remains required and unchanged in this
+> issue — see `docs/backlog.md` for the deferred carry-vs-total question.
+> Both enums are exported from `caddai.player.__init__`. No ADR was
+> required (ordinary additive domain evolution, consistent with M4.3's
+> onboarding enums).
 
 ## Purpose
 

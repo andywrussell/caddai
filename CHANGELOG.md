@@ -10,6 +10,40 @@ first public API is published.
 
 ### Added
 
+- Implemented **M4.4 — `ShotRecord` provenance and measurement-quality
+  fields** (GitHub issue #52). Added two `StrEnum` types to
+  [src/caddai/player/models.py](src/caddai/player/models.py):
+  `ShotMeasurementSource` (`MEASURED`/`GPS_ESTIMATE`/`MANUAL_ESTIMATE`/
+  `UNKNOWN`) and `ShotMeasurementQuality` (`UNKNOWN`/`LOW`/`MODERATE`/
+  `HIGH`), and gave `ShotRecord` two additive fields,
+  `measurement_source: ShotMeasurementSource` and `measurement_quality:
+  ShotMeasurementQuality`, both defaulting to `UNKNOWN` so existing
+  `ShotRecord` construction remains backward compatible.
+  `ShotMeasurementSource` is a new, `ShotRecord`-specific enum, distinct
+  from `caddai.player.onboarding.CarryProvenance` (a one-off onboarding
+  cold-start self-report trust axis, not a historical-shot measurement
+  provenance axis) — reusing `CarryProvenance` would also have created an
+  unwanted `models.py → onboarding.py` dependency.
+  `ShotMeasurementQuality` is independent of, and not derived from,
+  `ShotMeasurementSource`. Both fields are metadata only: they do not
+  affect `achieved_carry_metres`/`lateral_offset_metres` and are not
+  consumed by any `CarryDistribution`/`DirectionalDispersion`/
+  `PlayerShotDistribution` statistics/distribution math in this issue —
+  whether/how a future personal-learning distribution updater weights or
+  filters shots by these fields is deferred. No behavioural change to
+  `club_name`, `achieved_carry_metres`, `lateral_offset_metres`, or
+  `notes`. Updated
+  [src/caddai/player/__init__.py](src/caddai/player/__init__.py) to export
+  the two new enums and added 31 tests to
+  [tests/test_player_models.py](tests/test_player_models.py) covering
+  backward-compatible construction, every enum member, invalid-value
+  rejection, and serialization defaults. No new ADR required (ordinary
+  additive domain evolution, consistent with M4.3's onboarding enums).
+  Documented in [docs/player-model.md](docs/player-model.md); deferred
+  follow-ups (optional/`achieved_total_metres`, a player-domain lie/context
+  type, a penalty/OB/lost-ball flag, intended-shot-type/target-line
+  context) recorded in [docs/backlog.md](docs/backlog.md).
+
 - Documentation-only clarification of a product/strategy requirement ahead
   of M5 planning: CaddAI's strategy layer must ultimately support
   risk/reward evaluation, not only lowest-mean-expected-strokes selection,

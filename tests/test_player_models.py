@@ -32,6 +32,13 @@ from ``caddai.player`` to ``caddai.statistics``: the canonical definition
 moved to ``caddai.statistics.models`` (statistics must remain a leaf
 module), but every existing import path and serialized ``StrEnum`` value
 is preserved via a re-export from ``caddai.player``.
+
+See GitHub issue #52 ("M4.4 — `ShotRecord` provenance and
+measurement-quality fields") for the acceptance criteria covering
+``ShotMeasurementSource``/``ShotMeasurementQuality``: both are additive
+metadata fields on ``ShotRecord`` with truthful ``UNKNOWN`` defaults, must
+not alter existing ``ShotRecord`` field behaviour or validation, and the
+two enums are independent axes (quality is never derived from source).
 """
 
 import pytest
@@ -41,7 +48,14 @@ import caddai.player as player_package
 import caddai.player.models as player_models_module
 import caddai.statistics as statistics_package
 import caddai.statistics.models as statistics_models_module
-from caddai.player.models import Club, ClubCategory, Player, ShotRecord
+from caddai.player.models import (
+    Club,
+    ClubCategory,
+    Player,
+    ShotMeasurementQuality,
+    ShotMeasurementSource,
+    ShotRecord,
+)
 from caddai.statistics import CarryDistribution, DirectionalDispersion
 
 
@@ -552,3 +566,269 @@ def test_player_shot_history_independent_of_clubs() -> None:
 
     assert player_with_empty_history.shot_history == []
     assert player_with_history_only.shot_history == shot_history
+
+
+# --- ShotRecord provenance/quality metadata (issue #52) ---------------------------
+
+
+def test_shot_record_constructs_with_only_original_fields_and_defaults_new_fields_to_unknown() -> (
+    None
+):
+    """Backward compatibility: the four original fields alone still construct a ``ShotRecord``,
+    with both new fields defaulting to their truthful ``UNKNOWN`` values."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        notes="firm fairway, into wind",
+    )
+
+    assert shot_record.measurement_source == ShotMeasurementSource.UNKNOWN
+    assert shot_record.measurement_quality == ShotMeasurementQuality.UNKNOWN
+
+
+@pytest.mark.parametrize(
+    "measurement_source",
+    [
+        ShotMeasurementSource.MEASURED,
+        ShotMeasurementSource.GPS_ESTIMATE,
+        ShotMeasurementSource.MANUAL_ESTIMATE,
+        ShotMeasurementSource.UNKNOWN,
+    ],
+)
+def test_shot_record_accepts_every_measurement_source_member(
+    measurement_source: ShotMeasurementSource,
+) -> None:
+    """Every ``ShotMeasurementSource`` member round-trips through ``ShotRecord``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        measurement_source=measurement_source,
+    )
+
+    assert shot_record.measurement_source == measurement_source
+
+
+@pytest.mark.parametrize(
+    "measurement_quality",
+    [
+        ShotMeasurementQuality.UNKNOWN,
+        ShotMeasurementQuality.LOW,
+        ShotMeasurementQuality.MODERATE,
+        ShotMeasurementQuality.HIGH,
+    ],
+)
+def test_shot_record_accepts_every_measurement_quality_member(
+    measurement_quality: ShotMeasurementQuality,
+) -> None:
+    """Every ``ShotMeasurementQuality`` member round-trips through ``ShotRecord``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        measurement_quality=measurement_quality,
+    )
+
+    assert shot_record.measurement_quality == measurement_quality
+
+
+def test_shot_record_rejects_invalid_measurement_source_string() -> None:
+    """A ``measurement_source`` string outside ``ShotMeasurementSource``'s values is rejected."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=142.5,
+            lateral_offset_metres=-3.0,
+            measurement_source="launch_monitor",
+        )
+
+
+def test_shot_record_rejects_invalid_measurement_quality_string() -> None:
+    """A ``measurement_quality`` string outside ``ShotMeasurementQuality``'s values is rejected."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=142.5,
+            lateral_offset_metres=-3.0,
+            measurement_quality="excellent",
+        )
+
+
+@pytest.mark.parametrize(
+    "measurement_source",
+    [ShotMeasurementSource.MANUAL_ESTIMATE, ShotMeasurementSource.GPS_ESTIMATE],
+)
+def test_shot_record_provenance_never_mutates_measured_values(
+    measurement_source: ShotMeasurementSource,
+) -> None:
+    """A ``MEASURED`` shot and an estimated shot with identical measured values differ only in
+    ``measurement_source`` — provenance metadata never alters the measured numbers."""
+    measured_shot = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        measurement_source=ShotMeasurementSource.MEASURED,
+    )
+    estimated_shot = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        measurement_source=measurement_source,
+    )
+
+    assert measured_shot.measurement_source != estimated_shot.measurement_source
+    assert measured_shot.achieved_carry_metres == pytest.approx(
+        estimated_shot.achieved_carry_metres
+    )
+    assert measured_shot.lateral_offset_metres == pytest.approx(
+        estimated_shot.lateral_offset_metres
+    )
+
+
+def test_shot_record_measurement_quality_is_independent_of_measurement_source() -> None:
+    """Quality and source are separate axes: ``MEASURED``+``LOW`` and ``UNKNOWN``+``HIGH`` both
+    construct validly — quality is never derived from source."""
+    measured_but_low_quality = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        measurement_source=ShotMeasurementSource.MEASURED,
+        measurement_quality=ShotMeasurementQuality.LOW,
+    )
+    unknown_source_but_high_quality = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        measurement_source=ShotMeasurementSource.UNKNOWN,
+        measurement_quality=ShotMeasurementQuality.HIGH,
+    )
+
+    assert measured_but_low_quality.measurement_source == ShotMeasurementSource.MEASURED
+    assert measured_but_low_quality.measurement_quality == ShotMeasurementQuality.LOW
+    assert unknown_source_but_high_quality.measurement_source == ShotMeasurementSource.UNKNOWN
+    assert unknown_source_but_high_quality.measurement_quality == ShotMeasurementQuality.HIGH
+
+
+@pytest.mark.parametrize(
+    ("measurement_source", "measurement_quality"),
+    [
+        (ShotMeasurementSource.MEASURED, ShotMeasurementQuality.HIGH),
+        (ShotMeasurementSource.UNKNOWN, ShotMeasurementQuality.UNKNOWN),
+        (ShotMeasurementSource.GPS_ESTIMATE, ShotMeasurementQuality.LOW),
+    ],
+)
+def test_shot_record_accepts_large_carry_and_lateral_offset_regardless_of_provenance(
+    measurement_source: ShotMeasurementSource, measurement_quality: ShotMeasurementQuality
+) -> None:
+    """Large but genuine carry/lateral-offset values still construct — no implicit
+    outlier/severe-miss rejection was introduced by the new provenance/quality fields."""
+    shot_record = ShotRecord(
+        club_name="Driver",
+        achieved_carry_metres=350.0,
+        lateral_offset_metres=-80.0,
+        measurement_source=measurement_source,
+        measurement_quality=measurement_quality,
+    )
+
+    assert shot_record.achieved_carry_metres == pytest.approx(350.0)
+    assert shot_record.lateral_offset_metres == pytest.approx(-80.0)
+
+
+def test_shot_record_model_dump_includes_default_measurement_source_and_quality() -> None:
+    """``model_dump()`` includes both new fields with their default string values."""
+    shot_record = ShotRecord(
+        club_name="7 Iron", achieved_carry_metres=142.5, lateral_offset_metres=-3.0
+    )
+
+    dumped = shot_record.model_dump()
+
+    assert dumped["measurement_source"] == "unknown"
+    assert dumped["measurement_quality"] == "unknown"
+
+
+def test_shot_record_model_dump_includes_explicit_measurement_source_and_quality() -> None:
+    """``model_dump()`` includes both new fields with their explicitly set string values."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        achieved_carry_metres=142.5,
+        lateral_offset_metres=-3.0,
+        measurement_source=ShotMeasurementSource.MEASURED,
+        measurement_quality=ShotMeasurementQuality.HIGH,
+    )
+
+    dumped = shot_record.model_dump()
+
+    assert dumped["measurement_source"] == "measured"
+    assert dumped["measurement_quality"] == "high"
+
+
+@pytest.mark.parametrize("achieved_carry_metres", [float("nan"), float("inf"), float("-inf")])
+def test_shot_record_rejects_non_finite_achieved_carry_metres_with_provenance_fields_set(
+    achieved_carry_metres: float,
+) -> None:
+    """The new fields don't bypass existing finite-value validation on ``achieved_carry_metres``."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=achieved_carry_metres,
+            lateral_offset_metres=0.0,
+            measurement_source=ShotMeasurementSource.MEASURED,
+            measurement_quality=ShotMeasurementQuality.HIGH,
+        )
+
+
+@pytest.mark.parametrize("lateral_offset_metres", [float("nan"), float("inf"), float("-inf")])
+def test_shot_record_rejects_non_finite_lateral_offset_metres_with_provenance_fields_set(
+    lateral_offset_metres: float,
+) -> None:
+    """The new fields don't bypass existing finite-value validation on ``lateral_offset_metres``."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=142.5,
+            lateral_offset_metres=lateral_offset_metres,
+            measurement_source=ShotMeasurementSource.GPS_ESTIMATE,
+            measurement_quality=ShotMeasurementQuality.LOW,
+        )
+
+
+def test_player_shot_history_with_mixed_provenance_and_quality_round_trips() -> None:
+    """``Player.shot_history`` preserves list order and field values for shots with mixed
+    ``measurement_source``/``measurement_quality`` values."""
+    clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
+    shot_history = [
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=138.0,
+            lateral_offset_metres=-2.0,
+            measurement_source=ShotMeasurementSource.MEASURED,
+            measurement_quality=ShotMeasurementQuality.HIGH,
+        ),
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=141.0,
+            lateral_offset_metres=1.5,
+            measurement_source=ShotMeasurementSource.GPS_ESTIMATE,
+            measurement_quality=ShotMeasurementQuality.MODERATE,
+        ),
+        ShotRecord(
+            club_name="7 Iron",
+            achieved_carry_metres=144.0,
+            lateral_offset_metres=0.0,
+        ),
+    ]
+
+    player = Player(name="Ada", clubs=clubs, shot_history=shot_history)
+
+    assert player.shot_history == shot_history
+    assert [shot.measurement_source for shot in player.shot_history] == [
+        ShotMeasurementSource.MEASURED,
+        ShotMeasurementSource.GPS_ESTIMATE,
+        ShotMeasurementSource.UNKNOWN,
+    ]
+    assert [shot.measurement_quality for shot in player.shot_history] == [
+        ShotMeasurementQuality.HIGH,
+        ShotMeasurementQuality.MODERATE,
+        ShotMeasurementQuality.UNKNOWN,
+    ]

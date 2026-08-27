@@ -1,6 +1,13 @@
 """Player domain subsystem: player and club models."""
 
-from caddai.player.models import Club, ClubCategory, Player, ShotRecord
+from caddai.player.models import (
+    Club,
+    ClubCategory,
+    Player,
+    ShotMeasurementQuality,
+    ShotMeasurementSource,
+    ShotRecord,
+)
 from caddai.player.onboarding import (
     ONBOARDING_COMMON_MISS_BIAS_STRENGTH,
     ONBOARDING_CONFIG_VERSION,
@@ -22,6 +29,8 @@ __all__ = [
     "CommonMiss",
     "OnboardingPersonalisationResult",
     "Player",
+    "ShotMeasurementQuality",
+    "ShotMeasurementSource",
     "ShotRecord",
     "ShotShape",
     "personalise_shot_distribution",
