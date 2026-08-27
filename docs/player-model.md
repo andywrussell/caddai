@@ -15,7 +15,7 @@
 > zero-variance, zero-bias `Club` from a bare expected-carry scalar for
 > callers without a measured distribution), `Player` (`clubs`,
 > `shot_history`), and `ShotRecord` (a `club_name` snapshot,
-> `total_distance_metres`, `lateral_offset_metres`, optional `notes`,
+> `final_downrange_metres`, `lateral_offset_metres`, optional `notes`,
 > finite-value validated per issue #43; see the M4.4 paragraph below for
 > the evidence-only shape, including `observed_carry_metres` and
 > per-quantity measurement metadata). `ShotRecord.club_name` is a plain
@@ -142,30 +142,34 @@
 > evidence-only observation contract: normal on-course CaddAI use cannot
 > directly observe true carry (the
 > ball's first landing point), only shot start/finish position.
-> `achieved_carry_metres` is **renamed and re-scoped** to
-> `total_distance_metres` (required, `ge=0` — total/downrange distance,
-> always derivable from start/finish position); `lateral_offset_metres`
-> keeps its name but is now documented as the lateral offset at the
-> *final resting position*. A new optional `observed_carry_metres: float
-> | None` (`ge=0`, finite-validated when present) records true carry only
-> when a suitable direct-measurement source (e.g. a launch monitor)
-> genuinely measured it — `None` for the overwhelming majority of shots,
-> and never auto-populated from an estimate. This is a deliberate
-> breaking rename of a field with no consumer outside
-> `caddai.player.models` and no release yet, not a preserved-compatibility
-> change — see
+> `achieved_carry_metres` is **renamed and re-scoped** (via an
+> intermediate `total_distance_metres`) to `final_downrange_metres`
+> (required, `ge=0` — specifically the *downrange* component of the final
+> resting position along the intended target line, not the straight-line
+> start-to-finish distance, which would additionally require
+> `lateral_offset_metres`); `lateral_offset_metres` keeps its name but is
+> now documented as the lateral offset at the *final resting position*. A
+> new optional `observed_carry_metres: float | None` (`ge=0`,
+> finite-validated when present) records true carry only when a suitable
+> direct-measurement source (e.g. a launch monitor) genuinely measured
+> it — `None` for the overwhelming majority of shots, and never
+> auto-populated from an estimate. This is a deliberate breaking rename of
+> a field with no consumer outside `caddai.player.models` and no release
+> yet, not a preserved-compatibility change — see
 > [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md)
 > for the Architect's full review; ADR 0006 is unaffected. Measurement
 > provenance/quality is **per-quantity, not record-level**: a new
 > `ShotMeasurementMetadata` submodel (`source: ShotMeasurementSource` —
-> `MEASURED`/`GPS_ESTIMATE`/`MANUAL_ESTIMATE`/`UNKNOWN`; `quality:
+> `LAUNCH_MONITOR`/`GPS_DEVICE`/`MANUAL`/`UNKNOWN`; `quality:
 > ShotMeasurementQuality` — `UNKNOWN`/`LOW`/`MODERATE`/`HIGH`) is composed
-> once as `total_distance_measurement` (always present, default
-> `UNKNOWN`/`UNKNOWN`) and once as `observed_carry_measurement` (`None`
+> once as `endpoint_measurement` (always present, default
+> `UNKNOWN`/`UNKNOWN`, and covering both `final_downrange_metres` and
+> `lateral_offset_metres` as one shared final-position observation) and
+> once as `observed_carry_measurement` (`None`
 > unless `observed_carry_metres` is set), so one quantity's
 > source/quality never falsely applies to the other. A validator enforces
 > `observed_carry_metres`/`observed_carry_measurement` are null-paired. No
-> `observed_carry_metres <= total_distance_metres` consistency check is
+> `observed_carry_metres <= final_downrange_metres` consistency check is
 > enforced — `ShotRecord` records evidence, not physics consistency; the
 > two may come from independent instruments that can legitimately
 > disagree. None of these fields are consumed by any

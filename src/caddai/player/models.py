@@ -57,23 +57,26 @@ class Club(BaseModel):
 
 
 class ShotMeasurementSource(StrEnum):
-    """Where a ShotRecord's measurement came from.
+    """Where/how a ShotRecord's measurement originated — method/origin only.
 
-    A distinct semantic axis from ``caddai.player.onboarding.CarryProvenance``
-    (which describes trust in a one-off onboarding self-reported cold-start
+    Answers "where/how did this measurement originate?"; trustworthiness is
+    ``ShotMeasurementQuality``'s separate job, not this enum's. A distinct
+    semantic axis from ``caddai.player.onboarding.CarryProvenance`` (which
+    describes trust in a one-off onboarding self-reported cold-start
     number, not a historical shot observation) — see that module's
-    docstring. Reused across ``ShotRecord``'s ``total_distance_measurement``/
-    ``observed_carry_measurement`` — metadata only: does not affect
-    ``total_distance_metres``, ``observed_carry_metres``, or
+    docstring. ``LAUNCH_MONITOR`` is used for
+    ``observed_carry_measurement.source``; ``GPS_DEVICE``/``MANUAL`` are
+    used for ``endpoint_measurement.source``. Metadata only: does not
+    affect ``final_downrange_metres``, ``observed_carry_metres``, or
     ``lateral_offset_metres``, and must never be used to derive
     ``PlayerShotDistribution``/``CarryDistribution``/``DirectionalDispersion``
     parameters in this issue (that is for a future personal-learning
     updater to decide).
     """
 
-    MEASURED = "measured"
-    GPS_ESTIMATE = "gps_estimate"
-    MANUAL_ESTIMATE = "manual_estimate"
+    LAUNCH_MONITOR = "launch_monitor"
+    GPS_DEVICE = "gps_device"
+    MANUAL = "manual"
     UNKNOWN = "unknown"
 
 
@@ -81,8 +84,8 @@ class ShotMeasurementQuality(StrEnum):
     """How trustworthy/useful a ShotRecord's observation is.
 
     Independent of, and not derived from, ``ShotMeasurementSource`` — two
-    ``MEASURED`` shots can still differ in quality. Metadata only: never
-    alters ``total_distance_metres``, ``observed_carry_metres``, or
+    ``LAUNCH_MONITOR`` shots can still differ in quality. Metadata only:
+    never alters ``final_downrange_metres``, ``observed_carry_metres``, or
     ``lateral_offset_metres``, and must never be used to derive
     distribution parameters in this issue.
     """
@@ -96,12 +99,15 @@ class ShotMeasurementQuality(StrEnum):
 class ShotMeasurementMetadata(BaseModel):
     """Provenance/quality for one measured quantity on a ``ShotRecord``.
 
-    A single ``ShotRecord`` can have quantities from different instruments
-    with different trustworthiness (e.g. GPS-derived total distance
-    alongside an absent observed carry, or a launch monitor supplying both
-    at high quality) — this submodel is composed once per quantity rather
-    than once per record, so it never falsely implies every quantity on a
-    record shares one source/quality.
+    Composed once as ``endpoint_measurement`` — covering both
+    ``final_downrange_metres`` and ``lateral_offset_metres``, since both
+    are decompositions of one single final-position observation against
+    the target line — and once as ``observed_carry_measurement``, a
+    separate, distinct instrument/event (e.g. a launch monitor reading)
+    unrelated in time or source to the final-position fix. This submodel
+    is composed once per quantity-origin rather than once per record, so
+    it never falsely implies every quantity on a record shares one
+    source/quality.
     """
 
     source: ShotMeasurementSource = ShotMeasurementSource.UNKNOWN
@@ -113,49 +119,56 @@ class ShotRecord(BaseModel):
 
     Normal on-course CaddAI use cannot directly observe the ball's first
     landing point (true carry): it can only observe shot start and finish
-    position, from which ``total_distance_metres`` (total/downrange
-    distance) and ``lateral_offset_metres`` (lateral offset at the *final
-    resting position*) are derived. True carry is latent and is genuinely
-    observed only occasionally, by a suitable direct-measurement source
-    (e.g. a launch monitor) — ``observed_carry_metres`` is ``None`` for the
-    overwhelming majority of on-course shots, and must never be
+    position, from which ``final_downrange_metres`` and
+    ``lateral_offset_metres`` are derived. True carry is latent and is
+    genuinely observed only occasionally, by a suitable direct-measurement
+    source (e.g. a launch monitor) — ``observed_carry_metres`` is ``None``
+    for the overwhelming majority of on-course shots, and must never be
     auto-populated from an estimate.
 
     ``ShotRecord`` records evidence/observations only. Estimating latent
-    carry from total distance (using club, shot regime, rollout, surface,
-    wind, elevation, etc.) is a future, separate inference step — not
-    implemented here — that will read this evidence, not write it.
+    carry from downrange distance (using club, shot regime, rollout,
+    surface, wind, elevation, etc.) is a future, separate inference step —
+    not implemented here — that will read this evidence, not write it.
     Nothing on this model feeds ``PlayerShotDistribution``/
     ``CarryDistribution``/``DirectionalDispersion`` math.
+
+    ``final_downrange_metres`` is the downrange component of the final
+    resting position along the intended target line — i.e. the distance
+    from the shot's start position to the perpendicular projection of the
+    final position onto that line. Not the straight-line start-to-finish
+    displacement, which would be
+    ``sqrt(final_downrange_metres**2 + lateral_offset_metres**2)``.
 
     Sign convention for ``lateral_offset_metres``: negative is left of the
     intended target line, zero is on-line with the intended target, and
     positive is right of the intended target line — independent of player
     handedness (same convention as ``DirectionalDispersion.lateral_bias_metres``).
 
-    ``total_distance_measurement`` is always present (a quantity that is
-    always required has metadata by default). ``observed_carry_measurement``
-    is ``None`` exactly when ``observed_carry_metres`` is ``None`` — a
+    ``endpoint_measurement`` describes the source/quality of the single
+    final-position observation that both ``final_downrange_metres`` and
+    ``lateral_offset_metres`` are derived from — not two independent
+    measurements — and is always present (a quantity that is always
+    required has metadata by default). ``observed_carry_measurement`` is
+    ``None`` exactly when ``observed_carry_metres`` is ``None`` — a
     metadata object describing the provenance of a value that doesn't
     exist would be meaningless, so the two are enforced to be null-paired.
 
     No constraint is enforced between ``observed_carry_metres`` and
-    ``total_distance_metres`` (e.g. carry <= total) — they may come from
-    independent instruments that can legitimately disagree, and this model
-    records evidence, not physics consistency.
+    ``final_downrange_metres`` (e.g. carry <= downrange) — they may come
+    from independent instruments that can legitimately disagree, and this
+    model records evidence, not physics consistency.
     """
 
     club_name: str = Field(min_length=1)
-    total_distance_metres: float = Field(ge=0)
+    final_downrange_metres: float = Field(ge=0)
     lateral_offset_metres: float
+    endpoint_measurement: ShotMeasurementMetadata = Field(default_factory=ShotMeasurementMetadata)
     observed_carry_metres: float | None = Field(default=None, ge=0)
-    total_distance_measurement: ShotMeasurementMetadata = Field(
-        default_factory=ShotMeasurementMetadata
-    )
     observed_carry_measurement: ShotMeasurementMetadata | None = None
     notes: str | None = None
 
-    @field_validator("total_distance_metres", "lateral_offset_metres")
+    @field_validator("final_downrange_metres", "lateral_offset_metres")
     @classmethod
     def _validate_finite(cls, value: float) -> float:
         return _require_finite(value)

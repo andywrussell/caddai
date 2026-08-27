@@ -16,9 +16,11 @@ first public API is published.
   observe true carry (the ball's first landing point), only shot
   start/finish position. In
   [src/caddai/player/models.py](src/caddai/player/models.py),
-  `ShotRecord.achieved_carry_metres` is **renamed and re-scoped** to
-  `total_distance_metres` (required, `ge=0` — total/downrange distance,
-  always derivable from observed start/finish position);
+  `ShotRecord.achieved_carry_metres` is **renamed and re-scoped** (via an
+  intermediate `total_distance_metres`) to `final_downrange_metres`
+  (required, `ge=0` — specifically the downrange component of the final
+  resting position along the intended target line, not the straight-line
+  start-to-finish distance);
   `lateral_offset_metres` is unchanged in name but now explicitly
   documented as the lateral offset at the *final resting position*. A new
   optional `observed_carry_metres: float | None` (`ge=0`, finite-validated
@@ -34,16 +36,18 @@ first public API is published.
   intrinsic forward shot-production model, not this observation type.
   Measurement provenance/quality is **per-quantity, not record-level**: a
   new `ShotMeasurementMetadata` submodel (`source: ShotMeasurementSource`
-  — `MEASURED`/`GPS_ESTIMATE`/`MANUAL_ESTIMATE`/`UNKNOWN`; `quality:
+  — `LAUNCH_MONITOR`/`GPS_DEVICE`/`MANUAL`/`UNKNOWN`; `quality:
   ShotMeasurementQuality` — `UNKNOWN`/`LOW`/`MODERATE`/`HIGH`) is composed
-  once as `total_distance_measurement` (always present, defaults to
-  `UNKNOWN`/`UNKNOWN`) and once as `observed_carry_measurement` (`None`
-  unless `observed_carry_metres` is set), so a GPS-derived total distance
-  and an absent/measured carry never share one falsely-uniform
+  once as `endpoint_measurement` (always present, defaults to
+  `UNKNOWN`/`UNKNOWN`, and covering both `final_downrange_metres` and
+  `lateral_offset_metres` as one shared final-position observation) and
+  once as `observed_carry_measurement` (`None`
+  unless `observed_carry_metres` is set), so a GPS-derived downrange
+  distance and an absent/measured carry never share one falsely-uniform
   source/quality. A `model_validator` enforces that
   `observed_carry_metres`/`observed_carry_measurement` are null-paired (both
   present or both absent). No cross-field `observed_carry_metres <=
-  total_distance_metres` consistency check is enforced — `ShotRecord`
+  final_downrange_metres` consistency check is enforced — `ShotRecord`
   records evidence, not physics consistency, and the two quantities may
   come from independent instruments that can legitimately disagree.
   `ShotMeasurementSource` remains a new, `ShotRecord`-specific enum,

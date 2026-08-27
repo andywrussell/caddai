@@ -89,10 +89,10 @@
   resting position) — deferred out of M4.4 (issue #52) pending an actual
   launch-monitor integration. See
   [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
-- A future carry-from-total-distance estimator (using club, shot regime,
-  rollout, landing surface, ground firmness/wetness, wind, elevation, and
-  other environmental conditions) that reads `ShotRecord.
-  total_distance_metres` and produces a distinct, uncertainty/provenance-
+- A future carry-from-downrange-distance estimator (using club, shot
+  regime, rollout, landing surface, ground firmness/wetness, wind,
+  elevation, and other environmental conditions) that reads `ShotRecord.
+  final_downrange_metres` and produces a distinct, uncertainty/provenance-
   tagged *estimated* carry — must never be confused with, or written back
   into, `ShotRecord.observed_carry_metres` — deferred out of M4.4 (issue
   #52); this is the "context-aware inference" step of the learning
