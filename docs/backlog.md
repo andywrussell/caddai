@@ -83,12 +83,25 @@
   polygon boundary edge in `caddai.course.distance` (feeds M2 follow-up).
 - Add regression test coverage directly targeting `caddai.course.distance`'s
   `1e-6` m Shapely precision-snap boundary itself (feeds M2 follow-up).
-- Decide whether `ShotRecord.achieved_carry_metres` should become optional
-  and/or a new `achieved_total_metres` field should be added to preserve the
-  carry-vs-total distinction — deferred out of M4.4 (issue #52) as a new
-  measurement axis, not provenance/quality metadata; the Architect
-  identified this as a follow-up during that issue's review. See
+- Add an `observed_carry_lateral_metres` counterpart to `ShotRecord` for
+  launch-monitor-style lateral offset *at carry landing* (distinct from
+  `lateral_offset_metres`, which is now the lateral offset at final
+  resting position) — deferred out of M4.4 (issue #52) pending an actual
+  launch-monitor integration. See
   [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- A future carry-from-total-distance estimator (using club, shot regime,
+  rollout, landing surface, ground firmness/wetness, wind, elevation, and
+  other environmental conditions) that reads `ShotRecord.
+  total_distance_metres` and produces a distinct, uncertainty/provenance-
+  tagged *estimated* carry — must never be confused with, or written back
+  into, `ShotRecord.observed_carry_metres` — deferred out of M4.4 (issue
+  #52); this is the "context-aware inference" step of the learning
+  pipeline the Architect described in that issue's round-2 review.
+- An "attempted but rejected/discarded measurement" concept for
+  `ShotRecord` (e.g. a carry reading was attempted but not trusted enough
+  to keep) — distinct from `observed_carry_metres` simply being absent —
+  identified as a possible future extension during M4.4 (issue #52)'s
+  round-2 Architect review; not built unless a real consumer needs it.
 - A player-domain lie/context type for `ShotRecord` (e.g. fairway, rough,
   bunker, recovery) — deferred out of M4.4 (issue #52), no consumer yet.
   Must **not** import `caddai.strategy.LieType` (dependency direction:

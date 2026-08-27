@@ -22,8 +22,8 @@ through ``Club``, not just when constructing the nested model directly.
 
 See also GitHub issue #43 ("M3.x — Reject non-finite ``ShotRecord``
 measurements") for the acceptance criteria covering ``ShotRecord`` directly:
-``achieved_carry_metres`` and ``lateral_offset_metres`` must reject NaN and
-+/-infinity, since ``+inf`` otherwise satisfies both ``achieved_carry_metres``'s
+``total_distance_metres`` and ``lateral_offset_metres`` must reject NaN and
++/-infinity, since ``+inf`` otherwise satisfies both ``total_distance_metres``'s
 ``ge=0`` constraint and ``lateral_offset_metres``'s unconstrained sign.
 
 See GitHub issue #50 ("M4.2 — `PopulationPrior` population parameter
@@ -34,11 +34,14 @@ module), but every existing import path and serialized ``StrEnum`` value
 is preserved via a re-export from ``caddai.player``.
 
 See GitHub issue #52 ("M4.4 — `ShotRecord` provenance and
-measurement-quality fields") for the acceptance criteria covering
-``ShotMeasurementSource``/``ShotMeasurementQuality``: both are additive
-metadata fields on ``ShotRecord`` with truthful ``UNKNOWN`` defaults, must
-not alter existing ``ShotRecord`` field behaviour or validation, and the
-two enums are independent axes (quality is never derived from source).
+measurement-quality fields") for the acceptance criteria covering the
+evidence-only ``ShotRecord`` shape: ``total_distance_metres`` (required,
+renamed from ``achieved_carry_metres``), the new optional
+``observed_carry_metres`` (null-paired with ``observed_carry_measurement``),
+and per-quantity ``ShotMeasurementMetadata`` (``source``/``quality``) on
+``total_distance_measurement``/``observed_carry_measurement`` rather than
+record-level flat fields. No cross-field carry<=total consistency check is
+enforced — ``ShotRecord`` records evidence, not physics consistency.
 """
 
 import pytest
@@ -52,6 +55,7 @@ from caddai.player.models import (
     Club,
     ClubCategory,
     Player,
+    ShotMeasurementMetadata,
     ShotMeasurementQuality,
     ShotMeasurementSource,
     ShotRecord,
@@ -357,25 +361,30 @@ def test_player_rejects_empty_clubs_list() -> None:
         Player(name="Ada", clubs=[])
 
 
-def test_shot_record_constructs_with_valid_data() -> None:
-    """A shot record with all four fields round-trips."""
+def test_shot_record_constructs_with_only_required_fields() -> None:
+    """Only ``club_name``/``total_distance_metres``/``lateral_offset_metres`` are required.
+
+    ``observed_carry_metres``/``observed_carry_measurement`` default to ``None`` (true carry
+    is latent and rarely observed) and ``total_distance_measurement`` defaults to an
+    ``UNKNOWN``/``UNKNOWN`` ``ShotMeasurementMetadata()``.
+    """
     shot_record = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        notes="firm fairway, into wind",
+        club_name="7 Iron", total_distance_metres=142.5, lateral_offset_metres=-3.0
     )
 
     assert shot_record.club_name == "7 Iron"
-    assert shot_record.achieved_carry_metres == pytest.approx(142.5)
+    assert shot_record.total_distance_metres == pytest.approx(142.5)
     assert shot_record.lateral_offset_metres == pytest.approx(-3.0)
-    assert shot_record.notes == "firm fairway, into wind"
+    assert shot_record.observed_carry_metres is None
+    assert shot_record.observed_carry_measurement is None
+    assert shot_record.total_distance_measurement == ShotMeasurementMetadata()
+    assert shot_record.notes is None
 
 
 def test_shot_record_notes_defaults_to_none() -> None:
     """Omitting ``notes`` gives ``None``."""
     shot_record = ShotRecord(
-        club_name="7 Iron", achieved_carry_metres=142.5, lateral_offset_metres=-3.0
+        club_name="7 Iron", total_distance_metres=142.5, lateral_offset_metres=-3.0
     )
 
     assert shot_record.notes is None
@@ -385,7 +394,7 @@ def test_shot_record_notes_accepts_explicit_string() -> None:
     """An explicit ``notes`` string round-trips."""
     shot_record = ShotRecord(
         club_name="7 Iron",
-        achieved_carry_metres=142.5,
+        total_distance_metres=142.5,
         lateral_offset_metres=-3.0,
         notes="wet rough",
     )
@@ -400,68 +409,17 @@ def test_shot_record_accepts_negative_zero_and_positive_lateral_offset(
     """Negative (left), zero (on-line), and positive (right) offsets are all accepted."""
     shot_record = ShotRecord(
         club_name="7 Iron",
-        achieved_carry_metres=142.5,
+        total_distance_metres=142.5,
         lateral_offset_metres=lateral_offset_metres,
     )
 
     assert shot_record.lateral_offset_metres == pytest.approx(lateral_offset_metres)
 
 
-def test_shot_record_achieved_carry_metres_accepts_zero() -> None:
-    """``0.0`` is accepted — a whiffed/topped shot, unlike ``CarryDistribution.mean_metres``."""
-    shot_record = ShotRecord(
-        club_name="7 Iron", achieved_carry_metres=0.0, lateral_offset_metres=0.0
-    )
-
-    assert shot_record.achieved_carry_metres == pytest.approx(0.0)
-
-
-@pytest.mark.parametrize("achieved_carry_metres", [-0.1, -1.0, -140.0])
-def test_shot_record_rejects_negative_achieved_carry_metres(achieved_carry_metres: float) -> None:
-    """A negative achieved carry distance is physically meaningless."""
-    with pytest.raises(ValidationError):
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=achieved_carry_metres,
-            lateral_offset_metres=0.0,
-        )
-
-
-def test_shot_record_rejects_empty_club_name() -> None:
-    """An empty club name violates the non-empty-name invariant, consistent with ``Club.name``."""
-    with pytest.raises(ValidationError):
-        ShotRecord(club_name="", achieved_carry_metres=142.5, lateral_offset_metres=-3.0)
-
-
-def test_shot_record_rejects_missing_club_name() -> None:
-    """A shot record without a ``club_name`` is not valid."""
-    with pytest.raises(ValidationError):
-        ShotRecord(achieved_carry_metres=142.5, lateral_offset_metres=-3.0)  # type: ignore[call-arg]
-
-
-def test_shot_record_rejects_missing_achieved_carry_metres() -> None:
-    """A shot record without an ``achieved_carry_metres`` is not valid."""
-    with pytest.raises(ValidationError):
-        ShotRecord(club_name="7 Iron", lateral_offset_metres=-3.0)  # type: ignore[call-arg]
-
-
 def test_shot_record_rejects_missing_lateral_offset_metres() -> None:
     """A shot record without a ``lateral_offset_metres`` is not valid — it has no default."""
     with pytest.raises(ValidationError):
-        ShotRecord(club_name="7 Iron", achieved_carry_metres=142.5)  # type: ignore[call-arg]
-
-
-@pytest.mark.parametrize("achieved_carry_metres", [float("nan"), float("inf"), float("-inf")])
-def test_shot_record_rejects_non_finite_achieved_carry_metres(
-    achieved_carry_metres: float,
-) -> None:
-    """Issue #43: NaN/+inf/-inf are rejected even though ``+inf`` satisfies ``ge=0``."""
-    with pytest.raises(ValidationError):
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=achieved_carry_metres,
-            lateral_offset_metres=0.0,
-        )
+        ShotRecord(club_name="7 Iron", total_distance_metres=142.5)  # type: ignore[call-arg]
 
 
 @pytest.mark.parametrize("lateral_offset_metres", [float("nan"), float("inf"), float("-inf")])
@@ -472,9 +430,485 @@ def test_shot_record_rejects_non_finite_lateral_offset_metres(
     with pytest.raises(ValidationError):
         ShotRecord(
             club_name="7 Iron",
-            achieved_carry_metres=142.5,
+            total_distance_metres=142.5,
             lateral_offset_metres=lateral_offset_metres,
         )
+
+
+def test_shot_record_total_distance_metres_accepts_zero() -> None:
+    """``0.0`` is accepted — a whiffed/topped shot, unlike ``CarryDistribution.mean_metres``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron", total_distance_metres=0.0, lateral_offset_metres=0.0
+    )
+
+    assert shot_record.total_distance_metres == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("total_distance_metres", [-0.1, -1.0, -140.0])
+def test_shot_record_rejects_negative_total_distance_metres(total_distance_metres: float) -> None:
+    """A negative total distance is physically meaningless."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=total_distance_metres,
+            lateral_offset_metres=0.0,
+        )
+
+
+def test_shot_record_rejects_missing_total_distance_metres() -> None:
+    """A shot record without a ``total_distance_metres`` is not valid — always observable."""
+    with pytest.raises(ValidationError):
+        ShotRecord(club_name="7 Iron", lateral_offset_metres=-3.0)  # type: ignore[call-arg]
+
+
+@pytest.mark.parametrize("total_distance_metres", [float("nan"), float("inf"), float("-inf")])
+def test_shot_record_rejects_non_finite_total_distance_metres(
+    total_distance_metres: float,
+) -> None:
+    """Issue #43: NaN/+inf/-inf are rejected even though ``+inf`` satisfies ``ge=0``."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=total_distance_metres,
+            lateral_offset_metres=0.0,
+        )
+
+
+def test_shot_record_rejects_empty_club_name() -> None:
+    """An empty club name violates the non-empty-name invariant, consistent with ``Club.name``."""
+    with pytest.raises(ValidationError):
+        ShotRecord(club_name="", total_distance_metres=142.5, lateral_offset_metres=-3.0)
+
+
+def test_shot_record_rejects_missing_club_name() -> None:
+    """A shot record without a ``club_name`` is not valid."""
+    with pytest.raises(ValidationError):
+        ShotRecord(  # type: ignore[call-arg]
+            total_distance_metres=142.5, lateral_offset_metres=-3.0
+        )
+
+
+# --- observed_carry_metres optionality and null-pairing (issue #52) --------------
+
+
+def test_shot_record_observed_carry_metres_absent_by_default() -> None:
+    """``observed_carry_metres`` is ``None`` by default — the common on-course case."""
+    shot_record = ShotRecord(
+        club_name="7 Iron", total_distance_metres=142.5, lateral_offset_metres=-3.0
+    )
+
+    assert shot_record.observed_carry_metres is None
+    assert shot_record.observed_carry_measurement is None
+
+
+def test_shot_record_observed_carry_metres_explicit_none_is_valid() -> None:
+    """Explicitly passing ``observed_carry_metres=None`` is equivalent to omitting it."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        observed_carry_metres=None,
+        observed_carry_measurement=None,
+    )
+
+    assert shot_record.observed_carry_metres is None
+    assert shot_record.observed_carry_measurement is None
+
+
+def test_shot_record_observed_carry_metres_accepts_genuine_value_with_metadata() -> None:
+    """A genuine positive ``observed_carry_metres`` is valid alongside its metadata."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        observed_carry_metres=138.0,
+        observed_carry_measurement=ShotMeasurementMetadata(
+            source=ShotMeasurementSource.MEASURED, quality=ShotMeasurementQuality.HIGH
+        ),
+    )
+
+    assert shot_record.observed_carry_metres == pytest.approx(138.0)
+    assert shot_record.observed_carry_measurement == ShotMeasurementMetadata(
+        source=ShotMeasurementSource.MEASURED, quality=ShotMeasurementQuality.HIGH
+    )
+
+
+def test_shot_record_observed_carry_metres_accepts_zero_with_metadata() -> None:
+    """``0.0`` observed carry (e.g. a whiffed/topped shot) is accepted when metadata is supplied."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=0.0,
+        lateral_offset_metres=0.0,
+        observed_carry_metres=0.0,
+        observed_carry_measurement=ShotMeasurementMetadata(),
+    )
+
+    assert shot_record.observed_carry_metres == pytest.approx(0.0)
+
+
+@pytest.mark.parametrize("observed_carry_metres", [-0.1, -1.0, -140.0])
+def test_shot_record_rejects_negative_observed_carry_metres(observed_carry_metres: float) -> None:
+    """A negative observed carry distance is physically meaningless."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=142.5,
+            lateral_offset_metres=-3.0,
+            observed_carry_metres=observed_carry_metres,
+            observed_carry_measurement=ShotMeasurementMetadata(),
+        )
+
+
+@pytest.mark.parametrize("observed_carry_metres", [float("nan"), float("inf"), float("-inf")])
+def test_shot_record_rejects_non_finite_observed_carry_metres(
+    observed_carry_metres: float,
+) -> None:
+    """NaN/+inf/-inf are rejected for ``observed_carry_metres`` when present, as for the other
+    distance fields."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=142.5,
+            lateral_offset_metres=-3.0,
+            observed_carry_metres=observed_carry_metres,
+            observed_carry_measurement=ShotMeasurementMetadata(),
+        )
+
+
+def test_shot_record_rejects_observed_carry_metres_without_measurement() -> None:
+    """Setting ``observed_carry_metres`` without ``observed_carry_measurement`` is invalid —
+    the null-pairing invariant."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=142.5,
+            lateral_offset_metres=-3.0,
+            observed_carry_metres=138.0,
+        )
+
+
+def test_shot_record_rejects_observed_carry_measurement_without_metres() -> None:
+    """Setting ``observed_carry_measurement`` without ``observed_carry_metres`` is invalid —
+    a metadata object describing a value that doesn't exist is meaningless."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=142.5,
+            lateral_offset_metres=-3.0,
+            observed_carry_measurement=ShotMeasurementMetadata(),
+        )
+
+
+def test_shot_record_accepts_observed_carry_greater_than_total_distance() -> None:
+    """No carry<=total consistency check is enforced — evidence from independent instruments
+    may legitimately disagree, and this is not physics-consistency validated."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=100.0,
+        lateral_offset_metres=0.0,
+        observed_carry_metres=150.0,
+        observed_carry_measurement=ShotMeasurementMetadata(),
+    )
+
+    assert shot_record.observed_carry_metres == pytest.approx(150.0)
+    assert shot_record.total_distance_metres == pytest.approx(100.0)
+
+
+def test_shot_record_putter_has_no_carry_without_structural_pressure() -> None:
+    """A putt (no meaningful carry concept) constructs validly with ``observed_carry_metres=None``
+    — the shape doesn't force a carry value onto every club/shot."""
+    shot_record = ShotRecord(
+        club_name="Putter", total_distance_metres=8.0, lateral_offset_metres=0.1
+    )
+
+    assert shot_record.observed_carry_metres is None
+    assert shot_record.observed_carry_measurement is None
+
+
+# --- ShotMeasurementMetadata (issue #52) -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ShotMeasurementSource.MEASURED,
+        ShotMeasurementSource.GPS_ESTIMATE,
+        ShotMeasurementSource.MANUAL_ESTIMATE,
+        ShotMeasurementSource.UNKNOWN,
+    ],
+)
+def test_shot_record_total_distance_measurement_accepts_every_source_member(
+    source: ShotMeasurementSource,
+) -> None:
+    """Every ``ShotMeasurementSource`` member round-trips through ``total_distance_measurement``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        total_distance_measurement=ShotMeasurementMetadata(source=source),
+    )
+
+    assert shot_record.total_distance_measurement.source == source
+
+
+@pytest.mark.parametrize(
+    "quality",
+    [
+        ShotMeasurementQuality.UNKNOWN,
+        ShotMeasurementQuality.LOW,
+        ShotMeasurementQuality.MODERATE,
+        ShotMeasurementQuality.HIGH,
+    ],
+)
+def test_shot_record_total_distance_measurement_accepts_every_quality_member(
+    quality: ShotMeasurementQuality,
+) -> None:
+    """Every quality member round-trips through ``total_distance_measurement``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        total_distance_measurement=ShotMeasurementMetadata(quality=quality),
+    )
+
+    assert shot_record.total_distance_measurement.quality == quality
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ShotMeasurementSource.MEASURED,
+        ShotMeasurementSource.GPS_ESTIMATE,
+        ShotMeasurementSource.MANUAL_ESTIMATE,
+        ShotMeasurementSource.UNKNOWN,
+    ],
+)
+def test_shot_record_observed_carry_measurement_accepts_every_source_member(
+    source: ShotMeasurementSource,
+) -> None:
+    """Every ``ShotMeasurementSource`` member round-trips through ``observed_carry_measurement``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        observed_carry_metres=138.0,
+        observed_carry_measurement=ShotMeasurementMetadata(source=source),
+    )
+
+    assert shot_record.observed_carry_measurement is not None
+    assert shot_record.observed_carry_measurement.source == source
+
+
+@pytest.mark.parametrize(
+    "quality",
+    [
+        ShotMeasurementQuality.UNKNOWN,
+        ShotMeasurementQuality.LOW,
+        ShotMeasurementQuality.MODERATE,
+        ShotMeasurementQuality.HIGH,
+    ],
+)
+def test_shot_record_observed_carry_measurement_accepts_every_quality_member(
+    quality: ShotMeasurementQuality,
+) -> None:
+    """Every quality member round-trips through ``observed_carry_measurement``."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        observed_carry_metres=138.0,
+        observed_carry_measurement=ShotMeasurementMetadata(quality=quality),
+    )
+
+    assert shot_record.observed_carry_measurement is not None
+    assert shot_record.observed_carry_measurement.quality == quality
+
+
+def test_shot_measurement_metadata_rejects_invalid_source_string() -> None:
+    """A ``source`` string outside ``ShotMeasurementSource``'s values is rejected."""
+    with pytest.raises(ValidationError):
+        ShotMeasurementMetadata(source="launch_monitor")  # type: ignore[arg-type]
+
+
+def test_shot_measurement_metadata_rejects_invalid_quality_string() -> None:
+    """A ``quality`` string outside ``ShotMeasurementQuality``'s values is rejected."""
+    with pytest.raises(ValidationError):
+        ShotMeasurementMetadata(quality="excellent")  # type: ignore[arg-type]
+
+
+def test_shot_record_rejects_invalid_total_distance_measurement_source_string() -> None:
+    """An invalid ``source`` nested under ``total_distance_measurement`` raises through
+    ``ShotRecord``, not just when constructing ``ShotMeasurementMetadata`` directly."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=142.5,
+            lateral_offset_metres=-3.0,
+            total_distance_measurement={"source": "launch_monitor"},
+        )
+
+
+def test_shot_record_rejects_invalid_total_distance_measurement_quality_string() -> None:
+    """An invalid ``quality`` nested under ``total_distance_measurement`` raises through
+    ``ShotRecord``."""
+    with pytest.raises(ValidationError):
+        ShotRecord(
+            club_name="7 Iron",
+            total_distance_metres=142.5,
+            lateral_offset_metres=-3.0,
+            total_distance_measurement={"quality": "excellent"},
+        )
+
+
+def test_shot_measurement_metadata_source_and_quality_are_independent() -> None:
+    """``MEASURED``+``LOW`` and ``UNKNOWN``+``HIGH`` both construct validly — quality is never
+    derived from source."""
+    measured_but_low_quality = ShotMeasurementMetadata(
+        source=ShotMeasurementSource.MEASURED, quality=ShotMeasurementQuality.LOW
+    )
+    unknown_source_but_high_quality = ShotMeasurementMetadata(
+        source=ShotMeasurementSource.UNKNOWN, quality=ShotMeasurementQuality.HIGH
+    )
+
+    assert measured_but_low_quality.source == ShotMeasurementSource.MEASURED
+    assert measured_but_low_quality.quality == ShotMeasurementQuality.LOW
+    assert unknown_source_but_high_quality.source == ShotMeasurementSource.UNKNOWN
+    assert unknown_source_but_high_quality.quality == ShotMeasurementQuality.HIGH
+
+
+def test_shot_record_total_distance_and_observed_carry_measurement_are_independent() -> None:
+    """The two quantities' metadata are genuinely independent, not shared/record-level: a
+    GPS-estimated total distance can coexist with an absent observed carry, and a fully
+    ``MEASURED``/``HIGH`` record has both set to the same values only because both were
+    explicitly given that way."""
+    gps_total_only = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        total_distance_measurement=ShotMeasurementMetadata(
+            source=ShotMeasurementSource.GPS_ESTIMATE, quality=ShotMeasurementQuality.MODERATE
+        ),
+        observed_carry_metres=None,
+        observed_carry_measurement=None,
+    )
+    fully_measured = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        total_distance_measurement=ShotMeasurementMetadata(
+            source=ShotMeasurementSource.MEASURED, quality=ShotMeasurementQuality.HIGH
+        ),
+        observed_carry_metres=138.0,
+        observed_carry_measurement=ShotMeasurementMetadata(
+            source=ShotMeasurementSource.MEASURED, quality=ShotMeasurementQuality.HIGH
+        ),
+    )
+
+    assert gps_total_only.total_distance_measurement.source == ShotMeasurementSource.GPS_ESTIMATE
+    assert gps_total_only.observed_carry_measurement is None
+    assert fully_measured.total_distance_measurement.source == ShotMeasurementSource.MEASURED
+    assert fully_measured.observed_carry_measurement is not None
+    assert fully_measured.observed_carry_measurement.source == ShotMeasurementSource.MEASURED
+
+
+@pytest.mark.parametrize(
+    ("total_distance_source", "observed_carry_source"),
+    [
+        (ShotMeasurementSource.GPS_ESTIMATE, ShotMeasurementSource.MEASURED),
+        (ShotMeasurementSource.MANUAL_ESTIMATE, ShotMeasurementSource.UNKNOWN),
+    ],
+)
+def test_shot_record_metadata_per_quantity_differs_independently(
+    total_distance_source: ShotMeasurementSource, observed_carry_source: ShotMeasurementSource
+) -> None:
+    """Setting a different ``source`` per quantity on the same record round-trips independently,
+    confirming the metadata is not shared/record-level."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        total_distance_measurement=ShotMeasurementMetadata(source=total_distance_source),
+        observed_carry_metres=138.0,
+        observed_carry_measurement=ShotMeasurementMetadata(source=observed_carry_source),
+    )
+
+    assert shot_record.total_distance_measurement.source == total_distance_source
+    assert shot_record.observed_carry_measurement is not None
+    assert shot_record.observed_carry_measurement.source == observed_carry_source
+
+
+def test_shot_record_accepts_large_total_distance_and_lateral_offset() -> None:
+    """A large but genuine ``total_distance_metres``/``lateral_offset_metres`` still constructs —
+    no implicit outlier/severe-miss rejection."""
+    shot_record = ShotRecord(
+        club_name="Driver", total_distance_metres=350.0, lateral_offset_metres=-80.0
+    )
+
+    assert shot_record.total_distance_metres == pytest.approx(350.0)
+    assert shot_record.lateral_offset_metres == pytest.approx(-80.0)
+
+
+def test_shot_record_accepts_large_observed_carry_metres() -> None:
+    """A large but genuine ``observed_carry_metres`` still constructs with matching metadata."""
+    shot_record = ShotRecord(
+        club_name="Driver",
+        total_distance_metres=350.0,
+        lateral_offset_metres=-80.0,
+        observed_carry_metres=310.0,
+        observed_carry_measurement=ShotMeasurementMetadata(
+            source=ShotMeasurementSource.MEASURED, quality=ShotMeasurementQuality.HIGH
+        ),
+    )
+
+    assert shot_record.observed_carry_metres == pytest.approx(310.0)
+
+
+def test_shot_record_model_dump_with_all_defaults() -> None:
+    """``model_dump()`` for an all-defaults record includes every field, with
+    ``observed_carry_metres``/``observed_carry_measurement`` as ``None`` and
+    ``total_distance_measurement`` as a nested ``UNKNOWN``/``UNKNOWN`` dict."""
+    shot_record = ShotRecord(
+        club_name="7 Iron", total_distance_metres=142.5, lateral_offset_metres=-3.0
+    )
+
+    dumped = shot_record.model_dump()
+
+    assert dumped["total_distance_metres"] == pytest.approx(142.5)
+    assert dumped["lateral_offset_metres"] == pytest.approx(-3.0)
+    assert dumped["observed_carry_metres"] is None
+    assert dumped["total_distance_measurement"] == {"source": "unknown", "quality": "unknown"}
+    assert dumped["observed_carry_measurement"] is None
+    assert dumped["notes"] is None
+
+
+def test_shot_record_model_dump_fully_populated() -> None:
+    """``model_dump()`` for a fully populated record serializes both metadata submodels and
+    ``observed_carry_metres`` correctly."""
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        total_distance_metres=142.5,
+        lateral_offset_metres=-3.0,
+        observed_carry_metres=138.0,
+        total_distance_measurement=ShotMeasurementMetadata(
+            source=ShotMeasurementSource.GPS_ESTIMATE, quality=ShotMeasurementQuality.MODERATE
+        ),
+        observed_carry_measurement=ShotMeasurementMetadata(
+            source=ShotMeasurementSource.MEASURED, quality=ShotMeasurementQuality.HIGH
+        ),
+        notes="firm fairway, into wind",
+    )
+
+    dumped = shot_record.model_dump()
+
+    assert dumped["total_distance_metres"] == pytest.approx(142.5)
+    assert dumped["lateral_offset_metres"] == pytest.approx(-3.0)
+    assert dumped["observed_carry_metres"] == pytest.approx(138.0)
+    assert dumped["total_distance_measurement"] == {"source": "gps_estimate", "quality": "moderate"}
+    assert dumped["observed_carry_measurement"] == {"source": "measured", "quality": "high"}
+    assert dumped["notes"] == "firm fairway, into wind"
+
+
+# --- Player.shot_history (issue #52) ---------------------------------------------
 
 
 def test_player_shot_history_defaults_to_empty_list() -> None:
@@ -490,9 +924,9 @@ def test_player_shot_history_accepts_constructed_shot_records_and_preserves_orde
     """``Player.shot_history`` preserves the given list order."""
     clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
     shot_history = [
-        ShotRecord(club_name="7 Iron", achieved_carry_metres=138.0, lateral_offset_metres=-2.0),
-        ShotRecord(club_name="7 Iron", achieved_carry_metres=141.0, lateral_offset_metres=1.5),
-        ShotRecord(club_name="7 Iron", achieved_carry_metres=144.0, lateral_offset_metres=0.0),
+        ShotRecord(club_name="7 Iron", total_distance_metres=138.0, lateral_offset_metres=-2.0),
+        ShotRecord(club_name="7 Iron", total_distance_metres=141.0, lateral_offset_metres=1.5),
+        ShotRecord(club_name="7 Iron", total_distance_metres=144.0, lateral_offset_metres=0.0),
     ]
 
     player = Player(name="Ada", clubs=clubs, shot_history=shot_history)
@@ -508,13 +942,13 @@ def test_player_shot_history_coerces_nested_dicts_into_shot_records() -> None:
         name="Ada",
         clubs=clubs,
         shot_history=[
-            {"club_name": "7 Iron", "achieved_carry_metres": 138.0, "lateral_offset_metres": -2.0}
+            {"club_name": "7 Iron", "total_distance_metres": 138.0, "lateral_offset_metres": -2.0}
         ],
     )
 
     assert isinstance(player.shot_history[0], ShotRecord)
     assert player.shot_history[0].club_name == "7 Iron"
-    assert player.shot_history[0].achieved_carry_metres == pytest.approx(138.0)
+    assert player.shot_history[0].total_distance_metres == pytest.approx(138.0)
     assert player.shot_history[0].lateral_offset_metres == pytest.approx(-2.0)
 
 
@@ -558,7 +992,7 @@ def test_player_shot_history_independent_of_clubs() -> None:
     """
     clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
     shot_history = [
-        ShotRecord(club_name="Driver", achieved_carry_metres=210.0, lateral_offset_metres=5.0)
+        ShotRecord(club_name="Driver", total_distance_metres=210.0, lateral_offset_metres=5.0)
     ]
 
     player_with_empty_history = Player(name="Ada", clubs=clubs, shot_history=[])
@@ -566,269 +1000,3 @@ def test_player_shot_history_independent_of_clubs() -> None:
 
     assert player_with_empty_history.shot_history == []
     assert player_with_history_only.shot_history == shot_history
-
-
-# --- ShotRecord provenance/quality metadata (issue #52) ---------------------------
-
-
-def test_shot_record_constructs_with_only_original_fields_and_defaults_new_fields_to_unknown() -> (
-    None
-):
-    """Backward compatibility: the four original fields alone still construct a ``ShotRecord``,
-    with both new fields defaulting to their truthful ``UNKNOWN`` values."""
-    shot_record = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        notes="firm fairway, into wind",
-    )
-
-    assert shot_record.measurement_source == ShotMeasurementSource.UNKNOWN
-    assert shot_record.measurement_quality == ShotMeasurementQuality.UNKNOWN
-
-
-@pytest.mark.parametrize(
-    "measurement_source",
-    [
-        ShotMeasurementSource.MEASURED,
-        ShotMeasurementSource.GPS_ESTIMATE,
-        ShotMeasurementSource.MANUAL_ESTIMATE,
-        ShotMeasurementSource.UNKNOWN,
-    ],
-)
-def test_shot_record_accepts_every_measurement_source_member(
-    measurement_source: ShotMeasurementSource,
-) -> None:
-    """Every ``ShotMeasurementSource`` member round-trips through ``ShotRecord``."""
-    shot_record = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        measurement_source=measurement_source,
-    )
-
-    assert shot_record.measurement_source == measurement_source
-
-
-@pytest.mark.parametrize(
-    "measurement_quality",
-    [
-        ShotMeasurementQuality.UNKNOWN,
-        ShotMeasurementQuality.LOW,
-        ShotMeasurementQuality.MODERATE,
-        ShotMeasurementQuality.HIGH,
-    ],
-)
-def test_shot_record_accepts_every_measurement_quality_member(
-    measurement_quality: ShotMeasurementQuality,
-) -> None:
-    """Every ``ShotMeasurementQuality`` member round-trips through ``ShotRecord``."""
-    shot_record = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        measurement_quality=measurement_quality,
-    )
-
-    assert shot_record.measurement_quality == measurement_quality
-
-
-def test_shot_record_rejects_invalid_measurement_source_string() -> None:
-    """A ``measurement_source`` string outside ``ShotMeasurementSource``'s values is rejected."""
-    with pytest.raises(ValidationError):
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=142.5,
-            lateral_offset_metres=-3.0,
-            measurement_source="launch_monitor",
-        )
-
-
-def test_shot_record_rejects_invalid_measurement_quality_string() -> None:
-    """A ``measurement_quality`` string outside ``ShotMeasurementQuality``'s values is rejected."""
-    with pytest.raises(ValidationError):
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=142.5,
-            lateral_offset_metres=-3.0,
-            measurement_quality="excellent",
-        )
-
-
-@pytest.mark.parametrize(
-    "measurement_source",
-    [ShotMeasurementSource.MANUAL_ESTIMATE, ShotMeasurementSource.GPS_ESTIMATE],
-)
-def test_shot_record_provenance_never_mutates_measured_values(
-    measurement_source: ShotMeasurementSource,
-) -> None:
-    """A ``MEASURED`` shot and an estimated shot with identical measured values differ only in
-    ``measurement_source`` — provenance metadata never alters the measured numbers."""
-    measured_shot = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        measurement_source=ShotMeasurementSource.MEASURED,
-    )
-    estimated_shot = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        measurement_source=measurement_source,
-    )
-
-    assert measured_shot.measurement_source != estimated_shot.measurement_source
-    assert measured_shot.achieved_carry_metres == pytest.approx(
-        estimated_shot.achieved_carry_metres
-    )
-    assert measured_shot.lateral_offset_metres == pytest.approx(
-        estimated_shot.lateral_offset_metres
-    )
-
-
-def test_shot_record_measurement_quality_is_independent_of_measurement_source() -> None:
-    """Quality and source are separate axes: ``MEASURED``+``LOW`` and ``UNKNOWN``+``HIGH`` both
-    construct validly — quality is never derived from source."""
-    measured_but_low_quality = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        measurement_source=ShotMeasurementSource.MEASURED,
-        measurement_quality=ShotMeasurementQuality.LOW,
-    )
-    unknown_source_but_high_quality = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        measurement_source=ShotMeasurementSource.UNKNOWN,
-        measurement_quality=ShotMeasurementQuality.HIGH,
-    )
-
-    assert measured_but_low_quality.measurement_source == ShotMeasurementSource.MEASURED
-    assert measured_but_low_quality.measurement_quality == ShotMeasurementQuality.LOW
-    assert unknown_source_but_high_quality.measurement_source == ShotMeasurementSource.UNKNOWN
-    assert unknown_source_but_high_quality.measurement_quality == ShotMeasurementQuality.HIGH
-
-
-@pytest.mark.parametrize(
-    ("measurement_source", "measurement_quality"),
-    [
-        (ShotMeasurementSource.MEASURED, ShotMeasurementQuality.HIGH),
-        (ShotMeasurementSource.UNKNOWN, ShotMeasurementQuality.UNKNOWN),
-        (ShotMeasurementSource.GPS_ESTIMATE, ShotMeasurementQuality.LOW),
-    ],
-)
-def test_shot_record_accepts_large_carry_and_lateral_offset_regardless_of_provenance(
-    measurement_source: ShotMeasurementSource, measurement_quality: ShotMeasurementQuality
-) -> None:
-    """Large but genuine carry/lateral-offset values still construct — no implicit
-    outlier/severe-miss rejection was introduced by the new provenance/quality fields."""
-    shot_record = ShotRecord(
-        club_name="Driver",
-        achieved_carry_metres=350.0,
-        lateral_offset_metres=-80.0,
-        measurement_source=measurement_source,
-        measurement_quality=measurement_quality,
-    )
-
-    assert shot_record.achieved_carry_metres == pytest.approx(350.0)
-    assert shot_record.lateral_offset_metres == pytest.approx(-80.0)
-
-
-def test_shot_record_model_dump_includes_default_measurement_source_and_quality() -> None:
-    """``model_dump()`` includes both new fields with their default string values."""
-    shot_record = ShotRecord(
-        club_name="7 Iron", achieved_carry_metres=142.5, lateral_offset_metres=-3.0
-    )
-
-    dumped = shot_record.model_dump()
-
-    assert dumped["measurement_source"] == "unknown"
-    assert dumped["measurement_quality"] == "unknown"
-
-
-def test_shot_record_model_dump_includes_explicit_measurement_source_and_quality() -> None:
-    """``model_dump()`` includes both new fields with their explicitly set string values."""
-    shot_record = ShotRecord(
-        club_name="7 Iron",
-        achieved_carry_metres=142.5,
-        lateral_offset_metres=-3.0,
-        measurement_source=ShotMeasurementSource.MEASURED,
-        measurement_quality=ShotMeasurementQuality.HIGH,
-    )
-
-    dumped = shot_record.model_dump()
-
-    assert dumped["measurement_source"] == "measured"
-    assert dumped["measurement_quality"] == "high"
-
-
-@pytest.mark.parametrize("achieved_carry_metres", [float("nan"), float("inf"), float("-inf")])
-def test_shot_record_rejects_non_finite_achieved_carry_metres_with_provenance_fields_set(
-    achieved_carry_metres: float,
-) -> None:
-    """The new fields don't bypass existing finite-value validation on ``achieved_carry_metres``."""
-    with pytest.raises(ValidationError):
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=achieved_carry_metres,
-            lateral_offset_metres=0.0,
-            measurement_source=ShotMeasurementSource.MEASURED,
-            measurement_quality=ShotMeasurementQuality.HIGH,
-        )
-
-
-@pytest.mark.parametrize("lateral_offset_metres", [float("nan"), float("inf"), float("-inf")])
-def test_shot_record_rejects_non_finite_lateral_offset_metres_with_provenance_fields_set(
-    lateral_offset_metres: float,
-) -> None:
-    """The new fields don't bypass existing finite-value validation on ``lateral_offset_metres``."""
-    with pytest.raises(ValidationError):
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=142.5,
-            lateral_offset_metres=lateral_offset_metres,
-            measurement_source=ShotMeasurementSource.GPS_ESTIMATE,
-            measurement_quality=ShotMeasurementQuality.LOW,
-        )
-
-
-def test_player_shot_history_with_mixed_provenance_and_quality_round_trips() -> None:
-    """``Player.shot_history`` preserves list order and field values for shots with mixed
-    ``measurement_source``/``measurement_quality`` values."""
-    clubs = [Club.with_expected_carry(name="7 Iron", expected_carry_metres=140.0)]
-    shot_history = [
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=138.0,
-            lateral_offset_metres=-2.0,
-            measurement_source=ShotMeasurementSource.MEASURED,
-            measurement_quality=ShotMeasurementQuality.HIGH,
-        ),
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=141.0,
-            lateral_offset_metres=1.5,
-            measurement_source=ShotMeasurementSource.GPS_ESTIMATE,
-            measurement_quality=ShotMeasurementQuality.MODERATE,
-        ),
-        ShotRecord(
-            club_name="7 Iron",
-            achieved_carry_metres=144.0,
-            lateral_offset_metres=0.0,
-        ),
-    ]
-
-    player = Player(name="Ada", clubs=clubs, shot_history=shot_history)
-
-    assert player.shot_history == shot_history
-    assert [shot.measurement_source for shot in player.shot_history] == [
-        ShotMeasurementSource.MEASURED,
-        ShotMeasurementSource.GPS_ESTIMATE,
-        ShotMeasurementSource.UNKNOWN,
-    ]
-    assert [shot.measurement_quality for shot in player.shot_history] == [
-        ShotMeasurementQuality.HIGH,
-        ShotMeasurementQuality.MODERATE,
-        ShotMeasurementQuality.UNKNOWN,
-    ]

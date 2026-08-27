@@ -6,7 +6,7 @@ See docs/player-model.md for the full planned design of this subsystem.
 import math
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
 from caddai.statistics import CarryDistribution, DirectionalDispersion
 from caddai.statistics import ClubCategory as ClubCategory  # explicit re-export (mypy strict)
@@ -62,7 +62,9 @@ class ShotMeasurementSource(StrEnum):
     A distinct semantic axis from ``caddai.player.onboarding.CarryProvenance``
     (which describes trust in a one-off onboarding self-reported cold-start
     number, not a historical shot observation) — see that module's
-    docstring. Metadata only: does not affect ``achieved_carry_metres`` or
+    docstring. Reused across ``ShotRecord``'s ``total_distance_measurement``/
+    ``observed_carry_measurement`` — metadata only: does not affect
+    ``total_distance_metres``, ``observed_carry_metres``, or
     ``lateral_offset_metres``, and must never be used to derive
     ``PlayerShotDistribution``/``CarryDistribution``/``DirectionalDispersion``
     parameters in this issue (that is for a future personal-learning
@@ -80,8 +82,9 @@ class ShotMeasurementQuality(StrEnum):
 
     Independent of, and not derived from, ``ShotMeasurementSource`` — two
     ``MEASURED`` shots can still differ in quality. Metadata only: never
-    alters ``achieved_carry_metres``/``lateral_offset_metres``, and must
-    never be used to derive distribution parameters in this issue.
+    alters ``total_distance_metres``, ``observed_carry_metres``, or
+    ``lateral_offset_metres``, and must never be used to derive
+    distribution parameters in this issue.
     """
 
     UNKNOWN = "unknown"
@@ -90,33 +93,88 @@ class ShotMeasurementQuality(StrEnum):
     HIGH = "high"
 
 
+class ShotMeasurementMetadata(BaseModel):
+    """Provenance/quality for one measured quantity on a ``ShotRecord``.
+
+    A single ``ShotRecord`` can have quantities from different instruments
+    with different trustworthiness (e.g. GPS-derived total distance
+    alongside an absent observed carry, or a launch monitor supplying both
+    at high quality) — this submodel is composed once per quantity rather
+    than once per record, so it never falsely implies every quantity on a
+    record shares one source/quality.
+    """
+
+    source: ShotMeasurementSource = ShotMeasurementSource.UNKNOWN
+    quality: ShotMeasurementQuality = ShotMeasurementQuality.UNKNOWN
+
+
 class ShotRecord(BaseModel):
-    """A single manually entered, observed shot outcome for a club.
+    """A single observed shot outcome for a club — evidence only.
+
+    Normal on-course CaddAI use cannot directly observe the ball's first
+    landing point (true carry): it can only observe shot start and finish
+    position, from which ``total_distance_metres`` (total/downrange
+    distance) and ``lateral_offset_metres`` (lateral offset at the *final
+    resting position*) are derived. True carry is latent and is genuinely
+    observed only occasionally, by a suitable direct-measurement source
+    (e.g. a launch monitor) — ``observed_carry_metres`` is ``None`` for the
+    overwhelming majority of on-course shots, and must never be
+    auto-populated from an estimate.
+
+    ``ShotRecord`` records evidence/observations only. Estimating latent
+    carry from total distance (using club, shot regime, rollout, surface,
+    wind, elevation, etc.) is a future, separate inference step — not
+    implemented here — that will read this evidence, not write it.
+    Nothing on this model feeds ``PlayerShotDistribution``/
+    ``CarryDistribution``/``DirectionalDispersion`` math.
 
     Sign convention for ``lateral_offset_metres``: negative is left of the
     intended target line, zero is on-line with the intended target, and
     positive is right of the intended target line — independent of player
     handedness (same convention as ``DirectionalDispersion.lateral_bias_metres``).
 
-    ``measurement_source`` and ``measurement_quality`` let future personal
-    shot-distribution learning (M4.5, not implemented here) distinguish
-    genuinely observed shots from estimated, low-quality, or
-    unknown-provenance ones. Both are metadata only in this issue: they do
-    not affect ``achieved_carry_metres``/``lateral_offset_metres`` and are
-    not consumed by any statistics/distribution math here.
+    ``total_distance_measurement`` is always present (a quantity that is
+    always required has metadata by default). ``observed_carry_measurement``
+    is ``None`` exactly when ``observed_carry_metres`` is ``None`` — a
+    metadata object describing the provenance of a value that doesn't
+    exist would be meaningless, so the two are enforced to be null-paired.
+
+    No constraint is enforced between ``observed_carry_metres`` and
+    ``total_distance_metres`` (e.g. carry <= total) — they may come from
+    independent instruments that can legitimately disagree, and this model
+    records evidence, not physics consistency.
     """
 
     club_name: str = Field(min_length=1)
-    achieved_carry_metres: float = Field(ge=0)
+    total_distance_metres: float = Field(ge=0)
     lateral_offset_metres: float
+    observed_carry_metres: float | None = Field(default=None, ge=0)
+    total_distance_measurement: ShotMeasurementMetadata = Field(
+        default_factory=ShotMeasurementMetadata
+    )
+    observed_carry_measurement: ShotMeasurementMetadata | None = None
     notes: str | None = None
-    measurement_source: ShotMeasurementSource = ShotMeasurementSource.UNKNOWN
-    measurement_quality: ShotMeasurementQuality = ShotMeasurementQuality.UNKNOWN
 
-    @field_validator("achieved_carry_metres", "lateral_offset_metres")
+    @field_validator("total_distance_metres", "lateral_offset_metres")
     @classmethod
     def _validate_finite(cls, value: float) -> float:
         return _require_finite(value)
+
+    @field_validator("observed_carry_metres")
+    @classmethod
+    def _validate_observed_carry_finite(cls, value: float | None) -> float | None:
+        if value is None:
+            return value
+        return _require_finite(value)
+
+    @model_validator(mode="after")
+    def _validate_observed_carry_metadata_pairing(self) -> "ShotRecord":
+        if (self.observed_carry_metres is None) != (self.observed_carry_measurement is None):
+            raise ValueError(
+                "observed_carry_metres and observed_carry_measurement must both be "
+                "present or both be None"
+            )
+        return self
 
 
 class Player(BaseModel):

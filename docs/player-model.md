@@ -15,8 +15,10 @@
 > zero-variance, zero-bias `Club` from a bare expected-carry scalar for
 > callers without a measured distribution), `Player` (`clubs`,
 > `shot_history`), and `ShotRecord` (a `club_name` snapshot,
-> `achieved_carry_metres`, `lateral_offset_metres`, optional `notes`,
-> finite-value validated per issue #43). `ShotRecord.club_name` is a plain
+> `total_distance_metres`, `lateral_offset_metres`, optional `notes`,
+> finite-value validated per issue #43; see the M4.4 paragraph below for
+> the evidence-only shape, including `observed_carry_metres` and
+> per-quantity measurement metadata). `ShotRecord.club_name` is a plain
 > string snapshot only — it is **not** cross-validated against
 > `Player.clubs`; renaming or removing a club from a player's bag does not
 > update or invalidate existing shot records (see `docs/backlog.md`).
@@ -135,31 +137,48 @@
 > remains the only dependent of `caddai.statistics` (unmodified by this
 > issue).
 >
-> M4.4 (issue #52) added two additive `ShotRecord` fields to
-> [src/caddai/player/models.py](../src/caddai/player/models.py):
-> `measurement_source: ShotMeasurementSource` (`MEASURED`/`GPS_ESTIMATE`/
-> `MANUAL_ESTIMATE`/`UNKNOWN`) and `measurement_quality:
-> ShotMeasurementQuality` (`UNKNOWN`/`LOW`/`MODERATE`/`HIGH`), both
-> defaulting to `UNKNOWN` so existing/backward-compatible `ShotRecord`
-> construction is unaffected. `ShotMeasurementSource` is a new,
-> `ShotRecord`-specific enum, distinct from
-> `caddai.player.onboarding.CarryProvenance` (a one-off onboarding
-> cold-start self-report trust axis, not a historical-shot measurement
-> provenance axis) — reusing `CarryProvenance` would also have created an
-> unwanted `models.py → onboarding.py` dependency.
-> `ShotMeasurementQuality` is independent of, and not derived from,
-> `ShotMeasurementSource`: two `MEASURED` shots can still differ in
-> quality. Both fields are **metadata only** in this issue — they do not
-> affect `achieved_carry_metres`/`lateral_offset_metres` and are not
-> consumed by any `CarryDistribution`/`DirectionalDispersion`/
-> `PlayerShotDistribution` statistics/distribution math yet; whether and
-> how a future personal-learning distribution updater (M4.5+) weights or
-> filters shots by these fields is that updater's decision, not this
-> issue's. `achieved_carry_metres` remains required and unchanged in this
-> issue — see `docs/backlog.md` for the deferred carry-vs-total question.
-> Both enums are exported from `caddai.player.__init__`. No ADR was
-> required (ordinary additive domain evolution, consistent with M4.3's
-> onboarding enums).
+> M4.4 (issue #52) reworked `ShotRecord` in
+> [src/caddai/player/models.py](../src/caddai/player/models.py) around an
+> evidence-only observation contract: normal on-course CaddAI use cannot
+> directly observe true carry (the
+> ball's first landing point), only shot start/finish position.
+> `achieved_carry_metres` is **renamed and re-scoped** to
+> `total_distance_metres` (required, `ge=0` — total/downrange distance,
+> always derivable from start/finish position); `lateral_offset_metres`
+> keeps its name but is now documented as the lateral offset at the
+> *final resting position*. A new optional `observed_carry_metres: float
+> | None` (`ge=0`, finite-validated when present) records true carry only
+> when a suitable direct-measurement source (e.g. a launch monitor)
+> genuinely measured it — `None` for the overwhelming majority of shots,
+> and never auto-populated from an estimate. This is a deliberate
+> breaking rename of a field with no consumer outside
+> `caddai.player.models` and no release yet, not a preserved-compatibility
+> change — see
+> [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md)
+> for the Architect's full review; ADR 0006 is unaffected. Measurement
+> provenance/quality is **per-quantity, not record-level**: a new
+> `ShotMeasurementMetadata` submodel (`source: ShotMeasurementSource` —
+> `MEASURED`/`GPS_ESTIMATE`/`MANUAL_ESTIMATE`/`UNKNOWN`; `quality:
+> ShotMeasurementQuality` — `UNKNOWN`/`LOW`/`MODERATE`/`HIGH`) is composed
+> once as `total_distance_measurement` (always present, default
+> `UNKNOWN`/`UNKNOWN`) and once as `observed_carry_measurement` (`None`
+> unless `observed_carry_metres` is set), so one quantity's
+> source/quality never falsely applies to the other. A validator enforces
+> `observed_carry_metres`/`observed_carry_measurement` are null-paired. No
+> `observed_carry_metres <= total_distance_metres` consistency check is
+> enforced — `ShotRecord` records evidence, not physics consistency; the
+> two may come from independent instruments that can legitimately
+> disagree. None of these fields are consumed by any
+> `CarryDistribution`/`DirectionalDispersion`/`PlayerShotDistribution`
+> statistics/distribution math yet; whether/how a future personal-learning
+> updater (M4.5+) weights or filters shots by them is that updater's
+> decision. The shape does not structurally assume every shot has
+> meaningful carry — a `ClubCategory.PUTTER` shot naturally has
+> `observed_carry_metres=None` with no forcing. `club_name`/`notes` are
+> unchanged. All new types are exported from `caddai.player.__init__`. No
+> ADR was required (ordinary, if larger-than-usual, additive/corrective
+> domain evolution — no shipped cross-subsystem consumer existed to
+> break).
 
 ## Purpose
 
