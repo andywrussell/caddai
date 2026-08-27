@@ -83,6 +83,39 @@
   polygon boundary edge in `caddai.course.distance` (feeds M2 follow-up).
 - Add regression test coverage directly targeting `caddai.course.distance`'s
   `1e-6` m Shapely precision-snap boundary itself (feeds M2 follow-up).
+- Add an `observed_carry_lateral_metres` counterpart to `ShotRecord` for
+  launch-monitor-style lateral offset *at carry landing* (distinct from
+  `lateral_offset_metres`, which is now the lateral offset at final
+  resting position) — deferred out of M4.4 (issue #52) pending an actual
+  launch-monitor integration. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- A future carry-from-downrange-distance estimator (using club, shot
+  regime, rollout, landing surface, ground firmness/wetness, wind,
+  elevation, and other environmental conditions) that reads `ShotRecord.
+  final_downrange_metres` and produces a distinct, uncertainty/provenance-
+  tagged *estimated* carry — must never be confused with, or written back
+  into, `ShotRecord.observed_carry_metres` — deferred out of M4.4 (issue
+  #52); this is the "context-aware inference" step of the learning
+  pipeline the Architect described in that issue's round-2 review.
+- An "attempted but rejected/discarded measurement" concept for
+  `ShotRecord` (e.g. a carry reading was attempted but not trusted enough
+  to keep) — distinct from `observed_carry_metres` simply being absent —
+  identified as a possible future extension during M4.4 (issue #52)'s
+  round-2 Architect review; not built unless a real consumer needs it.
+- A player-domain lie/context type for `ShotRecord` (e.g. fairway, rough,
+  bunker, recovery) — deferred out of M4.4 (issue #52), no consumer yet.
+  Must **not** import `caddai.strategy.LieType` (dependency direction:
+  `player` may not depend on `strategy`); open question is whether a shared
+  neutral lie type should live in a subsystem-neutral module and be reused
+  by both, or whether `player` should define its own duplicate enum. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- A penalty/out-of-bounds/lost-ball outcome flag on `ShotRecord` — deferred
+  out of M4.4 (issue #52), no consumer yet. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- Intended-shot-type/target-line context on `ShotRecord` (e.g. intended shot
+  shape, target line, distinct from the achieved outcome) — deferred out of
+  M4.4 (issue #52), no consumer yet. See
+  [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
 
 ## Process
 

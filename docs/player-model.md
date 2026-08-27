@@ -15,8 +15,10 @@
 > zero-variance, zero-bias `Club` from a bare expected-carry scalar for
 > callers without a measured distribution), `Player` (`clubs`,
 > `shot_history`), and `ShotRecord` (a `club_name` snapshot,
-> `achieved_carry_metres`, `lateral_offset_metres`, optional `notes`,
-> finite-value validated per issue #43). `ShotRecord.club_name` is a plain
+> `final_downrange_metres`, `lateral_offset_metres`, optional `notes`,
+> finite-value validated per issue #43; see the M4.4 paragraph below for
+> the evidence-only shape, including `observed_carry_metres` and
+> per-quantity measurement metadata). `ShotRecord.club_name` is a plain
 > string snapshot only — it is **not** cross-validated against
 > `Player.clubs`; renaming or removing a club from a player's bag does not
 > update or invalidate existing shot records (see `docs/backlog.md`).
@@ -134,6 +136,69 @@
 > `sample()`, or Monte Carlo logic exists in this module; `caddai.player`
 > remains the only dependent of `caddai.statistics` (unmodified by this
 > issue).
+>
+> M4.4 (issue #52) reworked `ShotRecord` in
+> [src/caddai/player/models.py](../src/caddai/player/models.py) around an
+> evidence-only observation contract: normal on-course CaddAI use cannot
+> directly observe true carry (the
+> ball's first landing point), only shot start/finish position.
+> `achieved_carry_metres` is **renamed and re-scoped** (via an
+> intermediate `total_distance_metres`) to `final_downrange_metres`
+> (required, a signed coordinate — specifically the *downrange* component
+> of the final resting position along the intended target line, not the
+> straight-line start-to-finish distance, which would additionally require
+> `lateral_offset_metres`; may be negative for a genuine severe outcome
+> finishing behind the shot's start position, so no `ge=0` constraint is
+> enforced — see the round-4 addendum below); `lateral_offset_metres`
+> keeps its name but is
+> now documented as the lateral offset at the *final resting position*. A
+> new optional `observed_carry_metres: float | None` (`ge=0`,
+> finite-validated when present) records true carry only when a suitable
+> direct-measurement source (e.g. a launch monitor) genuinely measured
+> it — `None` for the overwhelming majority of shots, and never
+> auto-populated from an estimate. This is a deliberate breaking rename of
+> a field with no consumer outside `caddai.player.models` and no release
+> yet, not a preserved-compatibility change — see
+> [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md)
+> for the Architect's full review; ADR 0006 is unaffected. Measurement
+> provenance/quality is **per-quantity, not record-level**: a new
+> `ShotMeasurementMetadata` submodel (`source: ShotMeasurementSource` —
+> `LAUNCH_MONITOR`/`GPS_DEVICE`/`MANUAL`/`UNKNOWN`; `quality:
+> ShotMeasurementQuality` — `UNKNOWN`/`LOW`/`MODERATE`/`HIGH`) is composed
+> once as `endpoint_measurement` (always present, default
+> `UNKNOWN`/`UNKNOWN`, and covering both `final_downrange_metres` and
+> `lateral_offset_metres` as one shared final-position observation) and
+> once as `observed_carry_measurement` (`None`
+> unless `observed_carry_metres` is set), so one quantity's
+> source/quality never falsely applies to the other. A validator enforces
+> `observed_carry_metres`/`observed_carry_measurement` are null-paired. No
+> `observed_carry_metres <= final_downrange_metres` consistency check is
+> enforced — `ShotRecord` records evidence, not physics consistency; the
+> two may come from independent instruments that can legitimately
+> disagree. None of these fields are consumed by any
+> `CarryDistribution`/`DirectionalDispersion`/`PlayerShotDistribution`
+> statistics/distribution math yet; whether/how a future personal-learning
+> updater (M4.5+) weights or filters shots by them is that updater's
+> decision. The shape does not structurally assume every shot has
+> meaningful carry — a `ClubCategory.PUTTER` shot naturally has
+> `observed_carry_metres=None` with no forcing. `club_name`/`notes` are
+> unchanged. All new types are exported from `caddai.player.__init__`. No
+> ADR was required (ordinary, if larger-than-usual, additive/corrective
+> domain evolution — no shipped cross-subsystem consumer existed to
+> break).
+>
+> Round-4 addendum (same issue): `final_downrange_metres`/
+> `lateral_offset_metres` are relative to the golfer's own
+> **selected/accepted** intended target line for the shot, never
+> automatically the pin/green centre/hole centreline/a CaddAI-recommended
+> target unless actually accepted — constructing those coordinates and
+> recording which target was selected is future round/decision-journal
+> responsibility (`docs/decision-journal.md`), not implemented here; no
+> new field was added. `final_downrange_metres` lost its `ge=0` constraint
+> — it is a signed coordinate, not an unsigned distance, since a genuine
+> severe outcome can finish behind the shot's start position;
+> `observed_carry_metres` keeps `ge=0` (a genuine physical carry
+> measurement, not a coordinate).
 
 ## Purpose
 
