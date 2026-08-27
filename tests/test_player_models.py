@@ -23,8 +23,9 @@ through ``Club``, not just when constructing the nested model directly.
 See also GitHub issue #43 ("M3.x — Reject non-finite ``ShotRecord``
 measurements") for the acceptance criteria covering ``ShotRecord`` directly:
 ``final_downrange_metres`` and ``lateral_offset_metres`` must reject NaN and
-+/-infinity, since ``+inf`` otherwise satisfies both ``final_downrange_metres``'s
-``ge=0`` constraint and ``lateral_offset_metres``'s unconstrained sign.
++/-infinity, even though both are otherwise unconstrained in sign (see issue
+#52's round-4 update below: ``final_downrange_metres`` lost its ``ge=0``
+constraint, since it is a signed coordinate, not an unsigned distance).
 
 See GitHub issue #50 ("M4.2 — `PopulationPrior` population parameter
 model") for the acceptance criteria covering the ``ClubCategory`` migration
@@ -48,6 +49,17 @@ rather than record-level flat fields. ``ShotMeasurementSource`` members are
 ``MEASURED``/``GPS_ESTIMATE``/``MANUAL_ESTIMATE``/``UNKNOWN``). No
 cross-field carry<=downrange consistency check is enforced — ``ShotRecord``
 records evidence, not physics consistency.
+
+Round-4 update (still issue #52): ``final_downrange_metres``/
+``lateral_offset_metres`` are coordinates relative to the golfer's own
+selected/accepted intended target line for the shot — never automatically
+the pin/green centre/hole centreline/a CaddAI-recommended target unless the
+golfer actually accepted it — with that construction the responsibility of
+future upstream round/decision-journal code, not ``ShotRecord`` itself.
+``final_downrange_metres`` lost its ``ge=0`` constraint (it is a signed
+coordinate, not an unsigned distance; a severe outcome can genuinely finish
+behind the shot's start position), while ``observed_carry_metres`` keeps
+``ge=0`` (a genuine scalar physical carry measurement, never a coordinate).
 """
 
 import pytest
@@ -450,14 +462,41 @@ def test_shot_record_final_downrange_metres_accepts_zero() -> None:
     assert shot_record.final_downrange_metres == pytest.approx(0.0)
 
 
+def test_shot_record_final_downrange_metres_accepts_positive_value() -> None:
+    """A positive downrange coordinate (ahead of the start position) is accepted."""
+    shot_record = ShotRecord(
+        club_name="7 Iron", final_downrange_metres=142.5, lateral_offset_metres=-3.0
+    )
+
+    assert shot_record.final_downrange_metres == pytest.approx(142.5)
+
+
 @pytest.mark.parametrize("final_downrange_metres", [-0.1, -1.0, -140.0])
-def test_shot_record_rejects_negative_final_downrange_metres(final_downrange_metres: float) -> None:
-    """A negative downrange distance is physically meaningless."""
+def test_shot_record_accepts_negative_final_downrange_metres(final_downrange_metres: float) -> None:
+    """``final_downrange_metres`` is a signed coordinate along the intended target
+    line, not an unsigned physical distance — a genuine severe outcome (e.g. a
+    deflection off an obstruction) can finish behind the shot's start position,
+    which must not be rejected as invalid (issue #52, round-4 Architect review).
+    """
+    shot_record = ShotRecord(
+        club_name="7 Iron",
+        final_downrange_metres=final_downrange_metres,
+        lateral_offset_metres=0.0,
+    )
+
+    assert shot_record.final_downrange_metres == pytest.approx(final_downrange_metres)
+
+
+def test_shot_record_observed_carry_metres_still_rejects_negative_values() -> None:
+    """Unlike ``final_downrange_metres``, ``observed_carry_metres`` stays non-negative —
+    it is a genuine scalar physical carry-distance measurement, not a coordinate."""
     with pytest.raises(ValidationError):
         ShotRecord(
             club_name="7 Iron",
-            final_downrange_metres=final_downrange_metres,
-            lateral_offset_metres=0.0,
+            final_downrange_metres=142.5,
+            lateral_offset_metres=-3.0,
+            observed_carry_metres=-1.0,
+            observed_carry_measurement=ShotMeasurementMetadata(),
         )
 
 
@@ -852,6 +891,18 @@ def test_shot_record_accepts_large_final_downrange_and_lateral_offset() -> None:
 
     assert shot_record.final_downrange_metres == pytest.approx(350.0)
     assert shot_record.lateral_offset_metres == pytest.approx(-80.0)
+
+
+def test_shot_record_accepts_severe_negative_downrange_and_large_lateral_offset() -> None:
+    """A genuine severe outcome (e.g. a deflection off an obstruction finishing behind
+    the shot's start position) still constructs — large-magnitude negative downrange
+    alongside a large lateral offset is not rejected as an outlier."""
+    shot_record = ShotRecord(
+        club_name="Driver", final_downrange_metres=-45.0, lateral_offset_metres=60.0
+    )
+
+    assert shot_record.final_downrange_metres == pytest.approx(-45.0)
+    assert shot_record.lateral_offset_metres == pytest.approx(60.0)
 
 
 def test_shot_record_accepts_large_observed_carry_metres() -> None:

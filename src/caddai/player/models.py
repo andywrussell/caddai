@@ -139,6 +139,29 @@ class ShotRecord(BaseModel):
     final position onto that line. Not the straight-line start-to-finish
     displacement, which would be
     ``sqrt(final_downrange_metres**2 + lateral_offset_metres**2)``.
+    ``final_downrange_metres`` may be negative — a severe mishit (e.g. a
+    thin/top, a deflection off an obstruction, or an extreme contact
+    error) can leave the final position behind the shot's start position
+    along the intended target line's direction. This is a genuine,
+    evidence-preserving outcome, not a data-entry error, so no
+    non-negativity constraint is enforced here, unlike
+    ``observed_carry_metres`` (a genuine scalar physical carry-distance
+    measurement, not a coordinate, and definitionally non-negative).
+
+    The "intended target line" referenced above is the line implied by the
+    golfer's own selected/accepted target for this specific shot — not
+    automatically the pin, green centre, hole centreline, or a
+    CaddAI-recommended target, unless the golfer actually accepted that
+    target (in which case selected target == recommended target; if they
+    overrode it, selected target != recommended target). Computing
+    ``final_downrange_metres``/``lateral_offset_metres`` from raw
+    start/target/finish positions, and recording which target was actually
+    selected, is the responsibility of upstream round/decision-journal code
+    — not implemented here (see ``docs/decision-journal.md``) —
+    ``ShotRecord`` stores only the resulting target-line-relative
+    coordinates, never the target itself. This distinction matters: a
+    golfer's deliberate aim away from a recommended target must never be
+    misread as player dispersion/bias by a future learning step.
 
     Sign convention for ``lateral_offset_metres``: negative is left of the
     intended target line, zero is on-line with the intended target, and
@@ -161,7 +184,7 @@ class ShotRecord(BaseModel):
     """
 
     club_name: str = Field(min_length=1)
-    final_downrange_metres: float = Field(ge=0)
+    final_downrange_metres: float
     lateral_offset_metres: float
     endpoint_measurement: ShotMeasurementMetadata = Field(default_factory=ShotMeasurementMetadata)
     observed_carry_metres: float | None = Field(default=None, ge=0)

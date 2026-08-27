@@ -18,9 +18,11 @@ first public API is published.
   [src/caddai/player/models.py](src/caddai/player/models.py),
   `ShotRecord.achieved_carry_metres` is **renamed and re-scoped** (via an
   intermediate `total_distance_metres`) to `final_downrange_metres`
-  (required, `ge=0` — specifically the downrange component of the final
-  resting position along the intended target line, not the straight-line
-  start-to-finish distance);
+  (required, a signed coordinate — specifically the downrange component
+  of the final resting position along the intended target line, not the
+  straight-line start-to-finish distance; may be negative for a genuine
+  severe outcome finishing behind the shot's start position, so no
+  `ge=0` constraint is enforced — see the round-4 addendum below);
   `lateral_offset_metres` is unchanged in name but now explicitly
   documented as the lateral offset at the *final resting position*. A new
   optional `observed_carry_metres: float | None` (`ge=0`, finite-validated
@@ -71,6 +73,25 @@ first public API is published.
   `observed_carry_lateral_metres` counterpart, and an
   attempted-but-rejected-measurement concept) recorded in
   [docs/backlog.md](docs/backlog.md).
+
+  **Round-4 addendum (same issue):** `final_downrange_metres`/
+  `lateral_offset_metres` are now documented as relative to the golfer's
+  own **selected/accepted** intended target line for the shot — never
+  automatically the pin, green centre, hole centreline, or a
+  CaddAI-recommended target unless the golfer actually accepted it — so a
+  deliberate aim away from a recommendation is never misread as player
+  dispersion/bias by a future learning step. Constructing the
+  target-line-relative coordinates, and recording which target was
+  actually selected, is future upstream round/decision-journal
+  responsibility, not implemented here — no new field was added.
+  `final_downrange_metres` also lost its `ge=0` constraint: it is a
+  **signed coordinate** along the target line, not an unsigned distance,
+  since a genuine severe outcome (e.g. a deflection off an obstruction)
+  can finish behind the shot's start position; `observed_carry_metres`
+  correctly keeps `ge=0`, being a genuine scalar physical carry
+  measurement, not a coordinate. Tests added for positive/zero/negative
+  downrange, a negative-downrange-plus-large-lateral severe outcome, and
+  `observed_carry_metres` still rejecting negative values.
 
 - Documentation-only clarification of a product/strategy requirement ahead
   of M5 planning: CaddAI's strategy layer must ultimately support

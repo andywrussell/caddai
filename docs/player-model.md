@@ -144,10 +144,13 @@
 > ball's first landing point), only shot start/finish position.
 > `achieved_carry_metres` is **renamed and re-scoped** (via an
 > intermediate `total_distance_metres`) to `final_downrange_metres`
-> (required, `ge=0` — specifically the *downrange* component of the final
-> resting position along the intended target line, not the straight-line
-> start-to-finish distance, which would additionally require
-> `lateral_offset_metres`); `lateral_offset_metres` keeps its name but is
+> (required, a signed coordinate — specifically the *downrange* component
+> of the final resting position along the intended target line, not the
+> straight-line start-to-finish distance, which would additionally require
+> `lateral_offset_metres`; may be negative for a genuine severe outcome
+> finishing behind the shot's start position, so no `ge=0` constraint is
+> enforced — see the round-4 addendum below); `lateral_offset_metres`
+> keeps its name but is
 > now documented as the lateral offset at the *final resting position*. A
 > new optional `observed_carry_metres: float | None` (`ge=0`,
 > finite-validated when present) records true carry only when a suitable
@@ -183,6 +186,19 @@
 > ADR was required (ordinary, if larger-than-usual, additive/corrective
 > domain evolution — no shipped cross-subsystem consumer existed to
 > break).
+>
+> Round-4 addendum (same issue): `final_downrange_metres`/
+> `lateral_offset_metres` are relative to the golfer's own
+> **selected/accepted** intended target line for the shot, never
+> automatically the pin/green centre/hole centreline/a CaddAI-recommended
+> target unless actually accepted — constructing those coordinates and
+> recording which target was selected is future round/decision-journal
+> responsibility (`docs/decision-journal.md`), not implemented here; no
+> new field was added. `final_downrange_metres` lost its `ge=0` constraint
+> — it is a signed coordinate, not an unsigned distance, since a genuine
+> severe outcome can finish behind the shot's start position;
+> `observed_carry_metres` keeps `ge=0` (a genuine physical carry
+> measurement, not a coordinate).
 
 ## Purpose
 
