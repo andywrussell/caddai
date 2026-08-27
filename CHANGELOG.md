@@ -10,6 +10,48 @@ first public API is published.
 
 ### Added
 
+- Implemented **M4.2 — `PopulationPrior` population parameter model**
+  (GitHub issue #50), the ADR 0007 stable/replaceable handicap/
+  club-category population-prior contract. Migrated `ClubCategory`'s
+  canonical definition from `caddai.player.models` to
+  `caddai.statistics.models` (so `caddai.statistics` remains a leaf
+  module, per module ownership) — `caddai.player` still re-exports
+  `ClubCategory` unchanged, so every existing import path and serialized
+  `StrEnum` value is preserved. Added
+  [src/caddai/statistics/population_prior.py](src/caddai/statistics/population_prior.py):
+  `PopulationPriorParameters` (`family`, `carry_scale_metres`,
+  `lateral_scale_metres`, `correlation`, `degrees_of_freedom`, mirroring
+  `PlayerShotDistribution`'s own field bounds), `PopulationPriorConfidence`
+  (`StrEnum`: `LOW`/`MODERATE`/`HIGH`), `PopulationPriorProvenance`
+  (`StrEnum`: `EVIDENCE_INFORMED_PROVISIONAL_CONFIG`/`CADDAI_CALIBRATION`/
+  `FITTED_MODEL`), `HandicapBand` (`StrEnum`: `PLUS`/`LOW`/`MID`/`HIGH`),
+  `PopulationPriorResult`, and `resolve_population_prior(handicap_index,
+  club_category) -> PopulationPriorResult`, which validates
+  `handicap_index` (finite, in `[-10.0, 54.0]`) and `club_category` (one of
+  the 5 supported full-swing categories — `PUTTER`/`OTHER` rejected) and
+  raises `ValueError` on violation. Deliberately does **not** construct a
+  `PlayerShotDistribution` directly — `carry_location_metres`/
+  `lateral_bias_metres` require M4.3 onboarding data, not a
+  handicap/club-category lookup. Added
+  [src/caddai/statistics/population_prior_config.py](src/caddai/statistics/population_prior_config.py),
+  a small, explicit, versioned (`m4.2-provisional-v1`) lookup table backing
+  the contract, with every cell uniformly marked
+  `confidence=PopulationPriorConfidence.LOW` and
+  `provenance=PopulationPriorProvenance.EVIDENCE_INFORMED_PROVISIONAL_CONFIG`
+  — explicitly provisional CaddAI configuration, not validated population
+  data, per the unresolved evidence/calibration gaps identified in
+  [docs/research/m4-probabilistic-golfer-model.md](docs/research/m4-probabilistic-golfer-model.md).
+  `FAIRWAY_WOOD`/`HYBRID` share identical values in every band (the
+  research doc groups them together). Flipped
+  [ADR 0006](docs/adr/0006-player-shot-distribution-bivariate-student-t.md)
+  and [ADR 0007](docs/adr/0007-population-prior-replaceability.md) status
+  from Proposed to Accepted. No new runtime dependency; no `sample()`/RNG/
+  Monte Carlo logic; `caddai.statistics` remains a leaf module. Added
+  [tests/test_population_prior.py](tests/test_population_prior.py) and
+  updated [tests/test_player_models.py](tests/test_player_models.py),
+  [tests/test_architecture_boundaries.py](tests/test_architecture_boundaries.py),
+  and documented in [docs/player-model.md](docs/player-model.md) and
+  [docs/architecture.md](docs/architecture.md).
 - Implemented **M4.1 — `PlayerShotDistribution` domain type** (GitHub
   issue #49), the ADR 0006 bivariate Student-t shot-production
   representation. Added

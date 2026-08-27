@@ -2,7 +2,12 @@
 
 ## Status
 
-Proposed
+Accepted — the bivariate Student-t representation and its parameterisation
+(this ADR's binding decision) are fully implemented in
+`caddai.statistics.shot_distribution`, accepted as part of M4.2 (issue #50).
+`Club`/`Player` composition of `PlayerShotDistribution` (the "additive
+field" consequence described below) remains deferred to M4.6, per
+`docs/player-model.md`.
 
 ## Context
 

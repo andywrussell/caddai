@@ -25,11 +25,22 @@ measurements") for the acceptance criteria covering ``ShotRecord`` directly:
 ``achieved_carry_metres`` and ``lateral_offset_metres`` must reject NaN and
 +/-infinity, since ``+inf`` otherwise satisfies both ``achieved_carry_metres``'s
 ``ge=0`` constraint and ``lateral_offset_metres``'s unconstrained sign.
+
+See GitHub issue #50 ("M4.2 — `PopulationPrior` population parameter
+model") for the acceptance criteria covering the ``ClubCategory`` migration
+from ``caddai.player`` to ``caddai.statistics``: the canonical definition
+moved to ``caddai.statistics.models`` (statistics must remain a leaf
+module), but every existing import path and serialized ``StrEnum`` value
+is preserved via a re-export from ``caddai.player``.
 """
 
 import pytest
 from pydantic import ValidationError
 
+import caddai.player as player_package
+import caddai.player.models as player_models_module
+import caddai.statistics as statistics_package
+import caddai.statistics.models as statistics_models_module
 from caddai.player.models import Club, ClubCategory, Player, ShotRecord
 from caddai.statistics import CarryDistribution, DirectionalDispersion
 
@@ -491,6 +502,37 @@ def test_player_shot_history_coerces_nested_dicts_into_shot_records() -> None:
     assert player.shot_history[0].club_name == "7 Iron"
     assert player.shot_history[0].achieved_carry_metres == pytest.approx(138.0)
     assert player.shot_history[0].lateral_offset_metres == pytest.approx(-2.0)
+
+
+# --- ClubCategory migration (issue #50) ----------------------------------------
+
+
+def test_club_category_is_the_same_object_across_every_import_path() -> None:
+    """``ClubCategory`` is one canonical enum, re-exported (not redefined) by every module."""
+    assert player_package.ClubCategory is ClubCategory
+    assert player_models_module.ClubCategory is ClubCategory
+    assert statistics_package.ClubCategory is ClubCategory
+    assert statistics_models_module.ClubCategory is ClubCategory
+
+
+@pytest.mark.parametrize(
+    ("category", "expected_value"),
+    [
+        (ClubCategory.DRIVER, "driver"),
+        (ClubCategory.FAIRWAY_WOOD, "fairway_wood"),
+        (ClubCategory.HYBRID, "hybrid"),
+        (ClubCategory.IRON, "iron"),
+        (ClubCategory.WEDGE, "wedge"),
+        (ClubCategory.PUTTER, "putter"),
+        (ClubCategory.OTHER, "other"),
+    ],
+)
+def test_club_category_serialized_values_are_unchanged_by_the_migration(
+    category: ClubCategory, expected_value: str
+) -> None:
+    """Regression guard: the migration to ``caddai.statistics`` must not change any
+    member's serialized string value — existing persisted/serialized data must remain valid."""
+    assert category.value == expected_value
 
 
 def test_player_shot_history_independent_of_clubs() -> None:

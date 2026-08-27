@@ -2,7 +2,8 @@
 
 ## Status
 
-Proposed
+Accepted — accepted as part of M4.2 (issue #50): `resolve_population_prior`
+now implements this contract in `caddai.statistics.population_prior`.
 
 ## Context
 

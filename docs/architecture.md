@@ -93,7 +93,7 @@ runtime architecture (roadmap M7).
 | Course | `src/caddai/course/` | Hole/course geometry, hazards, GeoJSON representation |
 | GPS | `src/caddai/gps/` | Coordinates, bearings, GPS distance calculations |
 | Player | `src/caddai/player/` | Player and club domain models, tendencies |
-| Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics |
+| Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics, the `ClubCategory` taxonomy, and the `PopulationPrior` contract/config |
 | Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes |
 | Simulation | `src/caddai/simulation/` | Monte Carlo shot-outcome simulation |
 | LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M8+) |
