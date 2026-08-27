@@ -10,6 +10,59 @@ first public API is published.
 
 ### Added
 
+- Implemented **M4.5 — personal partial-pooling player-model updater**
+  (GitHub issue #53), CaddAI's first personal-learning mechanism: a
+  deterministic, closed-form partial-pooling (empirical-Bayes-style
+  shrinkage) update that moves a `PlayerShotDistribution` from its current
+  value (population-prior or onboarding-derived, per ADR 0006/ADR 0007
+  precedent) toward personal `ShotRecord` evidence — no RNG/Monte Carlo.
+  Split across two modules per the Architect's review
+  (see [docs/plans/m4.5-personal-partial-pooling-updater.plan.md](docs/plans/m4.5-personal-partial-pooling-updater.plan.md)):
+  the pure shrinkage math lives in a new
+  [src/caddai/statistics/personalisation.py](src/caddai/statistics/personalisation.py)
+  (`shrink_shot_distribution`, `PersonalisationConfig`,
+  `WeightedObservations`, `WeightedJointObservations`,
+  `DimensionUpdateOutcome`, `ShotDistributionUpdateResult`) — a leaf
+  module with no `caddai.player` import — and the `ShotRecord`
+  history-to-evidence glue lives in a new
+  [src/caddai/player/personalisation.py](src/caddai/player/personalisation.py)
+  (`build_shot_distribution_update_inputs`,
+  `update_shot_distribution_from_history`,
+  `MEASUREMENT_QUALITY_WEIGHTS`). Each `PlayerShotDistribution` dimension
+  shrinks at its own rate: `carry_location_metres`/`lateral_bias_metres`
+  (location) update fastest — pooled with the weighted sample mean of
+  evidence via a pseudo-count-weighted convex combination, with no
+  minimum-evidence gate beyond `n == 0`; `carry_scale_metres`/
+  `lateral_scale_metres` (dispersion) and `correlation` each require a
+  configurable minimum effective-observation-count (`sum(weights)`) before
+  moving away from the prior at all, reported per-dimension via
+  `DimensionUpdateOutcome`
+  (`UPDATED`/`INSUFFICIENT_EVIDENCE`/`NO_EVIDENCE`/`HELD_FIXED_BY_POLICY`);
+  `degrees_of_freedom` is never learned in V1 — always retained unchanged
+  (`HELD_FIXED_BY_POLICY`). `ShotRecord.final_downrange_metres` is never
+  used as carry evidence — only genuinely observed
+  `observed_carry_metres` updates carry-space parameters.
+  **Architect Decision A:** `lateral_offset_metres` (the shot's *final
+  resting position*, not its carry-point lateral offset) is used as an
+  explicitly documented, replaceable V1 approximation for the lateral
+  dimension, since `PlayerShotDistribution`'s lateral parameters are,
+  strictly, about intrinsic carry-point lateral shot production.
+  **Architect Decision B:** measurement quality (`ShotMeasurementQuality`)
+  is used as an explicit, named, provisional numeric weight
+  (`MEASUREMENT_QUALITY_WEIGHTS`), not a record filter, with `UNKNOWN`
+  contributing zero weight by default. All config values
+  (`PersonalisationConfig`/`DEFAULT_PERSONALISATION_CONFIG`,
+  `MEASUREMENT_QUALITY_WEIGHTS`) are explicit, versioned
+  (`m4.5-provisional-v1`), and provisional pending calibration data,
+  mirroring `population_prior_config.py`'s/`onboarding.py`'s own
+  precedent. No ADR required — no new dependency, public API contract
+  break, unit/ownership/dependency-direction change, or
+  deterministic-strategy-principle change (see the plan doc's Architect
+  decision record). Documented in
+  [docs/player-model.md](docs/player-model.md); tests added in
+  [tests/test_statistics_personalisation.py](tests/test_statistics_personalisation.py)
+  and [tests/test_player_personalisation.py](tests/test_player_personalisation.py).
+
 - Implemented **M4.4 — `ShotRecord` provenance and measurement-quality
   fields** (GitHub issue #52), reworked around an evidence-only
   observation contract: normal on-course CaddAI use cannot directly

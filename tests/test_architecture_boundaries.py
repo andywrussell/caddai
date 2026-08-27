@@ -89,6 +89,7 @@ SUBSYSTEM_BOUNDARIES = [
             REPO_ROOT / "src/caddai/statistics/shot_distribution.py",
             REPO_ROOT / "src/caddai/statistics/population_prior.py",
             REPO_ROOT / "src/caddai/statistics/population_prior_config.py",
+            REPO_ROOT / "src/caddai/statistics/personalisation.py",
         ),
         # statistics is a leaf domain module: zero other caddai.* imports permitted.
         allowed_caddai_prefixes=("caddai.statistics",),
@@ -100,6 +101,7 @@ SUBSYSTEM_BOUNDARIES = [
             REPO_ROOT / "src/caddai/player/__init__.py",
             REPO_ROOT / "src/caddai/player/models.py",
             REPO_ROOT / "src/caddai/player/onboarding.py",
+            REPO_ROOT / "src/caddai/player/personalisation.py",
         ),
         allowed_caddai_prefixes=("caddai.player", "caddai.statistics"),
         plan_reference=(
