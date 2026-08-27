@@ -62,6 +62,16 @@ first public API is published.
   [docs/player-model.md](docs/player-model.md); tests added in
   [tests/test_statistics_personalisation.py](tests/test_statistics_personalisation.py)
   and [tests/test_player_personalisation.py](tests/test_player_personalisation.py).
+  **Pre-merge refinement:** the ambiguous `prior` parameter was renamed to
+  `baseline_distribution` across `shrink_shot_distribution`,
+  `update_shot_distribution_from_history`, and
+  `build_shot_distribution_update_inputs` to make explicit that the update
+  is a **batch recompute from full history, not an incremental update** —
+  calling it repeatedly with the same inputs is idempotent, and the
+  result from re-running over accumulated history matches applying the
+  same shrinkage in one pass. Docstrings and new tests document this
+  contract directly (Architect-approved, no ADR required — unreleased,
+  unmerged code with zero external consumers).
 
 - Implemented **M4.4 — `ShotRecord` provenance and measurement-quality
   fields** (GitHub issue #52), reworked around an evidence-only

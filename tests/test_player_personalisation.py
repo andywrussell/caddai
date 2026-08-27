@@ -121,46 +121,46 @@ def test_player_personalisation_config_version_is_nonempty_string() -> None:
 
 
 def test_only_matching_club_name_records_are_used() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(club_name="7 Iron", observed_carry_metres=150.0),
         _shot_record(club_name="Driver", observed_carry_metres=250.0),
     ]
 
-    carry_obs, _, _ = build_shot_distribution_update_inputs(prior, "7 Iron", history)
+    carry_obs, _, _ = build_shot_distribution_update_inputs(baseline, "7 Iron", history)
 
     assert carry_obs.values == (150.0,)
 
 
 def test_no_matching_club_name_records_yields_no_evidence() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [_shot_record(club_name="Driver", observed_carry_metres=250.0)]
 
-    result = update_shot_distribution_from_history(prior, "7 Iron", history)
+    result = update_shot_distribution_from_history(baseline, "7 Iron", history)
 
     assert result.carry_location_outcome is DimensionUpdateOutcome.NO_EVIDENCE
-    assert result.shot_distribution == prior
+    assert result.shot_distribution == baseline
 
 
 # --- Quality-weight mapping applied to real records --------------------------
 
 
 def test_carry_weight_uses_observed_carry_measurement_quality() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(observed_carry_metres=150.0, carry_quality=ShotMeasurementQuality.MODERATE)
     ]
 
-    carry_obs, _, _ = build_shot_distribution_update_inputs(prior, _CLUB_NAME, history)
+    carry_obs, _, _ = build_shot_distribution_update_inputs(baseline, _CLUB_NAME, history)
 
     assert carry_obs.weights == (pytest.approx(0.6),)
 
 
 def test_lateral_weight_uses_endpoint_measurement_quality() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [_shot_record(lateral_offset_metres=3.0, endpoint_quality=ShotMeasurementQuality.LOW)]
 
-    _, lateral_obs, _ = build_shot_distribution_update_inputs(prior, _CLUB_NAME, history)
+    _, lateral_obs, _ = build_shot_distribution_update_inputs(baseline, _CLUB_NAME, history)
 
     assert lateral_obs.weights == (pytest.approx(0.25),)
 
@@ -171,7 +171,7 @@ def test_lateral_weight_uses_endpoint_measurement_quality() -> None:
 def test_final_downrange_metres_is_never_used_as_carry_evidence() -> None:
     """A record with no genuine observed_carry_metres, but a large distinctive
     final_downrange_metres, must never leak into carry evidence."""
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     history = [
         _shot_record(
             final_downrange_metres=999.0,
@@ -180,31 +180,31 @@ def test_final_downrange_metres_is_never_used_as_carry_evidence() -> None:
         )
     ]
 
-    carry_obs, _, _ = build_shot_distribution_update_inputs(prior, _CLUB_NAME, history)
-    result = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
+    carry_obs, _, _ = build_shot_distribution_update_inputs(baseline, _CLUB_NAME, history)
+    result = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
 
     assert carry_obs.values == ()
     assert result.carry_location_outcome is DimensionUpdateOutcome.NO_EVIDENCE
     assert result.shot_distribution.carry_location_metres == pytest.approx(
-        prior.carry_location_metres
+        baseline.carry_location_metres
     )
 
 
 def test_lateral_offset_metres_is_accepted_as_lateral_evidence() -> None:
-    prior = _prior(lateral_bias_metres=0.0)
+    baseline = _prior(lateral_bias_metres=0.0)
     history = [_shot_record(lateral_offset_metres=10.0) for _ in range(5)]
 
-    result = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
+    result = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
 
     assert result.lateral_bias_outcome is DimensionUpdateOutcome.UPDATED
-    assert result.shot_distribution.lateral_bias_metres > prior.lateral_bias_metres
+    assert result.shot_distribution.lateral_bias_metres > baseline.lateral_bias_metres
 
 
 # --- Partial observations: dimension-specific, no whole-record discarding ----
 
 
 def test_partial_record_with_only_carry_contributes_to_carry_dimension_only() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(
             observed_carry_metres=160.0,
@@ -214,7 +214,7 @@ def test_partial_record_with_only_carry_contributes_to_carry_dimension_only() ->
     ]
 
     carry_obs, lateral_obs, joint_obs = build_shot_distribution_update_inputs(
-        prior, _CLUB_NAME, history
+        baseline, _CLUB_NAME, history
     )
 
     assert carry_obs.values == (160.0,)
@@ -224,7 +224,7 @@ def test_partial_record_with_only_carry_contributes_to_carry_dimension_only() ->
 
 
 def test_partial_record_with_only_endpoint_contributes_to_lateral_dimension_only() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(
             observed_carry_metres=None,
@@ -234,7 +234,7 @@ def test_partial_record_with_only_endpoint_contributes_to_lateral_dimension_only
     ]
 
     carry_obs, lateral_obs, joint_obs = build_shot_distribution_update_inputs(
-        prior, _CLUB_NAME, history
+        baseline, _CLUB_NAME, history
     )
 
     assert carry_obs.values == ()
@@ -243,7 +243,7 @@ def test_partial_record_with_only_endpoint_contributes_to_lateral_dimension_only
 
 
 def test_joint_weight_is_minimum_of_carry_and_lateral_weights() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(
             observed_carry_metres=150.0,
@@ -253,7 +253,7 @@ def test_joint_weight_is_minimum_of_carry_and_lateral_weights() -> None:
         )
     ]
 
-    _, _, joint_obs = build_shot_distribution_update_inputs(prior, _CLUB_NAME, history)
+    _, _, joint_obs = build_shot_distribution_update_inputs(baseline, _CLUB_NAME, history)
 
     assert joint_obs.carry_values == (150.0,)
     assert joint_obs.lateral_values == (2.0,)
@@ -263,13 +263,13 @@ def test_joint_weight_is_minimum_of_carry_and_lateral_weights() -> None:
 def test_joint_evidence_excluded_when_either_leg_unusable() -> None:
     """A record contributing to only one dimension must never contribute a joint (correlation)
     leg — correlation evidence requires both legs usable for the same record."""
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(observed_carry_metres=150.0, endpoint_quality=ShotMeasurementQuality.UNKNOWN),
         _shot_record(observed_carry_metres=None, lateral_offset_metres=2.0),
     ]
 
-    _, _, joint_obs = build_shot_distribution_update_inputs(prior, _CLUB_NAME, history)
+    _, _, joint_obs = build_shot_distribution_update_inputs(baseline, _CLUB_NAME, history)
 
     assert joint_obs.carry_values == ()
     assert joint_obs.lateral_values == ()
@@ -280,7 +280,7 @@ def test_joint_evidence_excluded_when_either_leg_unusable() -> None:
 
 
 def test_unknown_quality_record_contributes_nothing_same_as_absent() -> None:
-    prior = _prior()
+    baseline = _prior()
     baseline_history = [_shot_record(observed_carry_metres=150.0)]
     extra_unknown_record = _shot_record(
         observed_carry_metres=400.0,
@@ -289,9 +289,9 @@ def test_unknown_quality_record_contributes_nothing_same_as_absent() -> None:
         endpoint_quality=ShotMeasurementQuality.UNKNOWN,
     )
 
-    baseline_result = update_shot_distribution_from_history(prior, _CLUB_NAME, baseline_history)
+    baseline_result = update_shot_distribution_from_history(baseline, _CLUB_NAME, baseline_history)
     with_unknown_result = update_shot_distribution_from_history(
-        prior, _CLUB_NAME, [*baseline_history, extra_unknown_record]
+        baseline, _CLUB_NAME, [*baseline_history, extra_unknown_record]
     )
 
     assert with_unknown_result == baseline_result
@@ -301,7 +301,7 @@ def test_unknown_quality_record_contributes_nothing_same_as_absent() -> None:
 
 
 def test_identical_inputs_produce_identical_results() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(observed_carry_metres=150.0),
         _shot_record(
@@ -310,10 +310,65 @@ def test_identical_inputs_produce_identical_results() -> None:
         ),
     ]
 
-    result_a = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
-    result_b = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
+    result_a = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
+    result_b = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
 
     assert result_a == result_b
+
+
+def test_batch_recompute_with_new_shot_matches_direct_full_history_call() -> None:
+    """Demonstrates the recommended usage pattern as an executable spec: calling
+    ``update_shot_distribution_from_history`` again after a new shot occurs, still paired with
+    the SAME fixed ``baseline``, over the *complete* current history, is exactly equivalent to
+    calling it once directly with that same complete history — there is no special-cased
+    "incremental" path threading the first call's result into the second."""
+    baseline = _prior()
+    history = [
+        _shot_record(observed_carry_metres=150.0 + i, lateral_offset_metres=float(i))
+        for i in range(5)
+    ]
+    new_shot = _shot_record(observed_carry_metres=210.0, lateral_offset_metres=-6.0)
+
+    # A first call over the history-so-far. Its result is deliberately unused as input to
+    # anything below -- it exists only to model "some earlier call happened".
+    update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
+
+    # shot 6 (`new_shot`) occurs; recompute using the SAME baseline over the complete history.
+    result_after_new_shot = update_shot_distribution_from_history(
+        baseline, _CLUB_NAME, [*history, new_shot]
+    )
+    result_direct_full_history = update_shot_distribution_from_history(
+        baseline, _CLUB_NAME, [*history, new_shot]
+    )
+
+    assert result_after_new_shot == result_direct_full_history
+
+
+def test_reusing_previous_posterior_as_baseline_double_counts_evidence_wrong_usage() -> None:
+    """Demonstrates the ANTI-PATTERN this module's naming/docs guard against, not the
+    recommended usage: feeding a previously-returned ``ShotDistributionUpdateResult.
+    shot_distribution`` back in as ``baseline_distribution`` alongside the *complete* history
+    (including the shots already reflected in that posterior) silently double-counts those
+    shots' evidence, producing a different (over-shrunk) result than correctly recomputing
+    from the original, fixed baseline over the same complete history."""
+    baseline = _prior(carry_location_metres=140.0)
+    history = [_shot_record(observed_carry_metres=200.0) for _ in range(5)]
+    new_shot = _shot_record(observed_carry_metres=200.0)
+    full_history = [*history, new_shot]
+
+    previous_result = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
+
+    correct_result = update_shot_distribution_from_history(baseline, _CLUB_NAME, full_history)
+    wrong_result = update_shot_distribution_from_history(
+        previous_result.shot_distribution, _CLUB_NAME, full_history
+    )
+
+    assert wrong_result != correct_result
+    # Double-counting the first 5 shots pulls the wrong result closer to the sample value
+    # (200.0) than the correct batch recomputation.
+    assert abs(wrong_result.shot_distribution.carry_location_metres - 200.0) < abs(
+        correct_result.shot_distribution.carry_location_metres - 200.0
+    )
 
 
 # --- Common-miss bias superseded by sufficient contradicting evidence --------
@@ -329,12 +384,12 @@ def test_sufficient_contradicting_evidence_supersedes_onboarding_common_miss_bia
         carry_provenance=CarryProvenance.PERSONAL_ESTIMATE,
         common_miss=CommonMiss.RIGHT,
     )
-    prior = onboarding_result.shot_distribution
-    assert prior.lateral_bias_metres > 0.0
+    baseline = onboarding_result.shot_distribution
+    assert baseline.lateral_bias_metres > 0.0
 
     history = [_shot_record(lateral_offset_metres=-15.0) for _ in range(100)]
 
-    result = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
+    result = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
 
     assert result.shot_distribution.lateral_bias_metres < 0.0
 
@@ -343,7 +398,7 @@ def test_sufficient_contradicting_evidence_supersedes_onboarding_common_miss_bia
 
 
 def test_higher_quality_evidence_has_stronger_influence_than_lower_quality() -> None:
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     sample_value = 200.0
 
     high_quality_history = [
@@ -358,20 +413,20 @@ def test_higher_quality_evidence_has_stronger_influence_than_lower_quality() -> 
         _shot_record(observed_carry_metres=sample_value, carry_quality=ShotMeasurementQuality.LOW)
     ]
 
-    high_result = update_shot_distribution_from_history(prior, _CLUB_NAME, high_quality_history)
+    high_result = update_shot_distribution_from_history(baseline, _CLUB_NAME, high_quality_history)
     moderate_result = update_shot_distribution_from_history(
-        prior, _CLUB_NAME, moderate_quality_history
+        baseline, _CLUB_NAME, moderate_quality_history
     )
-    low_result = update_shot_distribution_from_history(prior, _CLUB_NAME, low_quality_history)
+    low_result = update_shot_distribution_from_history(baseline, _CLUB_NAME, low_quality_history)
 
     high_distance = abs(
-        high_result.shot_distribution.carry_location_metres - prior.carry_location_metres
+        high_result.shot_distribution.carry_location_metres - baseline.carry_location_metres
     )
     moderate_distance = abs(
-        moderate_result.shot_distribution.carry_location_metres - prior.carry_location_metres
+        moderate_result.shot_distribution.carry_location_metres - baseline.carry_location_metres
     )
     low_distance = abs(
-        low_result.shot_distribution.carry_location_metres - prior.carry_location_metres
+        low_result.shot_distribution.carry_location_metres - baseline.carry_location_metres
     )
 
     assert high_distance > moderate_distance > low_distance > 0.0
@@ -381,19 +436,19 @@ def test_higher_quality_evidence_has_stronger_influence_than_lower_quality() -> 
 
 
 def test_empty_shot_history_yields_no_evidence_outcomes() -> None:
-    prior = _prior()
+    baseline = _prior()
 
-    result = update_shot_distribution_from_history(prior, _CLUB_NAME, [])
+    result = update_shot_distribution_from_history(baseline, _CLUB_NAME, [])
 
     assert result.carry_location_outcome is DimensionUpdateOutcome.NO_EVIDENCE
-    assert result.shot_distribution == prior
+    assert result.shot_distribution == baseline
 
 
 def test_default_config_used_when_config_argument_omitted() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [_shot_record(observed_carry_metres=150.0)]
 
-    result = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
+    result = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
 
     assert result.config_version == STATISTICS_PERSONALISATION_CONFIG_VERSION
 
@@ -401,10 +456,10 @@ def test_default_config_used_when_config_argument_omitted() -> None:
 def test_custom_config_overrides_default() -> None:
     """A config with a much larger location prior pseudo-count should shrink evidence toward
     the prior far more strongly than the default config does."""
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     history = [_shot_record(observed_carry_metres=200.0)]
     strong_prior_config = PersonalisationConfig(
-        config_version="test-strong-prior",
+        config_version="test-strong-baseline",
         location_prior_pseudo_count=10_000.0,
         dispersion_prior_pseudo_count=30.0,
         dispersion_min_effective_observations=2.0,
@@ -412,16 +467,16 @@ def test_custom_config_overrides_default() -> None:
         correlation_min_effective_observations=40.0,
     )
 
-    default_result = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
+    default_result = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
     strong_prior_result = update_shot_distribution_from_history(
-        prior, _CLUB_NAME, history, config=strong_prior_config
+        baseline, _CLUB_NAME, history, config=strong_prior_config
     )
 
     default_distance = abs(
-        default_result.shot_distribution.carry_location_metres - prior.carry_location_metres
+        default_result.shot_distribution.carry_location_metres - baseline.carry_location_metres
     )
     strong_prior_distance = abs(
-        strong_prior_result.shot_distribution.carry_location_metres - prior.carry_location_metres
+        strong_prior_result.shot_distribution.carry_location_metres - baseline.carry_location_metres
     )
     assert strong_prior_distance < default_distance
 
@@ -430,13 +485,13 @@ def test_custom_config_overrides_default() -> None:
 
 
 def test_genuine_severe_shot_pulls_posterior_and_is_not_excluded() -> None:
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     normal_history = [_shot_record(observed_carry_metres=140.0) for _ in range(20)]
     severe_shot = _shot_record(observed_carry_metres=40.0)
 
-    baseline_result = update_shot_distribution_from_history(prior, _CLUB_NAME, normal_history)
+    baseline_result = update_shot_distribution_from_history(baseline, _CLUB_NAME, normal_history)
     with_severe_result = update_shot_distribution_from_history(
-        prior, _CLUB_NAME, [*normal_history, severe_shot]
+        baseline, _CLUB_NAME, [*normal_history, severe_shot]
     )
 
     assert (
@@ -449,7 +504,7 @@ def test_genuine_severe_shot_pulls_posterior_and_is_not_excluded() -> None:
 
 
 def test_large_history_still_yields_a_valid_distribution() -> None:
-    prior = _prior()
+    baseline = _prior()
     history = [
         _shot_record(
             observed_carry_metres=140.0 + (i % 3) * 0.01,
@@ -458,7 +513,7 @@ def test_large_history_still_yields_a_valid_distribution() -> None:
         for i in range(500)
     ]
 
-    result = update_shot_distribution_from_history(prior, _CLUB_NAME, history)
+    result = update_shot_distribution_from_history(baseline, _CLUB_NAME, history)
 
     distribution = result.shot_distribution
     assert distribution.carry_scale_metres > 0.0

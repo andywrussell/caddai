@@ -307,62 +307,82 @@ def _update_correlation(
 
 
 def shrink_shot_distribution(
-    prior: PlayerShotDistribution,
+    baseline_distribution: PlayerShotDistribution,
     *,
     carry_observations: WeightedObservations,
     lateral_observations: WeightedObservations,
     joint_observations: WeightedJointObservations,
     config: PersonalisationConfig = DEFAULT_PERSONALISATION_CONFIG,
 ) -> ShotDistributionUpdateResult:
-    """Partial-pooling (empirical-Bayes-style shrinkage) update of ``prior`` toward evidence.
+    """Partial-pooling (empirical-Bayes-style shrinkage) update of ``baseline_distribution``
+    toward evidence.
 
-    Raises ``NotImplementedError`` if ``prior.family`` is not
+    Raises ``NotImplementedError`` if ``baseline_distribution.family`` is not
     ``ShotDistributionFamily.BIVARIATE_STUDENT_T`` — a future family would
     need its own shrinkage math, not this one silently misapplied. See the
     module docstring for the exact per-dimension formulas and gating.
+
+    ``baseline_distribution`` must always be the same immutable cold-start
+    distribution — the golfer's population-prior or onboarding-derived
+    ``PlayerShotDistribution`` — and never a previously-returned
+    ``ShotDistributionUpdateResult.shot_distribution``. This function
+    recomputes the posterior from scratch on every call (batch
+    recomputation); it does not accumulate sufficient statistics across
+    calls. Callers must rebuild ``carry_observations``/``lateral_observations``/
+    ``joint_observations`` from the *complete* current eligible evidence set
+    each time, paired with the same fixed baseline — never with a prior call's
+    own output — or evidence will be silently double-counted. See
+    ``caddai.player.personalisation.update_shot_distribution_from_history``
+    for the concrete misuse example.
     """
-    if prior.family is not ShotDistributionFamily.BIVARIATE_STUDENT_T:
+    if baseline_distribution.family is not ShotDistributionFamily.BIVARIATE_STUDENT_T:
         raise NotImplementedError(
-            f"shrink_shot_distribution does not support family {prior.family!r}"
+            f"shrink_shot_distribution does not support family {baseline_distribution.family!r}"
         )
 
-    factor = prior.degrees_of_freedom / (prior.degrees_of_freedom - 2.0)
+    factor = baseline_distribution.degrees_of_freedom / (
+        baseline_distribution.degrees_of_freedom - 2.0
+    )
 
     carry_location, carry_location_outcome, carry_location_n = _update_location(
-        prior.carry_location_metres, carry_observations, config.location_prior_pseudo_count
+        baseline_distribution.carry_location_metres,
+        carry_observations,
+        config.location_prior_pseudo_count,
     )
     lateral_bias, lateral_bias_outcome, lateral_bias_n = _update_location(
-        prior.lateral_bias_metres, lateral_observations, config.location_prior_pseudo_count
+        baseline_distribution.lateral_bias_metres,
+        lateral_observations,
+        config.location_prior_pseudo_count,
     )
     carry_scale, carry_scale_outcome, carry_scale_n = _update_scale(
-        prior.carry_scale_metres,
+        baseline_distribution.carry_scale_metres,
         carry_observations,
         config.dispersion_prior_pseudo_count,
         config.dispersion_min_effective_observations,
         factor,
     )
     lateral_scale, lateral_scale_outcome, lateral_scale_n = _update_scale(
-        prior.lateral_scale_metres,
+        baseline_distribution.lateral_scale_metres,
         lateral_observations,
         config.dispersion_prior_pseudo_count,
         config.dispersion_min_effective_observations,
         factor,
     )
     correlation, correlation_outcome, correlation_n = _update_correlation(
-        prior.correlation,
+        baseline_distribution.correlation,
         joint_observations,
         config.correlation_prior_pseudo_count,
         config.correlation_min_effective_observations,
     )
 
     shot_distribution = PlayerShotDistribution(
-        family=prior.family,
+        family=baseline_distribution.family,
         carry_location_metres=carry_location,
         lateral_bias_metres=lateral_bias,
         carry_scale_metres=carry_scale,
         lateral_scale_metres=lateral_scale,
         correlation=correlation,
-        degrees_of_freedom=prior.degrees_of_freedom,
+        degrees_of_freedom=baseline_distribution.degrees_of_freedom,
     )
 
     return ShotDistributionUpdateResult(

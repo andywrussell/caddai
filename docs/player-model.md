@@ -207,17 +207,19 @@
 > `ShotRecord` evidence. Split across two modules per the Architect's
 > review: the pure shrinkage math lives in
 > [src/caddai/statistics/personalisation.py](../src/caddai/statistics/personalisation.py)
-> (`shrink_shot_distribution(prior, *, carry_observations,
+> (`shrink_shot_distribution(baseline_distribution, *, carry_observations,
 > lateral_observations, joint_observations, config) ->
 > ShotDistributionUpdateResult`; a leaf module, no `caddai.player`
 > import), and the `ShotRecord` -> weighted-array glue lives in
 > [src/caddai/player/personalisation.py](../src/caddai/player/personalisation.py)
 > (`build_shot_distribution_update_inputs`,
-> `update_shot_distribution_from_history`). Each dimension shrinks at its
-> own rate, consistent with the M4.0 research ordering (location fastest,
-> dispersion slower, correlation slower still, degrees-of-freedom never
-> learned): `carry_location_metres`/`lateral_bias_metres` pool the prior
-> value with the weighted sample mean of evidence via a
+> `update_shot_distribution_from_history`, both taking
+> `baseline_distribution` as their first parameter). Each dimension
+> shrinks at its own rate, consistent with the M4.0 research ordering
+> (location fastest, dispersion slower, correlation slower still,
+> degrees-of-freedom never learned): `carry_location_metres`/
+> `lateral_bias_metres` pool the prior value with the weighted sample
+> mean of evidence via a
 > `location_prior_pseudo_count`-weighted convex combination (no minimum-
 > evidence gate beyond zero evidence); `carry_scale_metres`/
 > `lateral_scale_metres` convert to variance via the same `nu/(nu-2)`
@@ -265,6 +267,19 @@
 > change, unit/ownership/dependency-direction change, or
 > deterministic-strategy-principle change) — see
 > [docs/plans/m4.5-personal-partial-pooling-updater.plan.md](plans/m4.5-personal-partial-pooling-updater.plan.md).
+>
+> **Naming and batch-recompute contract:** the first parameter of all
+> three public functions is named `baseline_distribution` (renamed from an
+> earlier `prior` during pre-merge review) to make explicit that it must
+> always be the same immutable cold-start `PlayerShotDistribution` — the
+> golfer's population-prior or onboarding-derived distribution — never a
+> previously-returned `ShotDistributionUpdateResult.shot_distribution`.
+> All three functions recompute the posterior from scratch on every call
+> (batch recomputation over the *complete* current eligible evidence set);
+> none of them accumulate sufficient statistics incrementally across
+> calls. Incremental/online Bayesian updating (accumulating sufficient
+> statistics call-to-call instead of recomputing from the full history
+> each time) is explicitly deferred — not implemented — in M4.5.
 
 ## Purpose
 

@@ -66,7 +66,7 @@ PLAYER_PERSONALISATION_CONFIG_VERSION = "m4.5-provisional-v1"
 
 
 def build_shot_distribution_update_inputs(
-    prior: PlayerShotDistribution, club_name: str, shot_history: list[ShotRecord]
+    baseline_distribution: PlayerShotDistribution, club_name: str, shot_history: list[ShotRecord]
 ) -> tuple[WeightedObservations, WeightedObservations, WeightedJointObservations]:
     """Build the ``(carry, lateral, joint)`` weighted-evidence arrays for one club.
 
@@ -82,9 +82,28 @@ def build_shot_distribution_update_inputs(
     invariant. ``final_downrange_metres`` is never read here (Architect
     Decision A). A record contributes a joint (correlation) leg only when
     *both* its carry and lateral weights are > 0, weighted by the
-    ``min()`` of the two. ``prior`` is accepted for signature symmetry with
-    ``shrink_shot_distribution`` but is not otherwise used by this
-    function.
+    ``min()`` of the two. ``baseline_distribution`` is accepted for
+    signature symmetry with ``shrink_shot_distribution`` but is not
+    otherwise used by this function.
+
+    ``baseline_distribution`` must always be the same immutable cold-start
+    distribution — the golfer's population-prior or onboarding-derived
+    ``PlayerShotDistribution`` — and never a previously-returned
+    ``ShotDistributionUpdateResult.shot_distribution``. This function
+    recomputes the posterior from scratch on every call (batch
+    recomputation); it does not accumulate sufficient statistics across
+    calls. Always pair the same fixed baseline with the *complete* current
+    eligible shot history:
+
+        result_a = update_shot_distribution_from_history(baseline, club, history[:10])
+        # shot 11 occurs
+        result_b = update_shot_distribution_from_history(baseline, club, history[:11])  # correct
+
+        # WRONG: feeding a previous result back in as the baseline silently
+        # double-counts shots 1-10
+        result_b = update_shot_distribution_from_history(
+            result_a.shot_distribution, club, history[:11]
+        )
     """
 
     carry_values: list[float] = []
@@ -128,30 +147,49 @@ def build_shot_distribution_update_inputs(
 
 
 def update_shot_distribution_from_history(
-    prior: PlayerShotDistribution,
+    baseline_distribution: PlayerShotDistribution,
     club_name: str,
     shot_history: list[ShotRecord],
     config: PersonalisationConfig | None = None,
 ) -> ShotDistributionUpdateResult:
-    """Shrink ``prior`` toward ``club_name``'s evidence within ``shot_history``.
+    """Shrink ``baseline_distribution`` toward ``club_name``'s evidence within ``shot_history``.
 
     Builds the shrinkage inputs via ``build_shot_distribution_update_inputs``,
     then delegates to ``shrink_shot_distribution``. When ``config`` is
     ``None``, ``shrink_shot_distribution``'s own default
     (``DEFAULT_PERSONALISATION_CONFIG``) applies.
+
+    ``baseline_distribution`` must always be the same immutable cold-start
+    distribution — the golfer's population-prior or onboarding-derived
+    ``PlayerShotDistribution`` — and never a previously-returned
+    ``ShotDistributionUpdateResult.shot_distribution``. This function
+    recomputes the posterior from scratch on every call (batch
+    recomputation); it does not accumulate sufficient statistics across
+    calls. Always pair the same fixed baseline with the *complete* current
+    eligible shot history:
+
+        result_a = update_shot_distribution_from_history(baseline, club, history[:10])
+        # shot 11 occurs
+        result_b = update_shot_distribution_from_history(baseline, club, history[:11])  # correct
+
+        # WRONG: feeding a previous result back in as the baseline silently
+        # double-counts shots 1-10
+        result_b = update_shot_distribution_from_history(
+            result_a.shot_distribution, club, history[:11]
+        )
     """
     carry_observations, lateral_observations, joint_observations = (
-        build_shot_distribution_update_inputs(prior, club_name, shot_history)
+        build_shot_distribution_update_inputs(baseline_distribution, club_name, shot_history)
     )
     if config is None:
         return shrink_shot_distribution(
-            prior,
+            baseline_distribution,
             carry_observations=carry_observations,
             lateral_observations=lateral_observations,
             joint_observations=joint_observations,
         )
     return shrink_shot_distribution(
-        prior,
+        baseline_distribution,
         carry_observations=carry_observations,
         lateral_observations=lateral_observations,
         joint_observations=joint_observations,

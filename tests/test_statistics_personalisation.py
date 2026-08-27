@@ -222,17 +222,17 @@ def test_weighted_joint_observations_rejects_negative_weight(weight: float) -> N
 def test_no_observations_leaves_distribution_unchanged_with_no_evidence_outcomes() -> None:
     """With zero evidence everywhere, every field is retained exactly, all outcomes NO_EVIDENCE
     (except degrees_of_freedom, which is always HELD_FIXED_BY_POLICY)."""
-    prior = _prior()
+    baseline = _prior()
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
         config=DEFAULT_PERSONALISATION_CONFIG,
     )
 
-    assert result.shot_distribution == prior
+    assert result.shot_distribution == baseline
     assert result.carry_location_outcome is DimensionUpdateOutcome.NO_EVIDENCE
     assert result.lateral_bias_outcome is DimensionUpdateOutcome.NO_EVIDENCE
     assert result.carry_scale_outcome is DimensionUpdateOutcome.NO_EVIDENCE
@@ -252,11 +252,11 @@ def test_no_observations_leaves_distribution_unchanged_with_no_evidence_outcomes
 def test_raises_not_implemented_for_unsupported_family() -> None:
     """A non-bivariate-Student-t family (constructed via model_copy to bypass the enum's
     current single member) must raise NotImplementedError, not silently proceed."""
-    prior = _prior().model_copy(update={"family": "unsupported_family"})
+    baseline = _prior().model_copy(update={"family": "unsupported_family"})
 
     with pytest.raises(NotImplementedError):
         shrink_shot_distribution(
-            prior,
+            baseline,
             carry_observations=_obs([150.0]),
             lateral_observations=_obs([1.0]),
             joint_observations=_joint([150.0], [1.0]),
@@ -268,12 +268,12 @@ def test_raises_not_implemented_for_unsupported_family() -> None:
 
 def test_location_matches_exact_pooling_formula() -> None:
     """The location formula is stated exactly by the plan, so it can be checked precisely."""
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     values = [150.0, 152.0, 148.0]
     weights = [1.0, 0.6, 1.0]
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs(values, weights),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
@@ -294,29 +294,29 @@ def test_location_matches_exact_pooling_formula() -> None:
 
 def test_single_observation_moves_location_partially_not_fully() -> None:
     """One observation should shrink the location toward the sample, not replace it outright."""
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     sample_value = 200.0
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([sample_value]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
     )
 
     posterior = result.shot_distribution.carry_location_metres
-    assert prior.carry_location_metres < posterior < sample_value
+    assert baseline.carry_location_metres < posterior < sample_value
     assert result.carry_location_outcome is DimensionUpdateOutcome.UPDATED
 
 
 def test_increasing_observation_count_moves_location_monotonically_closer_to_sample() -> None:
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     sample_value = 200.0
 
     distances = [
         abs(
             shrink_shot_distribution(
-                prior,
+                baseline,
                 carry_observations=_obs([sample_value] * n),
                 lateral_observations=_obs([]),
                 joint_observations=_joint([], []),
@@ -333,10 +333,10 @@ def test_increasing_observation_count_moves_location_monotonically_closer_to_sam
 def test_zero_weight_sum_carry_location_is_no_evidence() -> None:
     """Observations present but summing to zero weight (e.g. all UNKNOWN-quality) behave
     identically to no observations at all: NO_EVIDENCE, value unchanged."""
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([999.0], weights=[0.0]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
@@ -344,7 +344,7 @@ def test_zero_weight_sum_carry_location_is_no_evidence() -> None:
 
     assert result.carry_location_outcome is DimensionUpdateOutcome.NO_EVIDENCE
     assert result.shot_distribution.carry_location_metres == pytest.approx(
-        prior.carry_location_metres
+        baseline.carry_location_metres
     )
 
 
@@ -352,16 +352,16 @@ def test_zero_weight_sum_carry_location_is_no_evidence() -> None:
 
 
 def test_lateral_bias_accepts_negative_and_positive_evidence() -> None:
-    prior = _prior(lateral_bias_metres=0.0)
+    baseline = _prior(lateral_bias_metres=0.0)
 
     left_result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([-10.0] * 5),
         joint_observations=_joint([], []),
     )
     right_result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([10.0] * 5),
         joint_observations=_joint([], []),
@@ -374,10 +374,10 @@ def test_lateral_bias_accepts_negative_and_positive_evidence() -> None:
 def test_sufficient_contradicting_lateral_evidence_moves_bias_past_zero() -> None:
     """A strong existing positive (RIGHT) bias can be moved negative given enough
     contradicting evidence — bias is not a permanent fixture once evidence disagrees."""
-    prior = _prior(lateral_bias_metres=5.0)
+    baseline = _prior(lateral_bias_metres=5.0)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([-20.0] * 200),
         joint_observations=_joint([], []),
@@ -390,26 +390,26 @@ def test_sufficient_contradicting_lateral_evidence_moves_bias_past_zero() -> Non
 
 
 def test_one_observation_never_moves_carry_scale_and_reports_insufficient_evidence() -> None:
-    prior = _prior(carry_scale_metres=8.0)
+    baseline = _prior(carry_scale_metres=8.0)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([300.0]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
     )
 
     assert result.carry_scale_outcome is DimensionUpdateOutcome.INSUFFICIENT_EVIDENCE
-    assert result.shot_distribution.carry_scale_metres == pytest.approx(prior.carry_scale_metres)
+    assert result.shot_distribution.carry_scale_metres == pytest.approx(baseline.carry_scale_metres)
 
 
 def test_scale_just_below_threshold_is_insufficient_evidence() -> None:
     """With the default config's dispersion_min_effective_observations == 2.0, n == 1.9 is
     below the gate — INSUFFICIENT_EVIDENCE, prior kept exactly."""
-    prior = _prior(carry_scale_metres=8.0)
+    baseline = _prior(carry_scale_metres=8.0)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([130.0, 150.0], weights=[0.95, 0.95]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
@@ -417,15 +417,15 @@ def test_scale_just_below_threshold_is_insufficient_evidence() -> None:
     )
 
     assert result.carry_scale_outcome is DimensionUpdateOutcome.INSUFFICIENT_EVIDENCE
-    assert result.shot_distribution.carry_scale_metres == pytest.approx(prior.carry_scale_metres)
+    assert result.shot_distribution.carry_scale_metres == pytest.approx(baseline.carry_scale_metres)
 
 
 def test_scale_at_exact_threshold_is_updated() -> None:
     """The gate is a strict less-than (n < threshold), so n == threshold exactly updates."""
-    prior = _prior(carry_scale_metres=8.0)
+    baseline = _prior(carry_scale_metres=8.0)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([130.0, 150.0], weights=[1.0, 1.0]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
@@ -433,7 +433,7 @@ def test_scale_at_exact_threshold_is_updated() -> None:
     )
 
     assert result.carry_scale_outcome is DimensionUpdateOutcome.UPDATED
-    assert result.shot_distribution.carry_scale_metres != pytest.approx(prior.carry_scale_metres)
+    assert result.shot_distribution.carry_scale_metres != pytest.approx(baseline.carry_scale_metres)
 
 
 def test_large_sample_scale_converges_toward_variance_over_nu_factor_not_raw_variance() -> None:
@@ -441,13 +441,13 @@ def test_large_sample_scale_converges_toward_variance_over_nu_factor_not_raw_var
     perfectly-alternating +-d sample (population variance exactly d^2), the posterior scale
     must approach sqrt(d^2 / factor), not sqrt(d^2) — a stddev/scale mix-up would fail this."""
     nu = 6.0
-    prior = _prior(carry_scale_metres=8.0, degrees_of_freedom=nu)
+    baseline = _prior(carry_scale_metres=8.0, degrees_of_freedom=nu)
     d = 20.0
     n = 4000
     values = [d if i % 2 == 0 else -d for i in range(n)]
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs(values),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
@@ -463,14 +463,14 @@ def test_large_sample_scale_converges_toward_variance_over_nu_factor_not_raw_var
 
 
 def test_increasing_sample_size_moves_scale_monotonically_toward_sample() -> None:
-    prior = _prior(carry_scale_metres=8.0)
+    baseline = _prior(carry_scale_metres=8.0)
     sample_half_range = 20.0
 
     distances = []
     for n in (2, 10, 100, 1000):
         values = [sample_half_range if i % 2 == 0 else -sample_half_range for i in range(n)]
         result = shrink_shot_distribution(
-            prior,
+            baseline,
             carry_observations=_obs(values),
             lateral_observations=_obs([]),
             joint_observations=_joint([], []),
@@ -482,10 +482,10 @@ def test_increasing_sample_size_moves_scale_monotonically_toward_sample() -> Non
 
 
 def test_lateral_scale_gating_mirrors_carry_scale_gating() -> None:
-    prior = _prior(lateral_scale_metres=4.0)
+    baseline = _prior(lateral_scale_metres=4.0)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([25.0]),
         joint_observations=_joint([], []),
@@ -493,7 +493,7 @@ def test_lateral_scale_gating_mirrors_carry_scale_gating() -> None:
 
     assert result.lateral_scale_outcome is DimensionUpdateOutcome.INSUFFICIENT_EVIDENCE
     assert result.shot_distribution.lateral_scale_metres == pytest.approx(
-        prior.lateral_scale_metres
+        baseline.lateral_scale_metres
     )
 
 
@@ -503,13 +503,13 @@ def test_lateral_scale_gating_mirrors_carry_scale_gating() -> None:
 def test_correlation_below_gate_leaves_prior_unchanged() -> None:
     """Below the default correlation_min_effective_observations (40.0), even a strongly
     correlated sample must not move correlation at all."""
-    prior = _prior(correlation=0.1)
+    baseline = _prior(correlation=0.1)
     n_below_gate = 39
     carry_values = [140.0 + i for i in range(n_below_gate)]
     lateral_values = [1.0 * i for i in range(n_below_gate)]
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([]),
         joint_observations=_joint(carry_values, lateral_values),
@@ -517,17 +517,17 @@ def test_correlation_below_gate_leaves_prior_unchanged() -> None:
     )
 
     assert result.correlation_outcome is DimensionUpdateOutcome.INSUFFICIENT_EVIDENCE
-    assert result.shot_distribution.correlation == pytest.approx(prior.correlation)
+    assert result.shot_distribution.correlation == pytest.approx(baseline.correlation)
 
 
 def test_correlation_at_exact_gate_is_updated() -> None:
-    prior = _prior(correlation=0.1)
+    baseline = _prior(correlation=0.1)
     n_at_gate = 40
     carry_values = [140.0 + i for i in range(n_at_gate)]
     lateral_values = [1.0 * i for i in range(n_at_gate)]
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([]),
         joint_observations=_joint(carry_values, lateral_values),
@@ -535,19 +535,19 @@ def test_correlation_at_exact_gate_is_updated() -> None:
     )
 
     assert result.correlation_outcome is DimensionUpdateOutcome.UPDATED
-    assert result.shot_distribution.correlation != pytest.approx(prior.correlation)
+    assert result.shot_distribution.correlation != pytest.approx(baseline.correlation)
 
 
 def test_correlation_update_is_shrunk_toward_sample_not_fully_replaced() -> None:
     """A perfectly-correlated (correlation == 1) large sample must still be pooled with the
     prior, landing strictly inside (prior_correlation, 1), never exactly at either bound."""
-    prior = _prior(correlation=0.0)
+    baseline = _prior(correlation=0.0)
     n = 200
     carry_values = [140.0 + (i - n / 2) * 0.5 for i in range(n)]
     lateral_values = list(carry_values)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([]),
         joint_observations=_joint(carry_values, lateral_values),
@@ -557,47 +557,47 @@ def test_correlation_update_is_shrunk_toward_sample_not_fully_replaced() -> None
 
 
 def test_two_observations_never_collapse_correlation_toward_sample() -> None:
-    prior = _prior(correlation=0.1)
+    baseline = _prior(correlation=0.1)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([]),
         lateral_observations=_obs([]),
         joint_observations=_joint([140.0, 160.0], [-5.0, 5.0]),
     )
 
     assert result.correlation_outcome is DimensionUpdateOutcome.INSUFFICIENT_EVIDENCE
-    assert result.shot_distribution.correlation == pytest.approx(prior.correlation)
+    assert result.shot_distribution.correlation == pytest.approx(baseline.correlation)
 
 
 # --- Degrees of freedom: always retained, never estimated ---------------------
 
 
 def test_degrees_of_freedom_always_held_fixed_regardless_of_evidence_volume() -> None:
-    prior = _prior(degrees_of_freedom=6.0)
+    baseline = _prior(degrees_of_freedom=6.0)
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([300.0] * 500),
         lateral_observations=_obs([50.0] * 500),
         joint_observations=_joint([300.0] * 500, [50.0] * 500),
     )
 
     assert result.degrees_of_freedom_outcome is DimensionUpdateOutcome.HELD_FIXED_BY_POLICY
-    assert result.shot_distribution.degrees_of_freedom == pytest.approx(prior.degrees_of_freedom)
+    assert result.shot_distribution.degrees_of_freedom == pytest.approx(baseline.degrees_of_freedom)
 
 
 # --- Effective-n bookkeeping ----------------------------------------------------
 
 
 def test_effective_n_fields_equal_sum_of_weights_per_dimension() -> None:
-    prior = _prior()
+    baseline = _prior()
     carry_obs = _obs([150.0, 160.0], [1.0, 0.5])
     lateral_obs = _obs([1.0, -1.0, 2.0], [1.0, 1.0, 0.25])
     joint_obs = _joint([150.0, 160.0], [1.0, -1.0], [1.0, 0.5])
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=carry_obs,
         lateral_observations=lateral_obs,
         joint_observations=joint_obs,
@@ -615,10 +615,10 @@ def test_effective_n_fields_equal_sum_of_weights_per_dimension() -> None:
 
 def test_result_echoes_supplied_config_version() -> None:
     custom_config = PersonalisationConfig(**_config_kwargs(config_version="custom-v7"))
-    prior = _prior()
+    baseline = _prior()
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([150.0]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
@@ -629,10 +629,10 @@ def test_result_echoes_supplied_config_version() -> None:
 
 
 def test_default_config_used_when_not_specified() -> None:
-    prior = _prior()
+    baseline = _prior()
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([150.0]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
@@ -646,19 +646,19 @@ def test_default_config_used_when_not_specified() -> None:
 
 def test_identical_inputs_produce_identical_results() -> None:
     """No randomness anywhere: calling twice with identical inputs must be exactly equal."""
-    prior = _prior()
+    baseline = _prior()
     carry_obs = _obs([150.0, 160.0, 145.0], [1.0, 0.6, 0.25])
     lateral_obs = _obs([2.0, -1.0, 0.5], [1.0, 0.6, 0.25])
     joint_obs = _joint([150.0, 160.0], [2.0, -1.0], [1.0, 0.6])
 
     result_a = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=carry_obs,
         lateral_observations=lateral_obs,
         joint_observations=joint_obs,
     )
     result_b = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=carry_obs,
         lateral_observations=lateral_obs,
         joint_observations=joint_obs,
@@ -667,19 +667,68 @@ def test_identical_inputs_produce_identical_results() -> None:
     assert result_a == result_b
 
 
+def test_batch_recompute_with_extra_observation_matches_single_fresh_call() -> None:
+    """There is no special-cased "incremental" code path: rebuilding the full evidence arrays
+    (existing evidence plus one new observation) and calling ``shrink_shot_distribution`` once
+    must be bit-for-bit identical to calling it twice — a run over the smaller evidence set
+    followed by a separate run over the extended set are simply two independent batch calls,
+    never chained through each other's output."""
+    baseline = _prior()
+    carry_values = [150.0, 160.0, 145.0]
+    carry_weights = [1.0, 0.6, 0.25]
+    lateral_values = [2.0, -1.0, 0.5]
+    lateral_weights = [1.0, 0.6, 0.25]
+
+    new_carry_value, new_carry_weight = 170.0, 0.8
+    new_lateral_value, new_lateral_weight = -3.0, 0.8
+
+    extended_carry_obs = _obs([*carry_values, new_carry_value], [*carry_weights, new_carry_weight])
+    extended_lateral_obs = _obs(
+        [*lateral_values, new_lateral_value], [*lateral_weights, new_lateral_weight]
+    )
+    extended_joint_obs = _joint(
+        [*carry_values, new_carry_value],
+        [*lateral_values, new_lateral_value],
+        [*carry_weights, new_carry_weight],
+    )
+
+    single_fresh_call_result = shrink_shot_distribution(
+        baseline,
+        carry_observations=extended_carry_obs,
+        lateral_observations=extended_lateral_obs,
+        joint_observations=extended_joint_obs,
+    )
+    recomputed_from_scratch_result = shrink_shot_distribution(
+        baseline,
+        carry_observations=_obs(
+            [*carry_values, new_carry_value], [*carry_weights, new_carry_weight]
+        ),
+        lateral_observations=_obs(
+            [*lateral_values, new_lateral_value], [*lateral_weights, new_lateral_weight]
+        ),
+        joint_observations=_joint(
+            [*carry_values, new_carry_value],
+            [*lateral_values, new_lateral_value],
+            [*carry_weights, new_carry_weight],
+        ),
+    )
+
+    assert single_fresh_call_result == recomputed_from_scratch_result
+
+
 # --- Invariant protection / adversarial evidence --------------------------------
 
 
 def test_near_degenerate_evidence_still_yields_a_valid_distribution() -> None:
     """A large, near-zero-variance, near-perfectly-correlated evidence set must still
     produce a PlayerShotDistribution satisfying all of its own Pydantic invariants."""
-    prior = _prior()
+    baseline = _prior()
     n = 300
     carry_values = [140.0 + (i % 2) * 1e-6 for i in range(n)]
     lateral_values = [(i % 2) * 1e-6 for i in range(n)]
 
     result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs(carry_values),
         lateral_observations=_obs(lateral_values),
         joint_observations=_joint(carry_values, lateral_values),
@@ -697,18 +746,18 @@ def test_near_degenerate_evidence_still_yields_a_valid_distribution() -> None:
 def test_severe_outlier_carry_value_pulls_posterior_and_is_not_excluded() -> None:
     """A genuinely severe (very short) carry observation must visibly pull the posterior
     location down, proving it was used, not filtered out as an outlier."""
-    prior = _prior(carry_location_metres=140.0)
+    baseline = _prior(carry_location_metres=140.0)
     normal_values = [140.0] * 20
     severe_short_shot = 40.0
 
     baseline_result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs(normal_values),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
     )
     with_outlier_result = shrink_shot_distribution(
-        prior,
+        baseline,
         carry_observations=_obs([*normal_values, severe_short_shot]),
         lateral_observations=_obs([]),
         joint_observations=_joint([], []),
