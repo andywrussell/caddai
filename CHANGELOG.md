@@ -10,6 +10,14 @@ first public API is published.
 
 ### Added
 
+- Repository hygiene: removed two accidental byte-for-byte duplicate ADR
+  files (`docs/adr/0006-player-shot-distribution-bivariate-student-t 2.md`
+  and `docs/adr/0007-population-prior-replaceability 2.md`) and updated
+  [ADR 0006](docs/adr/0006-player-shot-distribution-bivariate-student-t.md)'s
+  status from Proposed to Accepted, now that M4.1 (issue #49) has
+  implemented the binding `PlayerShotDistribution` decision. ADR 0007
+  remains Proposed — its `PopulationPrior` contract is not implemented
+  until M4.2.
 - Implemented **M4.1 — `PlayerShotDistribution` domain type** (GitHub
   issue #49), the ADR 0006 bivariate Student-t shot-production
   representation. Added
