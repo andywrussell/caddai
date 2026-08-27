@@ -21,9 +21,12 @@ first public API is published.
   `resolve_population_prior` (ADR 0007) with onboarding information to
   build a golfer-specific `PlayerShotDistribution` (ADR 0006) for a single
   club. `carry_location_metres` is taken directly from the validated
-  `reported_carry_metres` input; `lateral_bias_metres` is a new provisional
-  `ONBOARDING_COMMON_MISS_BIAS_METRES` constant scaled only by a new
-  `CommonMiss` (`LEFT`/`NONE`/`RIGHT`) enum's sign; `carry_scale_metres`,
+  `reported_carry_metres` input; `lateral_bias_metres` is derived as
+  `common_miss`'s sign times a new provisional dimensionless
+  `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` constant times the resolved
+  club's `lateral_scale_metres`, so bias magnitude scales with the
+  club/ability-specific lateral scale rather than being a flat metres
+  constant across all clubs; `carry_scale_metres`,
   `lateral_scale_metres`, `correlation`, and `degrees_of_freedom` are
   copied verbatim from `resolve_population_prior(...).parameters` —
   mechanically enforcing the aleatoric/epistemic separation the issue
@@ -39,10 +42,16 @@ first public API is published.
   `carry_provenance`, `carry_confidence`, `population_prior`, `shot_shape`,
   `onboarding_config_version`), precedented
   by `PopulationPriorResult`'s ADR 0007 "adjacent type" allowance. Added
-  `ONBOARDING_CONFIG_VERSION` (`m4.3-provisional-v1`) and
-  `ONBOARDING_COMMON_MISS_BIAS_METRES`, both explicitly provisional
-  pending calibration data, mirroring `population_prior_config.py`'s own
-  provisional numbers. `resolve_population_prior`'s own `ValueError`/
+  `ONBOARDING_CONFIG_VERSION` (`m4.3-provisional-v2`) and
+  `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` (dimensionless), both explicitly
+  provisional pending calibration data, mirroring
+  `population_prior_config.py`'s own provisional numbers.
+  `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` has no fitted/calibrated
+  statistical meaning of its own (a convenience heuristic only) and
+  deliberately couples onboarding bias magnitude to `caddai.statistics`'s
+  population-prior `lateral_scale_metres` — recalibrating that config also
+  changes onboarding bias magnitude for the same `common_miss` input.
+  `resolve_population_prior`'s own `ValueError`/
   `PopulationPriorUnsupportedCategoryError` (`PUTTER`=`DEFERRED`,
   `OTHER`=`NOT_MODELABLE`) propagate unmodified; invalid/non-finite
   `reported_carry_metres` raises a plain `ValueError`. No RNG, `sample()`,

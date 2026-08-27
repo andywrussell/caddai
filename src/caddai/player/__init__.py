@@ -2,7 +2,7 @@
 
 from caddai.player.models import Club, ClubCategory, Player, ShotRecord
 from caddai.player.onboarding import (
-    ONBOARDING_COMMON_MISS_BIAS_METRES,
+    ONBOARDING_COMMON_MISS_BIAS_STRENGTH,
     ONBOARDING_CONFIG_VERSION,
     CarryConfidence,
     CarryProvenance,
@@ -13,7 +13,7 @@ from caddai.player.onboarding import (
 )
 
 __all__ = [
-    "ONBOARDING_COMMON_MISS_BIAS_METRES",
+    "ONBOARDING_COMMON_MISS_BIAS_STRENGTH",
     "ONBOARDING_CONFIG_VERSION",
     "CarryConfidence",
     "CarryProvenance",

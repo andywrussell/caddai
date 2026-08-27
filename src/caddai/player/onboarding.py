@@ -20,6 +20,28 @@ would silently conflate "how sure are we of this number" with "how
 variable is this golfer's shot production," which is exactly what ADR
 0006/0007 keep separate.
 
+**Common-miss bias formula:** `lateral_bias_metres = sign(common_miss) *
+ONBOARDING_COMMON_MISS_BIAS_STRENGTH * parameters.lateral_scale_metres`,
+where `parameters` is the resolved population prior's parameters for the
+same `handicap_index`/`club_category`. Bias magnitude therefore scales
+with the club/ability-specific `lateral_scale_metres` rather than being a
+flat metres constant across all clubs — a fixed metres bias means
+something very different for a wedge than for a driver, since absolute
+lateral dispersion varies materially by club/shot length.
+`ONBOARDING_COMMON_MISS_BIAS_STRENGTH` has no fitted or calibrated
+statistical meaning of its own (it is *not* "a fraction of a standard
+deviation" in any validated sense) — it is a convenience heuristic only,
+chosen to make bias magnitude scale sensibly with club, nothing more. This
+deliberately creates an intra-`caddai.player` coupling: recalibrating
+`lateral_scale_metres` in `caddai.statistics`'s population-prior config
+will also change onboarding bias magnitude for the same `common_miss`
+input. Anyone recalibrating the population prior should be aware of this
+knock-on effect. `lateral_scale_metres` itself (shot-to-shot dispersion,
+aleatoric) is read only, never mutated, by this bias calculation;
+`lateral_bias_metres` (a centre/location shift) remains a conceptually
+separate quantity, merely derived using the scale as a multiplicative
+factor.
+
 No RNG, no `sample()`, no randomness, no Monte Carlo, no network calls —
 resolution here is deterministic and side-effect free, same as
 `resolve_population_prior`.
@@ -104,15 +126,22 @@ _COMMON_MISS_SIGN: dict[CommonMiss, float] = {
     CommonMiss.RIGHT: 1.0,
 }
 
-ONBOARDING_CONFIG_VERSION = "m4.3-provisional-v1"
+ONBOARDING_CONFIG_VERSION = "m4.3-provisional-v2"
 
-# Provisional, unvalidated common-miss bias magnitude pending calibration
+# Provisional, unvalidated common-miss bias strength pending calibration
 # data — mirrors population_prior_config.py's own provisional numbers.
-# Applied only via CommonMiss's sign; never derived from handicap, club, or
-# any other input. Must be replaced by CaddAI's own calibration data (or a
+# Dimensionless: multiplies the resolved club's lateral_scale_metres (see
+# personalise_shot_distribution) to derive lateral_bias_metres, applied
+# only via CommonMiss's sign; never derived from handicap or any other
+# input directly. Arbitrary/illustrative — NOT evidence-derived, and not
+# a fitted/calibrated fraction of a standard deviation in any validated
+# sense. Must be replaced by CaddAI's own calibration data (or a
 # fitted/learned model) before being treated as authoritative — see ADR
-# 0006/ADR 0007 and docs/research/m4-probabilistic-golfer-model.md.
-ONBOARDING_COMMON_MISS_BIAS_METRES = 5.0
+# 0006/ADR 0007 and docs/research/m4-probabilistic-golfer-model.md. This
+# value is calibration-replaceable without any interface change.
+ONBOARDING_COMMON_MISS_BIAS_STRENGTH = (
+    0.3  # dimensionless; arbitrary/illustrative, NOT evidence-derived
+)
 
 
 class OnboardingPersonalisationResult(BaseModel):
@@ -151,15 +180,27 @@ def personalise_shot_distribution(
     `carry_location_metres` is set directly from `reported_carry_metres` —
     it strongly anchors location per the issue/research doc, since no
     defensible population carry-location prior exists to blend it toward.
-    `lateral_bias_metres` is `ONBOARDING_COMMON_MISS_BIAS_METRES` scaled
-    only by `common_miss`'s sign (`LEFT` -> negative, `NONE` -> exactly
-    0.0, `RIGHT` -> positive). `carry_scale_metres`, `lateral_scale_metres`,
-    `correlation`, and `degrees_of_freedom` are copied verbatim from
+    `lateral_bias_metres` is `common_miss`'s sign times
+    `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` times the resolved
+    `parameters.lateral_scale_metres` (`LEFT` -> negative, `NONE` -> exactly
+    0.0, `RIGHT` -> positive) — bias magnitude scales with the
+    club/ability-specific lateral scale rather than being a flat metres
+    value, since absolute lateral dispersion varies materially by club.
+    `ONBOARDING_COMMON_MISS_BIAS_STRENGTH` itself carries no fitted or
+    calibrated statistical meaning (it is not a validated fraction of a
+    standard deviation) — it is a convenience heuristic only. This is an
+    intentional intra-`caddai.player` coupling: recalibrating
+    `lateral_scale_metres` in `caddai.statistics`'s population-prior config
+    changes onboarding bias magnitude too, for the same `common_miss`
+    input. `carry_scale_metres`, `lateral_scale_metres`, `correlation`, and
+    `degrees_of_freedom` are copied verbatim from
     `resolve_population_prior(...).parameters` — untouched by carry
     provenance/confidence or `shot_shape`, per the module docstring's
-    aleatoric/epistemic separation. `shot_shape` is echoed onto the
-    returned `OnboardingPersonalisationResult.shot_shape` unchanged — it
-    has no effect on `shot_distribution` or any other field.
+    aleatoric/epistemic separation; `lateral_scale_metres` is read only (as
+    a multiplicative factor for the bias) and never mutated by this
+    calculation. `shot_shape` is echoed onto the returned
+    `OnboardingPersonalisationResult.shot_shape` unchanged — it has no
+    effect on `shot_distribution` or any other field.
 
     Raises `ValueError` if `reported_carry_metres` is non-finite or not
     strictly positive. Propagates `resolve_population_prior`'s own
@@ -179,7 +220,11 @@ def personalise_shot_distribution(
     shot_distribution = PlayerShotDistribution(
         family=parameters.family,
         carry_location_metres=reported_carry_metres,
-        lateral_bias_metres=ONBOARDING_COMMON_MISS_BIAS_METRES * _COMMON_MISS_SIGN[common_miss],
+        lateral_bias_metres=(
+            _COMMON_MISS_SIGN[common_miss]
+            * ONBOARDING_COMMON_MISS_BIAS_STRENGTH
+            * parameters.lateral_scale_metres
+        ),
         carry_scale_metres=parameters.carry_scale_metres,
         lateral_scale_metres=parameters.lateral_scale_metres,
         correlation=parameters.correlation,

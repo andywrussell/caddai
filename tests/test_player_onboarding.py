@@ -22,7 +22,7 @@ simulation, or strategy — those are out of scope for M4.3.
 import pytest
 
 from caddai.player.onboarding import (
-    ONBOARDING_COMMON_MISS_BIAS_METRES,
+    ONBOARDING_COMMON_MISS_BIAS_STRENGTH,
     ONBOARDING_CONFIG_VERSION,
     CarryConfidence,
     CarryProvenance,
@@ -91,35 +91,100 @@ def test_carry_location_equals_reported_carry_exactly(reported_carry_metres: flo
 
 
 def test_common_miss_left_produces_negative_bias_of_configured_magnitude() -> None:
-    """LEFT maps to exactly ``-ONBOARDING_COMMON_MISS_BIAS_METRES``, matching the existing
-    negative-left lateral sign convention."""
+    """LEFT maps to exactly ``-ONBOARDING_COMMON_MISS_BIAS_STRENGTH *
+    lateral_scale_metres``, matching the existing negative-left lateral sign
+    convention."""
+    expected_lateral_scale_metres = resolve_population_prior(
+        12.3, ClubCategory.IRON
+    ).parameters.lateral_scale_metres
+
     result = _personalise(common_miss=CommonMiss.LEFT)
 
     assert result.shot_distribution.lateral_bias_metres == pytest.approx(
-        -ONBOARDING_COMMON_MISS_BIAS_METRES
+        -ONBOARDING_COMMON_MISS_BIAS_STRENGTH * expected_lateral_scale_metres
     )
 
 
 def test_common_miss_right_produces_positive_bias_of_configured_magnitude() -> None:
-    """RIGHT maps to exactly ``+ONBOARDING_COMMON_MISS_BIAS_METRES``."""
+    """RIGHT maps to exactly ``+ONBOARDING_COMMON_MISS_BIAS_STRENGTH *
+    lateral_scale_metres``."""
+    expected_lateral_scale_metres = resolve_population_prior(
+        12.3, ClubCategory.IRON
+    ).parameters.lateral_scale_metres
+
     result = _personalise(common_miss=CommonMiss.RIGHT)
 
     assert result.shot_distribution.lateral_bias_metres == pytest.approx(
-        ONBOARDING_COMMON_MISS_BIAS_METRES
+        ONBOARDING_COMMON_MISS_BIAS_STRENGTH * expected_lateral_scale_metres
     )
 
 
 def test_common_miss_none_produces_exactly_zero_bias() -> None:
-    """NONE maps to exactly ``0.0``, not merely a small value."""
+    """NONE maps to exactly ``0.0``, not merely a small value (0 times any
+    lateral_scale_metres is exactly 0.0)."""
     result = _personalise(common_miss=CommonMiss.NONE)
 
     assert result.shot_distribution.lateral_bias_metres == 0.0
 
 
-def test_onboarding_common_miss_bias_metres_is_strictly_positive() -> None:
-    """The configured bias magnitude constant is a positive metres value (sign is applied
-    separately via ``CommonMiss``, never baked into the constant itself)."""
-    assert ONBOARDING_COMMON_MISS_BIAS_METRES > 0.0
+def test_onboarding_common_miss_bias_strength_is_strictly_positive() -> None:
+    """The configured bias strength constant is a positive dimensionless value (sign is
+    applied separately via ``CommonMiss``, never baked into the constant itself)."""
+    assert ONBOARDING_COMMON_MISS_BIAS_STRENGTH > 0.0
+
+
+def test_lateral_bias_scales_with_club_specific_lateral_scale() -> None:
+    """Bias magnitude is club-sensitive: it scales with the resolved population prior's
+    ``lateral_scale_metres`` rather than being a flat constant across all clubs."""
+    handicap_index = 12.3
+
+    wedge_expected_scale = resolve_population_prior(
+        handicap_index, ClubCategory.WEDGE
+    ).parameters.lateral_scale_metres
+    driver_expected_scale = resolve_population_prior(
+        handicap_index, ClubCategory.DRIVER
+    ).parameters.lateral_scale_metres
+
+    wedge_result = _personalise(
+        handicap_index=handicap_index,
+        club_category=ClubCategory.WEDGE,
+        common_miss=CommonMiss.RIGHT,
+    )
+    driver_result = _personalise(
+        handicap_index=handicap_index,
+        club_category=ClubCategory.DRIVER,
+        common_miss=CommonMiss.RIGHT,
+    )
+
+    assert wedge_result.shot_distribution.lateral_bias_metres == pytest.approx(
+        ONBOARDING_COMMON_MISS_BIAS_STRENGTH * wedge_expected_scale
+    )
+    assert driver_result.shot_distribution.lateral_bias_metres == pytest.approx(
+        ONBOARDING_COMMON_MISS_BIAS_STRENGTH * driver_expected_scale
+    )
+    assert wedge_result.shot_distribution.lateral_bias_metres != pytest.approx(
+        driver_result.shot_distribution.lateral_bias_metres
+    )
+
+
+def test_lateral_scale_metres_is_unmutated_by_bias_formula() -> None:
+    """Regression: deriving ``lateral_bias_metres`` from ``lateral_scale_metres`` must not
+    alter the aleatoric ``lateral_scale_metres`` field itself."""
+    handicap_index = 12.3
+    club_category = ClubCategory.IRON
+    expected_lateral_scale_metres = resolve_population_prior(
+        handicap_index, club_category
+    ).parameters.lateral_scale_metres
+
+    result = _personalise(
+        handicap_index=handicap_index,
+        club_category=club_category,
+        common_miss=CommonMiss.RIGHT,
+    )
+
+    assert result.shot_distribution.lateral_scale_metres == pytest.approx(
+        expected_lateral_scale_metres
+    )
 
 
 # --- shot_shape has zero numeric effect --------------------------------------
