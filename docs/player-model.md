@@ -44,6 +44,49 @@
 > 0006/ADR 0007, and it stores no ADR 0007 provenance/confidence metadata
 > (deferred to the future `PopulationPrior` type, M4.2). No sampling/RNG/
 > Monte Carlo logic exists in this type.
+>
+> M4.2 (issue #50) added
+> [src/caddai/statistics/population_prior.py](../src/caddai/statistics/population_prior.py):
+> `resolve_population_prior(handicap_index, club_category) ->
+> PopulationPriorResult`, the ADR 0007 `PopulationPrior` contract. It does
+> **not** construct a `PlayerShotDistribution` directly — it returns
+> `PopulationPriorParameters` covering only `carry_scale_metres`/
+> `lateral_scale_metres`/`correlation`/`degrees_of_freedom`, since
+> `carry_location_metres`/`lateral_bias_metres` require onboarding data
+> (M4.3) that a handicap/club-category lookup alone cannot supply.
+> `PopulationPriorResult` also carries `confidence`
+> (`PopulationPriorConfidence`), `provenance` (`PopulationPriorProvenance`),
+> and `config_version` for traceability. Internal handicap banding
+> (`_HandicapBand`) is a private implementation detail of
+> [src/caddai/statistics/population_prior_config.py](../src/caddai/statistics/population_prior_config.py)'s
+> lookup table only — it is not part of the public `caddai.statistics`
+> contract. `PopulationPriorResult` only ever exposes the continuous
+> `handicap_index` (float), so a future fitted/learned population-prior
+> model (ADR 0007) can consume it directly without depending on today's
+> bucket scheme. Backing data lives in
+> [src/caddai/statistics/population_prior_config.py](../src/caddai/statistics/population_prior_config.py)
+> (version `m4.2-provisional-v1`) — a small, explicit, versioned table that
+> is **explicitly provisional CaddAI configuration**, not validated
+> population data: every cell is marked `confidence=LOW` and
+> `provenance=EVIDENCE_INFORMED_PROVISIONAL_CONFIG`, pending the
+> calibration data described in
+> [docs/research/m4-probabilistic-golfer-model.md](research/m4-probabilistic-golfer-model.md)'s
+> "Unresolved evidence/calibration gaps". This issue also migrated
+> `ClubCategory`'s canonical definition from `caddai.player` to
+> `caddai.statistics.models` (so `caddai.statistics` remains a leaf module)
+> — `caddai.player` still re-exports it unchanged, so every existing import
+> path and serialized value is preserved.
+>
+> `resolve_population_prior` distinguishes `ClubCategory.PUTTER` — a valid
+> category whose own probabilistic model is deferred, since putting is a
+> behaviourally distinct shot regime from full swings — from
+> `ClubCategory.OTHER`, an intentional catch-all with no modelable
+> mechanics. Both raise `PopulationPriorUnsupportedCategoryError` (a
+> `ValueError` subclass, so existing `pytest.raises(ValueError)`-style
+> callers remain compatible), distinguishable via its `status` attribute
+> (`ClubCategorySupportStatus.DEFERRED` vs `NOT_MODELABLE`,
+> `club_category_support_status()`/`CLUB_CATEGORY_SUPPORT_STATUS` expose
+> the mapping for all 7 `ClubCategory` members).
 
 ## Purpose
 

@@ -4,11 +4,11 @@ See docs/player-model.md for the full planned design of this subsystem.
 """
 
 import math
-from enum import StrEnum
 
 from pydantic import BaseModel, Field, computed_field, field_validator
 
 from caddai.statistics import CarryDistribution, DirectionalDispersion
+from caddai.statistics import ClubCategory as ClubCategory  # explicit re-export (mypy strict)
 
 
 def _require_finite(value: float) -> float:
@@ -16,21 +16,6 @@ def _require_finite(value: float) -> float:
     if not math.isfinite(value):
         raise ValueError("must be finite")
     return value
-
-
-class ClubCategory(StrEnum):
-    """The broad category a club belongs to.
-
-    Metadata only — no strategy behaviour keys off this yet.
-    """
-
-    DRIVER = "driver"
-    FAIRWAY_WOOD = "fairway_wood"
-    HYBRID = "hybrid"
-    IRON = "iron"
-    WEDGE = "wedge"
-    PUTTER = "putter"
-    OTHER = "other"
 
 
 class Club(BaseModel):

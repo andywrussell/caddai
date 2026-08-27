@@ -31,6 +31,17 @@
 - Update GitHub tracking issue #10 (currently titled "M4 — Candidate-shot
   generation and Monte Carlo simulation") to reflect the M4.0/M4 roadmap
   redefinition once this documentation change is merged.
+- A dedicated putting-shot probabilistic model for `ClubCategory.PUTTER`,
+  distinct from the stock full-swing `PopulationPrior`/
+  `population_prior_config.py` table — putting is a behaviourally distinct
+  shot regime per docs/research/m4-probabilistic-golfer-model.md's scope
+  assumptions and must not be pooled with full-swing carry/lateral
+  dispersion. `resolve_population_prior` currently raises
+  `PopulationPriorUnsupportedCategoryError` with
+  `status=ClubCategorySupportStatus.DEFERRED` for `PUTTER` pending this
+  work; likely needs its own representation (e.g. green-side distance/line
+  model, not carry/lateral Student-t) and probably its own research spike
+  before a config table or ADR is warranted.
 - Derive/fit `CarryDistribution`/`DirectionalDispersion` from historical
   `ShotRecord` samples (deferred out of M3 — see #9/#30; M3 uses only
   manually supplied statistical parameters; likely lands around the
