@@ -359,6 +359,8 @@ Course-relative outcomes (green / rough / bunker / water / penalty)
 Resulting golf states
         ↓
 Expected strokes / scoring distribution
+        +
+Handicap / round scoring context
         ↓
 Strategy objective (risk preference + situation)
         ↓
@@ -372,6 +374,46 @@ often a shot finds trouble, how often it produces a very good result, and
 how it compares on scoring terms (e.g. birdie-or-better, par-or-better,
 bogey-or-worse). This lets CaddAI reason about risk and reward, not only
 about the lowest mean expected strokes.
+
+---
+
+## Does CaddAI understand my handicap and where I stand in the round?
+Longer term, yes.
+
+A golfer's strategic objective is not decided by physical shot risk alone.
+It can also depend on handicap and scoring context: their Handicap Index,
+the tee set they are playing, that tee set's Course Rating and Slope
+Rating, the hole's par, the hole's Stroke Index (which decides where
+handicap strokes are allocated), and the golfer's current gross/net
+position in the round.
+
+For example:
+
+- If the hole gives the golfer a handicap stroke, a gross bogey may equal a
+  net par.
+- If the golfer is protecting a good net score, a conservative shot may be
+  the rational play even though a bolder line has a better average
+  outcome.
+- If the golfer needs a net birdie late in the round, an option with a
+  realistic upside may become the better strategic choice even if it has a
+  worse mean expected-strokes outcome.
+- In a future match-play or competition context, CaddAI may optimise for
+  the probability of achieving the outcome that matters, rather than only
+  the lowest mean expected strokes.
+
+This handicap/scoring context changes the **strategic objective** CaddAI
+optimises for. It never changes CaddAI's model of how the golfer actually
+hits the ball. Course Rating, Slope Rating, and Stroke Index describe
+handicap and scoring context, not physical shot difficulty — CaddAI's own
+course model and shot simulation remain the sole source of how physically
+risky a shot actually is. Stroke Index in particular decides where
+handicap strokes are allocated for scoring purposes; it is not read as a
+measure of physical risk.
+
+How Handicap Index, Course Handicap, Playing Handicap and similar World
+Handicap System (WHS) calculations are performed, and where that logic
+lives, is a design question for a future milestone, not something this
+document specifies.
 
 ---
 

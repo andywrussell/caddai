@@ -174,6 +174,48 @@
   score, match-play objectives) are explicitly deferred to the M5
   planning/architecture pass after M4 closes, not specified here.
 
+  M5 planning scope must also explicitly cover World Handicap System
+  (WHS)-aware scoring context: a golfer's strategic objective can depend on
+  Handicap Index, selected tee set, tee-specific Course Rating and Slope
+  Rating, hole par, Stroke Index/handicap-stroke allocation, and the
+  golfer's current gross/net scoring position in the round — not only
+  physical shot risk and expected strokes. This is a distinct concern that
+  must layer on top of, and must never contaminate, the underlying physical
+  shot-outcome probability model (`PlayerShotDistribution`, club, distance,
+  lie, course geometry, hazards, environment, terrain/rollout): Course
+  Rating, Slope Rating, and Stroke Index are handicap/scoring-context
+  inputs to the strategy objective, not physical-difficulty inputs, and
+  must never directly alter intrinsic shot dispersion or physics. Stroke
+  Index in particular governs handicap-stroke allocation (and therefore
+  gross/net scoring context) — it is not a physical 1-18 hole-difficulty
+  score; CaddAI's own simulation/course model remains the sole source of a
+  hole's actual physical risk. Conceptually, this extends the
+  candidate-shot -> simulated-outcome -> course-relative-outcome ->
+  golf-state -> expected-strokes/scoring-distribution pipeline with an
+  additional WHS/round-scoring-context input feeding the strategy
+  objective, alongside risk preference and strategic situation — e.g. a
+  golfer receiving a handicap stroke may treat a gross bogey as a net par;
+  protecting a net score may make a conservative shot rational; needing a
+  net birdie late in a round may make a higher-variance option
+  strategically preferable despite worse mean expected strokes; and a
+  future match-play/competition objective may optimise probability of an
+  outcome rather than mean expected strokes. The M5 planning/architecture
+  pass must jointly resolve, rather than design as unrelated features:
+  course-relative outcome mapping, canonical course/tee-data requirements
+  (at minimum: tee-set identity, tee-specific Course Rating and Slope
+  Rating, and per-hole par and Stroke Index — Course Rating and Slope
+  Rating are tee-specific and must not be treated as course-global
+  constants), Course Rating/Slope/Stroke Index representation, a
+  handicap/scoring-domain boundary for WHS-derived arithmetic (Course
+  Handicap/Playing Handicap calculations, including any jurisdiction-
+  specific handling, e.g. GB&I/Scotland) kept separate from `strategy`'s
+  deterministic decision logic, the expected-strokes model, distribution-
+  aware risk/reward evaluation, goal-sensitive strategy objectives, gross
+  vs. net scoring semantics, and how round state changes recommendation
+  utility. No WHS formula, Course Handicap/Playing Handicap arithmetic, or
+  course/tee data ingestion is specified or implemented here — this is a
+  planning-scope note only.
+
 - **M5.5 — Runtime & Offline Architecture (research spike)**
   Architecture/research milestone, not implementation. Once `strategy`/
   `simulation` are mature enough to benchmark (post-M5), evaluate how to
