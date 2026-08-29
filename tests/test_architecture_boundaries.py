@@ -31,6 +31,8 @@ FORBIDDEN_TOP_LEVEL_MODULES = {
     "rich",
 }
 
+FORBIDDEN_POLICY_IDENTIFIERS = ("competition", "rules_mode", "rules_conform", "environment_enabled")
+
 REPO_ROOT = Path(__file__).parent.parent
 
 
@@ -209,3 +211,12 @@ def test_subsystem_module_only_depends_on_approved_subsystems(
         f"{boundary.name} may only depend on {boundary.allowed_caddai_prefixes} + stdlib "
         f"(see {boundary.plan_reference})."
     )
+
+
+def test_simulation_contains_no_rules_of_golf_policy_identifiers() -> None:
+    """caddai.simulation must stay policy-neutral (AGENTS.md §2.1) — no competition/rules flags."""
+    boundary = next(b for b in SUBSYSTEM_BOUNDARIES if b.name == "simulation")
+    for source_path in boundary.source_files:
+        text = source_path.read_text(encoding="utf-8").lower()
+        found = [needle for needle in FORBIDDEN_POLICY_IDENTIFIERS if needle in text]
+        assert not found, f"{source_path} contains forbidden policy identifier(s) {found}"

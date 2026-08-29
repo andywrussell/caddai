@@ -14,6 +14,17 @@ deliberate V1 restriction, not a bug: a topped/grounded/severely-mishit
 ball is not modelled as meaningfully airborne-exposed to wind. Elevation
 and air-density effects are unaffected by this restriction and still apply
 to non-positive-downrange outcomes.
+
+This module is policy-neutral by design: it only answers "if these
+environmental conditions are applied, how do they affect this shot?" —
+never "is applying environmental conditions allowed in this round?". There
+is no enabled/disabled flag here and none should be added. To skip
+environmental adjustment entirely (e.g. a future casual-vs-tournament
+round mode), a caller simply does not call ``apply_environment_transform``
+and uses the intrinsic ``ShotOutcome`` unchanged. Whether a given round
+permits environmental assistance is a decision for a future round/rules
+layer outside ``caddai.simulation`` (see docs/roadmap.md's M5.5 entry) —
+never for this module.
 """
 
 from caddai.simulation.environment_config import (
@@ -66,6 +77,13 @@ def apply_environment_transform(
     zero elevation delta, no air-density override) is an exact identity
     transform — every additive correction term evaluates to ``0.0`` and the
     returned ``ShotOutcome`` is field-for-field equal to ``outcome``.
+
+    Each environmental feature can already be independently neutralized via
+    ``EnvironmentInput``'s per-field defaults without any extra parameter:
+    e.g. ``EnvironmentInput(elevation_delta_metres=10.0)`` leaves ``wind`` at
+    its zero default, ``EnvironmentInput(wind=WindComponents(longitudinal_mps=5.0))``
+    leaves elevation and air density at their no-op defaults. No flag is
+    needed for partial or full disablement, and none should be added.
 
     Raises ``EnvironmentTransformUnsupportedClubCategoryError`` if
     ``club_category`` is ``ClubCategory.PUTTER`` (checked before any config

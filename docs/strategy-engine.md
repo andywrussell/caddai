@@ -81,6 +81,10 @@ the critical path. Neither module may take on a mandatory network dependency
   subsystems' outputs, they don't implement them.
 - No natural-language generation.
 - No API/CLI adapter logic.
+- No Rules-of-Golf/competition-mode policy — `simulation` only computes the
+  effect of environmental inputs *if* applied; whether a round permits
+  environmental assistance at all belongs to a future round/rules layer
+  (see [roadmap.md](roadmap.md)'s M5.5 entry).
 
 ## Reproducibility
 
