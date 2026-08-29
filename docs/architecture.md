@@ -86,6 +86,13 @@ selected by this constraint — those are future decisions, informed by the
 [roadmap.md](roadmap.md)) that precedes committing to the full mobile
 runtime architecture (roadmap M7).
 
+Recording a decision/outcome locally (item 7 above) is distinct from
+*deriving* operational or recommendation-evaluation analytics from that
+record (see [decision-journal.md](decision-journal.md)): the former is
+active-round core functionality; the latter is connectivity-enhanced and
+may live in a separate component entirely — this diagram does not assume
+they share a service, repository, or storage technology.
+
 ## Subsystems
 
 | Subsystem | Path | Responsibility |
