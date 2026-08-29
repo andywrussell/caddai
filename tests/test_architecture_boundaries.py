@@ -109,6 +109,20 @@ SUBSYSTEM_BOUNDARIES = [
             'GitHub issue #28 ("M3.3 — Evolve Club/Player to carry distribution + dispersion")'
         ),
     ),
+    SubsystemBoundary(
+        name="simulation",
+        source_files=(
+            REPO_ROOT / "src/caddai/simulation/__init__.py",
+            REPO_ROOT / "src/caddai/simulation/models.py",
+            REPO_ROOT / "src/caddai/simulation/environment_config.py",
+            REPO_ROOT / "src/caddai/simulation/environment.py",
+        ),
+        allowed_caddai_prefixes=("caddai.simulation", "caddai.statistics"),
+        plan_reference=(
+            'GitHub issue #55 ("M4.7 — Environment/physics transformation layer '
+            'and simulation bootstrap")'
+        ),
+    ),
 ]
 
 
