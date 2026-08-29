@@ -105,6 +105,27 @@ def test_family_accepts_explicit_bivariate_student_t() -> None:
     assert distribution.family == ShotDistributionFamily.BIVARIATE_STUDENT_T
 
 
+# --- Immutability (frozen) ----------------------------------------------------
+
+
+def test_assigning_to_carry_location_metres_raises() -> None:
+    """The model is frozen: attribute assignment after construction is rejected, proving
+    ``PlayerShotDistribution`` is a structurally-immutable value object."""
+    distribution = PlayerShotDistribution(**_valid_kwargs())
+
+    with pytest.raises((ValidationError, TypeError)):
+        distribution.carry_location_metres = 200.0
+
+
+def test_assigning_to_lateral_bias_metres_raises() -> None:
+    """Frozen enforcement is not field-specific: a second, unrelated field is equally
+    protected from mutation after construction."""
+    distribution = PlayerShotDistribution(**_valid_kwargs())
+
+    with pytest.raises((ValidationError, TypeError)):
+        distribution.lateral_bias_metres = -5.0
+
+
 # --- carry_location_metres ---------------------------------------------------
 
 
@@ -520,6 +541,78 @@ def test_resolve_current_shot_distribution_does_not_mutate_club_shot_distributio
 
     resolve_current_shot_distribution(club, history)
     assert club.shot_distribution == baseline
+
+
+def test_resolve_current_shot_distribution_preserves_baseline_object_identity() -> None:
+    """Object identity, not just value-equality: resolving a current distribution must never
+    rebind ``Club.shot_distribution`` to a new (even equal-valued) object."""
+    baseline = _compose(shot_history=[]).baseline_shot_distribution
+    club = _club_with_shot_distribution(baseline)
+    original = club.shot_distribution
+    history = [
+        _m46_shot_record(observed_carry_metres=200.0, lateral_offset_metres=15.0) for _ in range(5)
+    ]
+
+    resolve_current_shot_distribution(club, history)
+
+    assert club.shot_distribution is original
+
+
+def test_resolve_current_shot_distribution_does_not_mutate_baseline_field_values() -> None:
+    """Behavioural regression test independent of the frozen mechanism: resolving with
+    strong evidence must leave the supplied baseline object's own field values exactly as
+    constructed."""
+    baseline = PlayerShotDistribution(
+        carry_location_metres=150.0,
+        lateral_bias_metres=0.0,
+        carry_scale_metres=8.0,
+        lateral_scale_metres=4.0,
+        correlation=0.1,
+        degrees_of_freedom=6.0,
+    )
+    original_values = baseline.model_dump()
+    club = _club_with_shot_distribution(baseline)
+    history = [
+        _m46_shot_record(observed_carry_metres=200.0, lateral_offset_metres=15.0) for _ in range(10)
+    ]
+
+    resolve_current_shot_distribution(club, history)
+
+    assert baseline.model_dump() == original_values
+
+
+def test_resolve_current_shot_distribution_repeated_calls_preserve_baseline_identity() -> None:
+    """Idempotency includes non-mutation: repeated resolution with unchanged inputs must
+    never rebind ``Club.shot_distribution``, not just produce equal results."""
+    baseline = _compose(shot_history=[]).baseline_shot_distribution
+    club = _club_with_shot_distribution(baseline)
+    original = club.shot_distribution
+    history = [_m46_shot_record(observed_carry_metres=160.0, lateral_offset_metres=3.0)]
+
+    first = resolve_current_shot_distribution(club, history)
+    assert club.shot_distribution is original
+
+    second = resolve_current_shot_distribution(club, history)
+    assert club.shot_distribution is original
+
+    assert first == second
+
+
+def test_resolve_current_shot_distribution_result_is_not_alias_of_baseline_when_it_differs() -> (
+    None
+):
+    """The resolved 'current' distribution must be a distinct object from the stored
+    baseline whenever evidence actually moves it — never a silent alias."""
+    baseline = _compose(shot_history=[]).baseline_shot_distribution
+    club = _club_with_shot_distribution(baseline)
+    history = [
+        _m46_shot_record(observed_carry_metres=200.0, lateral_offset_metres=15.0) for _ in range(10)
+    ]
+
+    resolution = resolve_current_shot_distribution(club, history)
+
+    assert resolution.shot_distribution != club.shot_distribution
+    assert resolution.shot_distribution is not club.shot_distribution
 
 
 # --- PUTTER: DEFERRED ------------------------------------------------------------

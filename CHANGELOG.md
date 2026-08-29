@@ -123,6 +123,24 @@ first public API is published.
   [docs/player-model.md](docs/player-model.md); tests added in
   [tests/test_player_shot_distribution.py](tests/test_player_shot_distribution.py)
   and [tests/test_player_models.py](tests/test_player_models.py).
+  **Follow-up (Architect-recommended tightening, same issue #54):**
+  [src/caddai/statistics/shot_distribution.py](src/caddai/statistics/shot_distribution.py)'s
+  `PlayerShotDistribution` is now a structurally immutable Pydantic value
+  object (`model_config = ConfigDict(frozen=True)`) — attribute
+  assignment after construction raises, enforcing the M4.5/M4.6
+  immutable-baseline invariant structurally rather than only by
+  convention. `Club`/`Club.shot_distribution` remain unfrozen/mutable by
+  design — only the value object itself is frozen. No ADR required (not a
+  public API contract change; zero test breakage). New tests added in
+  [tests/test_player_shot_distribution.py](tests/test_player_shot_distribution.py)
+  proving: frozen-attribute-assignment raises,
+  `resolve_current_shot_distribution` never rebinds
+  `Club.shot_distribution` (object identity preserved, not just
+  value-equality), repeated resolution is idempotent and non-mutating,
+  and the resolved "current" distribution is never an object alias of the
+  stored baseline when it legitimately differs.
+  [docs/player-model.md](docs/player-model.md)'s M3-vs-M4 authority note
+  was strengthened with explicit wording.
 
 - Implemented **M4.4 — `ShotRecord` provenance and measurement-quality
   fields** (GitHub issue #52), reworked around an evidence-only

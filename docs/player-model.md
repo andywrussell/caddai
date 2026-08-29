@@ -352,7 +352,22 @@
 > coupling ADR 0006 rejects): once `shot_distribution` is populated for a
 > club, `carry_distribution`/`dispersion` are not read by any
 > `shot_distribution`-aware consumer, by convention — no consumer should
-> read both and blend/average them.
+> read both and blend/average them. To state this unambiguously: M4
+> `PlayerShotDistribution` is *the* authoritative representation for
+> probabilistic simulation (`caddai.simulation`, M4.8, and any future
+> `strategy` consumer built against it); M3
+> `CarryDistribution`/`DirectionalDispersion` are legacy/deterministic
+> compatibility representations, specifically still authoritative for
+> `Club.expected_carry_metres` and current `strategy.recommend_club()`
+> during the M3->M4 transition. The two representations are **not expected
+> to remain synchronized automatically** — no code keeps them in sync, and
+> none should be added to. Separately, `PlayerShotDistribution` is now a
+> frozen (immutable) Pydantic value object (`model_config =
+> ConfigDict(frozen=True)`), which structurally prevents in-place mutation
+> of a stored baseline — this does not prevent wholesale reassignment of
+> `Club.shot_distribution` itself, which remains a normal mutable field,
+> reassigned only at onboarding/re-onboarding time via
+> `compose_club_shot_distribution`'s caller.
 >
 > **Flagged, not solved, limitation:** `Club.name`/`ShotRecord.club_name`
 > remain plain strings with no uniqueness constraint across a `Player`'s
