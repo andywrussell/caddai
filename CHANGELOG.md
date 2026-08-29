@@ -10,6 +10,20 @@ first public API is published.
 
 ### Added
 
+- Documented an additional M5 planning-scope requirement: future `strategy`
+  recommendations must incorporate World Handicap System (WHS)-aware
+  handicap/scoring context (Handicap Index, tee set, tee-specific Course
+  Rating and Slope Rating, hole par, Stroke Index/handicap-stroke
+  allocation, and current round gross/net scoring context) as a distinct
+  concern layered on top of, and never contaminating, the physical
+  shot-outcome probability model. Clarifies that Stroke Index governs
+  handicap-stroke allocation/scoring context, not physical hole difficulty,
+  and that Course Rating/Slope Rating are tee-specific, not course-global
+  constants. No WHS formulas, Course/Playing Handicap arithmetic, course
+  data ingestion, or strategy code were implemented — planning/documentation
+  only. Updated [docs/prfaq.md](docs/prfaq.md), [docs/roadmap.md](docs/roadmap.md)
+  (M5 entry), and the M5 parent GitHub issue (#11).
+
 - Implemented **M4.5 — personal partial-pooling player-model updater**
   (GitHub issue #53), CaddAI's first personal-learning mechanism: a
   deterministic, closed-form partial-pooling (empirical-Bayes-style
