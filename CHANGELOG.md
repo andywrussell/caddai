@@ -10,6 +10,42 @@ first public API is published.
 
 ### Added
 
+- Documented a cross-cutting MVP requirement, ahead of continued M4/M5
+  implementation, that the future system must preserve enough structured
+  information to answer two distinct questions: whether the product/system
+  is working correctly (**operational monitoring** — recommendation
+  generated/unavailable, fallback used, unsupported club/shot regime,
+  missing/incomplete course data, poor GPS confidence, simulation/strategy
+  failure, invalid input, latency, course package/version problems, optional
+  cloud sync failures) and whether CaddAI's recommendations are actually
+  good (**recommendation evaluation** — a decision-time snapshot of
+  identity/versioning, input context, candidate evaluations, decision, and
+  outcome; retained counterfactual candidate evaluations, explicitly not
+  observed ground truth; and probabilistic calibration, e.g. whether ~10%
+  predicted penalty probability matches ~10% observed outcomes). Also
+  documents a lightweight, non-per-shot user-reported-issue capture
+  requirement with automatically associated recommendation context; that
+  all such capture must work fully offline (local append during a round,
+  optional sync/export afterwards, per the offline-first active-round
+  principle); and an explicit non-design of the eventual privacy boundary
+  (pseudonymous IDs, data minimisation, user control over export). Records a
+  roadmap responsibility split — M5:
+  candidate outputs stay evaluation-ready (already implied by the existing
+  distribution-aware requirement); M5.5: define cross-component event
+  contracts, storage/sync boundary, ownership, versioning, and the
+  operational-observability and evaluation-data architectures as two
+  separate concerns; M6: the decision journal links recommendation, golfer
+  choice, shot observation, and resulting state, and is the primary
+  evaluation data source; M7: MVP-level local event capture, lightweight
+  issue reporting, optional post-round sync/export. No telemetry schema,
+  persistence, monitoring stack, analytics warehouse, calibration
+  calculation, A/B testing, feedback UI, or sync/privacy system was
+  implemented — planning/documentation only. Updated
+  [docs/prfaq.md](docs/prfaq.md), [docs/roadmap.md](docs/roadmap.md) (M5
+  cross-reference; M5.5, M6, M7 entries), [docs/decision-journal.md](docs/decision-journal.md),
+  and [docs/architecture.md](docs/architecture.md) (offline-first
+  active-round section).
+
 - Documented an additional M5 planning-scope requirement: **expected
   strokes** and **Strokes Gained** are the common value framework for
   evaluating a candidate shot's resulting golf states — the pipeline

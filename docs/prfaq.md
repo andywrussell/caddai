@@ -661,6 +661,31 @@ Privacy, retention and synchronisation policies will need to be defined before p
 
 ---
 
+## How will CaddAI know if it is working properly, and whether its recommendations are actually good?
+These are two different questions, and CaddAI should not collapse them into one generic "logging" concept.
+
+The first question is **operational**:
+
+> Is the product/system behaving correctly?
+For example: did a recommendation get produced at all, did the system fall back to a simpler behaviour, was course data missing or stale, was GPS confidence too poor to trust, and how long did a recommendation take.
+
+The second question is about **recommendation quality**:
+
+> Are CaddAI's recommendations actually good?
+A single good or bad outcome on one shot does not answer that question. A statistically sound recommendation can still produce a poor result because of how the shot was struck, and a poor recommendation can occasionally get lucky. Answering it properly requires keeping what CaddAI predicted *before* the shot separate from what the golfer chose and what actually happened afterwards.
+
+To make that possible, CaddAI is intended to preserve a **decision-time snapshot** whenever it evaluates a shot — not just the club it recommended, but the other candidates it considered (e.g. driver vs. 3-wood, and their respective expected outcomes and risk), the golfer's actual choice, and the eventual observed result. Retaining those alternative candidate evaluations does not mean CaddAI later claims to know what would truly have happened with the club not chosen — only that its own pre-shot reasoning remains available for later review.
+
+Over time, this also supports **calibration**: checking whether CaddAI's probabilistic estimates match reality, not just whether its average recommendation looked good. For example, if CaddAI estimates roughly a 10% chance of finding a penalty area, do comparable real shots find trouble roughly 10% of the time? Calibration should be expected to improve as CaddAI accumulates a golfer's own recorded shots.
+
+Golfers and testers should also be able to flag a recommendation that looks wrong — for example, the wrong club, the wrong target, or bad course data — without needing to do this after every single shot. An occasional, on-demand or post-round report is enough, and the relevant recommendation context should be attached automatically rather than requiring the golfer to reconstruct it.
+
+All of this capture is intended to work fully offline during a round, consistent with CaddAI's offline-first principle: recording a decision or outcome locally must never depend on connectivity. Only exporting or synchronising that history afterwards is a connectivity-enhanced convenience.
+
+No monitoring technology, evaluation dataset format, or calibration methodology is specified by this answer — those are implementation decisions for later milestones.
+
+---
+
 ## Will CaddAI automatically learn my game?
 Eventually, that is the goal.
 

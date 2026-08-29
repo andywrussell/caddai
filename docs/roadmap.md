@@ -286,6 +286,13 @@
   model, risk utility, round-state logic, or course/tee data ingestion is
   specified or implemented here — this is a planning-scope note only.
 
+  This distribution-aware requirement (candidates carry expected Strokes
+  Gained, upside/downside, and tail/penalty information rather than a
+  single collapsed scalar) is also what future recommendation-evaluation
+  work (see [decision-journal.md](decision-journal.md)) will need to
+  consume — M5 does not need additional scope to satisfy this, only to
+  preserve it.
+
 - **M5.5 — Runtime & Offline Architecture (research spike)**
   Architecture/research milestone, not implementation. Once `strategy`/
   `simulation` are mature enough to benchmark (post-M5), evaluate how to
@@ -305,7 +312,20 @@
   produce the specific ADRs later milestones need (M6 storage, M7 mobile
   runtime, M9 on-device inference) rather than making those technology
   choices itself — this spike deliberately does not select a mobile
-  framework, database, or cloud provider.
+  framework, database, or cloud provider. Scope also includes the
+  cross-cutting monitoring/evaluation requirement below: define
+  cross-component event contracts (recommendation, decision, outcome) and
+  the local storage/sync boundary for them; decide repository/service
+  ownership; design model/config versioning (course data, player model,
+  strategy/config, expected-strokes/Strokes Gained model) needed to
+  interpret a decision-time snapshot later. Additionally, and kept
+  conceptually separate per [decision-journal.md](decision-journal.md#monitoring-vs-evaluation):
+  determine the operational-observability architecture (is
+  infrastructure/application behaviour healthy — metrics/logs/traces/
+  alerts). Separately, determine the evaluation-data architecture (are
+  CaddAI's predictions/recommendations good — analytics datasets,
+  calibration analysis, Strokes Gained analysis, experiment comparison).
+  These two need not share a service or repository.
 
 - **M6 — Round tracking and decision journal**
   Recording situation, recommendation, rationale, player decision, shot
@@ -314,13 +334,28 @@
   selected yet — requires an ADR when this milestone starts. Recording a
   decision/outcome is active-round core functionality (`AGENTS.md` §2.2): the
   write path must work locally; any remote sync of round history is
-  connectivity-enhanced, not a prerequisite.
+  connectivity-enhanced, not a prerequisite. The decision journal is the
+  primary data source for **recommendation evaluation** (is a
+  recommendation actually good — decision-time candidate snapshots,
+  counterfactual candidate retention, probabilistic calibration, realised
+  Strokes Gained), a distinct concern from **operational monitoring** (is
+  the system behaving correctly); see
+  [decision-journal.md](decision-journal.md#monitoring-vs-evaluation) for
+  the full framing and the non-goals that remain unspecified here.
 
 - **M7 — GPS/mobile application integration**
   Live GPS position feeding the engine; mobile/UI integration. Requires
   human decision on target platform (`AGENTS.md` escalation rules). Builds
   on the M5.5 research spike's findings; positioning must remain an
   active-round core capability per `AGENTS.md` §2.2 regardless of platform.
+  Scope also includes an MVP level of monitoring/evaluation instrumentation
+  building on M6's decision journal: local event capture during a round,
+  lightweight (occasional/post-round, not per-shot) issue reporting with
+  automatically associated recommendation context, and optional post-round
+  sync/export — enough to evaluate pilot use, not a full analytics or
+  calibration platform (deferred to post-MVP work; see
+  [decision-journal.md](decision-journal.md#intended-uses) for the
+  candidate MVP evaluation scorecard).
 
 - **M8 — LLM caddie communication layer**
   An LLM explains the deterministic recommendation in natural, caddie-style
