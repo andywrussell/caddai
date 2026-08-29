@@ -358,7 +358,7 @@ Course-relative outcomes (green / rough / bunker / water / penalty)
         ↓
 Resulting golf states
         ↓
-Expected strokes / scoring distribution
+Expected strokes / Strokes Gained distribution
         +
 Handicap / round scoring context
         ↓
@@ -368,12 +368,29 @@ Recommendation
 ```
 CaddAI can then compare multiple strategies rather than relying on simple rules such as “choose the nearest club distance.”
 
+Expected strokes and Strokes Gained are intended to be CaddAI's common value
+framework for comparing candidate shots and the golf states they lead to —
+one unit that works whether the shot is a tee shot, an approach, a
+recovery, a shot around the green, or (once supported) a putt. Every golf
+state has an expected number of strokes to hole out from it; a candidate
+shot produces a distribution of resulting states, and each resulting
+state's Strokes Gained is how much better or worse that outcome leaves the
+golfer than the state they started from, after the stroke played. A
+candidate shot therefore has both an expected Strokes Gained value and a
+full distribution of possible Strokes Gained outcomes — CaddAI does not
+collapse a shot to a single expected-value number.
+
 The simulation should preserve enough detail about each candidate shot's
 outcomes — not just its average result — to support questions such as how
 often a shot finds trouble, how often it produces a very good result, and
 how it compares on scoring terms (e.g. birdie-or-better, par-or-better,
-bogey-or-worse). This lets CaddAI reason about risk and reward, not only
-about the lowest mean expected strokes.
+bogey-or-worse). This lets CaddAI reason about risk and reward — expected
+Strokes Gained, upside, and downside/tail risk together — not only about
+the lowest mean expected strokes. The highest expected Strokes Gained is an
+important baseline, but the golfer's strategic objective (protecting a
+score, needing a birdie, risk preference, handicap/round context) can
+rationally favour a different candidate — see the risk-preference and
+handicap/scoring-context questions below.
 
 ---
 

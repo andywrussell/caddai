@@ -10,6 +10,28 @@ first public API is published.
 
 ### Added
 
+- Documented an additional M5 planning-scope requirement: **expected
+  strokes** and **Strokes Gained** are the common value framework for
+  evaluating a candidate shot's resulting golf states — the pipeline
+  candidate shot -> resulting golf state -> expected-strokes model ->
+  Strokes Gained distribution. Strokes Gained gives CaddAI a common value
+  scale across shot types (tee shots, approaches, recovery, short game,
+  putting once supported) for ranking candidates, explaining recommendation
+  value, comparing golfer decisions with CaddAI recommendations, and
+  identifying where strokes are gained/lost. Reaffirms that CaddAI must not
+  collapse a candidate shot to a single scalar expected-Strokes-Gained
+  value — the full probabilistic outcome distribution must remain
+  available for risk-sensitive and goal-sensitive decisions (e.g.
+  protecting a score, needing a birdie, future match-play objectives), and
+  keeps the physical outcome model (`PlayerShotDistribution`), the value
+  model (expected strokes, Strokes Gained), and the strategic objective
+  (WHS/round scoring context, risk preference) explicitly distinct. No
+  expected-strokes model, data source, formula, or strategy code was
+  implemented — planning/documentation only. Updated
+  [docs/prfaq.md](docs/prfaq.md), [docs/roadmap.md](docs/roadmap.md) (M5
+  entry), [docs/architecture.md](docs/architecture.md) (Strategy subsystem
+  row), and the M5 parent GitHub issue (#11).
+
 - Documented an additional M5 planning-scope requirement: future `strategy`
   recommendations must incorporate World Handicap System (WHS)-aware
   handicap/scoring context (Handicap Index, tee set, tee-specific Course
