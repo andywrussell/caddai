@@ -11,7 +11,7 @@ this subsystem.
 import math
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def _require_finite(value: float) -> float:
@@ -79,7 +79,12 @@ class PlayerShotDistribution(BaseModel):
     Construction is deterministic and side-effect free: this type defines
     no ``sample()`` method, no RNG parameter, and no NumPy random usage —
     Monte Carlo sampling is out of scope for M4.1.
+
+    This model is structurally immutable (``frozen=True``): assigning to
+    any attribute after construction raises ``ValidationError``.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     family: ShotDistributionFamily = ShotDistributionFamily.BIVARIATE_STUDENT_T
     carry_location_metres: float = Field(gt=0)

@@ -102,6 +102,7 @@ SUBSYSTEM_BOUNDARIES = [
             REPO_ROOT / "src/caddai/player/models.py",
             REPO_ROOT / "src/caddai/player/onboarding.py",
             REPO_ROOT / "src/caddai/player/personalisation.py",
+            REPO_ROOT / "src/caddai/player/shot_distribution.py",
         ),
         allowed_caddai_prefixes=("caddai.player", "caddai.statistics"),
         plan_reference=(

@@ -8,7 +8,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
 
-from caddai.statistics import CarryDistribution, DirectionalDispersion
+from caddai.statistics import CarryDistribution, DirectionalDispersion, PlayerShotDistribution
 from caddai.statistics import ClubCategory as ClubCategory  # explicit re-export (mypy strict)
 
 
@@ -20,12 +20,19 @@ def _require_finite(value: float) -> float:
 
 
 class Club(BaseModel):
-    """A golf club, its carry distribution, and its directional dispersion."""
+    """A golf club, its carry distribution, and its directional dispersion.
+
+    Once ``shot_distribution`` is populated for a club, ``carry_distribution``/
+    ``dispersion`` are not read by any ``shot_distribution``-aware consumer,
+    by convention (no code enforces this) — see `docs/player-model.md`'s
+    M4.6 entry.
+    """
 
     name: str = Field(min_length=1)
     carry_distribution: CarryDistribution
     dispersion: DirectionalDispersion
     category: ClubCategory
+    shot_distribution: PlayerShotDistribution | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
