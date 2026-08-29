@@ -325,7 +325,16 @@
   alerts). Separately, determine the evaluation-data architecture (are
   CaddAI's predictions/recommendations good — analytics datasets,
   calibration analysis, Strokes Gained analysis, experiment comparison).
-  These two need not share a service or repository.
+  These two need not share a service or repository. Scope also includes a
+  pre-mobile-MVP Rules-of-Golf/competition-conformance review of
+  environmental assistance: whether wind information/measurement, elevation
+  or slope adjustment, effective-playing-distance adjustment, club
+  recommendations, and recommended target/line of play are permissible
+  under the Rules of Golf and any applicable Local Rules (including
+  distance-measuring-device restrictions), and how casual/practice and
+  rules-conforming modes should differ as a result — disabling one
+  environmental input (e.g. wind) must not be assumed sufficient on its
+  own to make a mode rules-conforming.
 
 - **M6 — Round tracking and decision journal**
   Recording situation, recommendation, rationale, player decision, shot

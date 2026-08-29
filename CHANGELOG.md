@@ -10,6 +10,50 @@ first public API is published.
 
 ### Added
 
+- Bootstrapped a new `caddai.simulation` subsystem (M4.7, issue #55): a
+  deterministic environment/physics transform (`apply_environment_transform`)
+  applying wind (asymmetric headwind/tailwind response, symmetric
+  crosswind), elevation, and optional air-density corrections to a new
+  `ShotOutcome` domain type (`downrange_metres`/`lateral_metres`, both
+  signed and unclamped). `ShotOutcome` is a forward-modelled outcome and is
+  explicitly kept separate from `caddai.player.PlayerShotDistribution`'s
+  intrinsic golfer-variability parameters — `simulation` models do not
+  import `caddai.player` or `caddai.strategy`. All coefficients (headwind/
+  tailwind/crosswind/elevation/air-density sensitivities, per-`ClubCategory`
+  multipliers, reference carry/air-density constants) are collected in a
+  new versioned (`m4.7-provisional-v1`) `EnvironmentTransformConfig`,
+  explicitly documented as provisional/uncalibrated pending CaddAI's own
+  measured data — see `environment_config.py` for the full evidence-quality
+  classification of each coefficient. `apply_environment_transform` raises
+  `EnvironmentTransformUnsupportedClubCategoryError` for `ClubCategory.PUTTER`
+  (putting has no airborne aerodynamic regime to model). `EnvironmentInput()`
+  (all-default environment) is an exact identity transform.
+  `tests/test_architecture_boundaries.py` gained a `simulation` entry
+  restricting it to `caddai.simulation`/`caddai.statistics` imports only,
+  consistent with `strategy`/`simulation` never depending on `llm`/`api`/
+  `cli`/UI (`AGENTS.md` §2.1). `docs/architecture.md`'s `simulation`
+  subsystem row and implementation-status note were updated accordingly.
+
+- Documented and tested two follow-up clarifications to the M4.7 environment
+  transform (issue #55) ahead of finalising the PR: (1) the wind-exposure
+  "hang-time" proxy is floored at zero for any non-positive intrinsic
+  `downrange_metres`, so all wind effects (headwind/tailwind/crosswind) are
+  exactly zero — never sign-inverted — for a topped/grounded/severely
+  mishit outcome; this V1 validity-domain restriction is now explicit in
+  `environment.py`/`environment_config.py`'s docstrings, flagged for M4.8's
+  stochastic sampling layer, with new tests proving wind direction is
+  governed solely by wind sign, never by the outcome coordinate's sign; and
+  (2) `caddai.simulation` is explicitly documented as policy-neutral —
+  environmental assistance is optional at the caller level (a caller simply
+  skips `apply_environment_transform` to leave a `ShotOutcome` unchanged;
+  each environmental feature is already independently neutralisable via
+  `EnvironmentInput`'s per-field defaults), with no Rules-of-Golf/
+  competition-mode flag inside `caddai.simulation` — a new
+  `tests/test_architecture_boundaries.py` regression test guards against
+  such a flag being added. Recorded a future pre-mobile-MVP Rules-of-Golf/
+  competition-conformance review requirement in `docs/roadmap.md`'s M5.5
+  entry (documentation/planning only, no ADR, no implementation).
+
 - Documented a cross-cutting MVP requirement, ahead of continued M4/M5
   implementation, that the future system must preserve enough structured
   information to answer two distinct questions: whether the product/system

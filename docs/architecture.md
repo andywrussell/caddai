@@ -3,8 +3,11 @@
 > Status: describes intended target architecture for the full roadmap.
 > Implemented so far: `gps`/`course` (M2, complete — see
 > [course-engine.md](course-engine.md)) and `player`/`statistics` (M3,
-> complete — see [player-model.md](player-model.md)). `simulation`, `llm`,
-> `api`, and `cli` do not exist yet.
+> complete — see [player-model.md](player-model.md)). `simulation` has been
+> bootstrapped (M4.7, issue #55) with a deterministic wind/elevation/
+> air-density environment transform only — Monte Carlo shot-outcome
+> sampling and composition with `player`'s intrinsic shot distribution are
+> still future work (M4.8+). `llm`, `api`, and `cli` do not exist yet.
 
 ## Guiding principle
 
@@ -102,7 +105,7 @@ they share a service, repository, or storage technology.
 | Player | `src/caddai/player/` | Player and club domain models, tendencies |
 | Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics, the `ClubCategory` taxonomy, and the `PopulationPrior` contract/config |
 | Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes, Strokes Gained |
-| Simulation | `src/caddai/simulation/` | Monte Carlo shot-outcome simulation |
+| Simulation | `src/caddai/simulation/` | Deterministic wind/elevation/air-density environment transform of a forward-modelled shot outcome (M4.7); Monte Carlo shot-outcome sampling composed with `player`'s intrinsic shot distribution is future work (M4.8+) |
 | LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M8+) |
 | API | `src/caddai/api/` | FastAPI adapter; translates HTTP ↔ domain calls, no business logic |
 | CLI | `src/caddai/cli/` | Typer adapter; translates CLI ↔ domain calls, no business logic |
