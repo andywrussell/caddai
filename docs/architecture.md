@@ -94,7 +94,7 @@ runtime architecture (roadmap M7).
 | GPS | `src/caddai/gps/` | Coordinates, bearings, GPS distance calculations |
 | Player | `src/caddai/player/` | Player and club domain models, tendencies |
 | Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics, the `ClubCategory` taxonomy, and the `PopulationPrior` contract/config |
-| Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes |
+| Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes, Strokes Gained |
 | Simulation | `src/caddai/simulation/` | Monte Carlo shot-outcome simulation |
 | LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M8+) |
 | API | `src/caddai/api/` | FastAPI adapter; translates HTTP ↔ domain calls, no business logic |

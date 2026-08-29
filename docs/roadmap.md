@@ -174,6 +174,68 @@
   score, match-play objectives) are explicitly deferred to the M5
   planning/architecture pass after M4 closes, not specified here.
 
+  M5 planning scope must make explicit that **expected strokes** and
+  **Strokes Gained** are the common value framework for evaluating a
+  candidate shot's resulting golf states — not one possible objective among
+  several unrelated ones. Conceptually: a golf state has an expected number
+  of strokes to hole out from it; a candidate shot produces a distribution
+  of resulting golf states; for each resulting state, strokes gained =
+  (expected strokes from the current state) − (1 stroke taken + expected
+  strokes from the resulting state). A candidate shot therefore has both an
+  expected Strokes Gained value and a distribution of possible Strokes
+  Gained outcomes. Consistent with the distribution-aware requirement
+  above, CaddAI must not collapse a candidate shot to a single scalar
+  expected-Strokes-Gained value — the full probabilistic outcome
+  distribution must remain available for risk-sensitive and goal-sensitive
+  decisions. No expected-strokes model, data source, or formula
+  implementation is specified here; this is value-framework naming, not a
+  specification.
+
+  Strokes Gained matters because it gives CaddAI one common value scale for
+  comparing golf actions and resulting states that would otherwise be hard
+  to compare directly — tee shots, approaches, recovery shots, short game,
+  and (once supported) putting — supporting, over time: ranking candidate
+  shots; explaining a recommendation's value; comparing a golfer's actual
+  decision against CaddAI's recommendation; identifying where strokes are
+  gained or lost; and evaluating strategy quality across different shot
+  types. It also gives the distribution-aware risk/reward requirement above
+  a concrete unit: conceptually, simulated candidate shot -> course-relative
+  outcome -> resulting golf state -> expected-strokes model -> Strokes
+  Gained distribution, from which CaddAI should eventually be able to
+  reason about expected Strokes Gained, the probability of strongly
+  positive outcomes, the probability of losing strokes, downside/tail risk,
+  penalty/catastrophic risk, and scoring probabilities — the exact summary
+  statistics are not defined here unless already required by the M5 issue.
+
+  Highest expected Strokes Gained is an important baseline strategy
+  objective, but it is not necessarily the final recommendation in every
+  situation: the same candidate-shot outcome distributions may be evaluated
+  under different objectives depending on strategic situation, e.g.
+  maximising expected value/minimising expected strokes in normal stroke
+  play; accepting a slightly lower expected Strokes Gained to materially
+  reduce catastrophic risk when protecting a score; accepting greater
+  downside where it materially increases the probability of a needed
+  birdie/net-birdie outcome; or, in a future match-play/competition
+  context, optimising probability of winning/halving the relevant contest
+  rather than mean Strokes Gained alone. None of these policies are
+  implemented here.
+
+  This requires keeping three concepts conceptually separate through the M5
+  planning pass: (1) the **physical outcome model** (`PlayerShotDistribution`,
+  environment, course geometry, hazards/terrain), unchanged by any of this;
+  (2) the **value model** (expected strokes, Strokes Gained); and (3) the
+  **strategic objective** (gross/net scoring context, handicap strokes,
+  Stroke Index, round state, risk preference, competition objective —
+  elaborated immediately below). Course Rating, Slope Rating, and Stroke
+  Index must not alter intrinsic shot physics or `PlayerShotDistribution`;
+  they may change what outcome is strategically desirable, never how the
+  ball actually flies. The intended conceptual M5+ pipeline is: candidate
+  shot -> probabilistic shot outcomes -> course-relative classification ->
+  resulting golf states -> expected-strokes model -> Strokes Gained
+  distribution -> expected value + upside/downside/tail information + WHS/
+  round scoring context + risk/strategic objective -> recommendation. No
+  concrete implementation types are locked in by this description.
+
   M5 planning scope must also explicitly cover World Handicap System
   (WHS)-aware scoring context: a golfer's strategic objective can depend on
   Handicap Index, selected tee set, tee-specific Course Rating and Slope
@@ -209,12 +271,20 @@
   handicap/scoring-domain boundary for WHS-derived arithmetic (Course
   Handicap/Playing Handicap calculations, including any jurisdiction-
   specific handling, e.g. GB&I/Scotland) kept separate from `strategy`'s
-  deterministic decision logic, the expected-strokes model, distribution-
-  aware risk/reward evaluation, goal-sensitive strategy objectives, gross
-  vs. net scoring semantics, and how round state changes recommendation
-  utility. No WHS formula, Course Handicap/Playing Handicap arithmetic, or
-  course/tee data ingestion is specified or implemented here — this is a
-  planning-scope note only.
+  deterministic decision logic, the definition of a golf "state" for
+  expected-strokes purposes, the expected-strokes model and its data
+  source, Strokes Gained semantics, how resulting-state uncertainty becomes
+  a Strokes Gained distribution, treatment of penalties/OB/hazards in that
+  model, putting/state coverage limitations, risk/reward summary metrics,
+  the expected-Strokes-Gained baseline strategy objective, goal-sensitive/
+  risk-sensitive ranking on top of it, distribution-aware risk/reward
+  evaluation, goal-sensitive strategy objectives, gross vs. net scoring
+  semantics, how round state changes recommendation utility, and the
+  course-data requirements needed to support these calculations. No WHS
+  formula, Course Handicap/Playing Handicap arithmetic, expected-strokes
+  table, Strokes Gained calculation, course-state classification, putting
+  model, risk utility, round-state logic, or course/tee data ingestion is
+  specified or implemented here — this is a planning-scope note only.
 
 - **M5.5 — Runtime & Offline Architecture (research spike)**
   Architecture/research milestone, not implementation. Once `strategy`/
