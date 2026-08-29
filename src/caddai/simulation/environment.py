@@ -3,6 +3,17 @@
 See docs/plans/m4.7-environment-physics-transform.plan.md (GitHub issue
 #55) for the design this implements, and ``environment_config.py`` for the
 evidence-quality classification of every coefficient used here.
+
+V1 wind-exposure validity domain: the wind-exposure hang-time proxy
+(``scale`` below) is defined to be exactly ``0.0`` for any non-positive
+intrinsic ``outcome.downrange_metres`` (zero or negative). Consequently
+**all** wind effects — both the longitudinal (headwind/tailwind) and
+lateral (crosswind) terms — are exactly zero whenever the intrinsic
+outcome is non-positive, regardless of wind speed or direction. This is a
+deliberate V1 restriction, not a bug: a topped/grounded/severely-mishit
+ball is not modelled as meaningfully airborne-exposed to wind. Elevation
+and air-density effects are unaffected by this restriction and still apply
+to non-positive-downrange outcomes.
 """
 
 from caddai.simulation.environment_config import (
@@ -69,6 +80,13 @@ def apply_environment_transform(
     validation is relied on to guarantee no silent NaN/inf ever propagates
     out of this function; a ``pydantic.ValidationError`` from that
     construction is allowed to propagate uncaught.
+
+    For any non-positive intrinsic ``outcome.downrange_metres``, both wind
+    terms (``downrange_wind_effect`` and ``lateral_wind_effect``) evaluate
+    to exactly ``0.0`` — see the module docstring for the rationale.
+    **M4.8's stochastic sampling layer should be aware:** shot outcomes
+    drawn from the extreme negative tail of the intrinsic distribution will
+    receive no wind adjustment under this transform.
     """
     if club_category is ClubCategory.PUTTER:
         raise EnvironmentTransformUnsupportedClubCategoryError(club_category)
@@ -80,7 +98,7 @@ def apply_environment_transform(
     )
 
     # Hang-time proxy: longer intrinsic carries spend more time exposed to wind.
-    # Floored at zero so an already-negative intrinsic outcome cannot invert wind's sign.
+    # Floored at zero: see module docstring for the documented V1 wind-exposure validity domain.
     scale = max(outcome.downrange_metres, 0.0) / config.reference_carry_metres
 
     w_long = environment.wind.longitudinal_mps

@@ -74,7 +74,11 @@ are correct. Each coefficient is classified below by evidence quality:
     normalisation constant used only to build a dimensionless
     "hang-time proxy" scale factor (``outcome.downrange_metres /
     reference_carry_metres``) for the wind terms — it is not a claim about
-    any particular club's typical carry.
+    any particular club's typical carry. Because that scale factor is
+    floored at zero, any non-positive intrinsic ``outcome.downrange_metres``
+    deliberately zeroes all wind effects (both longitudinal and lateral)
+    regardless of wind magnitude — see ``environment.py``'s module/function
+    docstrings for the documented V1 validity domain.
 
 Nothing in this module performs calibration, fitting, or learning; it is a
 static, versioned (``config_version``) lookup consumed by

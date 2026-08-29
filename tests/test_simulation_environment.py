@@ -363,3 +363,91 @@ def test_negative_transformed_downrange_from_elevation_is_not_clamped() -> None:
     result = apply_environment_transform(small_outcome, strong_uphill)
 
     assert result.downrange_metres < 0.0
+
+
+# --- Signed-downrange wind-exposure proxy: no sign-coupling regression -------
+#
+# These prove wind's directional effect is controlled solely by
+# WindComponents' own sign, never by the sign of outcome.downrange_metres
+# (the wind-exposure "hang-time" proxy). Per the documented V1 validity
+# domain (environment.py module docstring), the proxy is floored at zero,
+# so ALL wind effects (longitudinal and lateral) are exactly zero for any
+# non-positive intrinsic downrange — never inverted, never nonzero-but-wrong.
+
+
+def test_positive_downrange_headwind_reduces_downrange() -> None:
+    """Positive intrinsic downrange + headwind: downrange decreases (not inverted)."""
+    outcome = ShotOutcome(downrange_metres=150.0, lateral_metres=0.0)
+    headwind = EnvironmentInput(wind=WindComponents(longitudinal_mps=-5.0))
+
+    result = apply_environment_transform(outcome, headwind)
+
+    assert result.downrange_metres < outcome.downrange_metres
+
+
+def test_positive_downrange_tailwind_increases_downrange() -> None:
+    """Positive intrinsic downrange + tailwind: downrange increases (not inverted)."""
+    outcome = ShotOutcome(downrange_metres=150.0, lateral_metres=0.0)
+    tailwind = EnvironmentInput(wind=WindComponents(longitudinal_mps=5.0))
+
+    result = apply_environment_transform(outcome, tailwind)
+
+    assert result.downrange_metres > outcome.downrange_metres
+
+
+def test_zero_downrange_wind_has_no_effect() -> None:
+    """Zero intrinsic downrange: the exposure proxy is zero, so wind has no effect at all."""
+    outcome = ShotOutcome(downrange_metres=0.0, lateral_metres=0.0)
+    headwind = EnvironmentInput(wind=WindComponents(longitudinal_mps=-5.0))
+    tailwind = EnvironmentInput(wind=WindComponents(longitudinal_mps=5.0))
+    crosswind = EnvironmentInput(wind=WindComponents(lateral_mps=5.0))
+
+    assert apply_environment_transform(outcome, headwind).downrange_metres == 0.0
+    assert apply_environment_transform(outcome, tailwind).downrange_metres == 0.0
+    assert apply_environment_transform(outcome, crosswind).lateral_metres == 0.0
+
+
+def test_negative_downrange_headwind_has_no_effect_not_inverted() -> None:
+    """Negative intrinsic downrange + headwind: no effect at all — never made MORE negative.
+
+    Proves the exposure proxy's zero-floor prevents the sign-reversal bug a
+    naive ``intrinsic_downrange * wind`` formula would produce (which would
+    make an already-negative downrange even more negative under headwind).
+    """
+    outcome = ShotOutcome(downrange_metres=-10.0, lateral_metres=0.0)
+    headwind = EnvironmentInput(wind=WindComponents(longitudinal_mps=-5.0))
+
+    result = apply_environment_transform(outcome, headwind)
+
+    assert result.downrange_metres == outcome.downrange_metres
+
+
+def test_negative_downrange_tailwind_has_no_effect_not_inverted() -> None:
+    """Negative intrinsic downrange + tailwind: no effect at all — never made MORE negative.
+
+    This is the exact scenario from the issue: a naive
+    ``intrinsic_downrange * longitudinal_wind`` formula would make a -10m
+    outcome under a +5 m/s tailwind MORE negative (since a negative times a
+    positive is negative), even though the wind itself acts toward the
+    +downrange direction. The zero-floored exposure proxy prevents this:
+    the result is unchanged, not more negative.
+    """
+    outcome = ShotOutcome(downrange_metres=-10.0, lateral_metres=0.0)
+    tailwind = EnvironmentInput(wind=WindComponents(longitudinal_mps=5.0))
+
+    result = apply_environment_transform(outcome, tailwind)
+
+    assert result.downrange_metres == outcome.downrange_metres
+
+
+def test_negative_downrange_crosswind_has_no_effect_not_inverted() -> None:
+    """Negative intrinsic downrange + crosswind: lateral outcome is unaffected, not flipped."""
+    outcome = ShotOutcome(downrange_metres=-10.0, lateral_metres=3.0)
+    right_crosswind = EnvironmentInput(wind=WindComponents(lateral_mps=5.0))
+    left_crosswind = EnvironmentInput(wind=WindComponents(lateral_mps=-5.0))
+
+    right_result = apply_environment_transform(outcome, right_crosswind)
+    left_result = apply_environment_transform(outcome, left_crosswind)
+
+    assert right_result.lateral_metres == outcome.lateral_metres
+    assert left_result.lateral_metres == outcome.lateral_metres
