@@ -4,10 +4,12 @@
 > Implemented so far: `gps`/`course` (M2, complete — see
 > [course-engine.md](course-engine.md)) and `player`/`statistics` (M3,
 > complete — see [player-model.md](player-model.md)). `simulation` has been
-> bootstrapped (M4.7, issue #55) with a deterministic wind/elevation/
-> air-density environment transform only — Monte Carlo shot-outcome
-> sampling and composition with `player`'s intrinsic shot distribution are
-> still future work (M4.8+). `llm`, `api`, and `cli` do not exist yet.
+> bootstrapped with a deterministic wind/elevation/air-density environment
+> transform (M4.7, issue #55) and seeded bivariate Student-t intrinsic
+> shot-outcome sampling (M4.8, issue #56,
+> `sample_bivariate_student_t_shot_outcomes`) — course-relative mapping,
+> expected strokes/Strokes Gained, and risk/reward strategy selection
+> remain future work (M5+). `llm`, `api`, and `cli` do not exist yet.
 
 ## Guiding principle
 
@@ -105,7 +107,7 @@ they share a service, repository, or storage technology.
 | Player | `src/caddai/player/` | Player and club domain models, tendencies |
 | Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics, the `ClubCategory` taxonomy, and the `PopulationPrior` contract/config |
 | Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes, Strokes Gained |
-| Simulation | `src/caddai/simulation/` | Deterministic wind/elevation/air-density environment transform of a forward-modelled shot outcome (M4.7); Monte Carlo shot-outcome sampling composed with `player`'s intrinsic shot distribution is future work (M4.8+) |
+| Simulation | `src/caddai/simulation/` | Deterministic wind/elevation/air-density environment transform of a forward-modelled shot outcome (M4.7); seeded bivariate Student-t intrinsic shot-outcome sampling composed with `player`'s shot distribution (M4.8); course-relative mapping, expected strokes/Strokes Gained, and risk/reward strategy are future work (M5+) |
 | LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M8+) |
 | API | `src/caddai/api/` | FastAPI adapter; translates HTTP ↔ domain calls, no business logic |
 | CLI | `src/caddai/cli/` | Typer adapter; translates CLI ↔ domain calls, no business logic |

@@ -118,6 +118,7 @@ SUBSYSTEM_BOUNDARIES = [
             REPO_ROOT / "src/caddai/simulation/models.py",
             REPO_ROOT / "src/caddai/simulation/environment_config.py",
             REPO_ROOT / "src/caddai/simulation/environment.py",
+            REPO_ROOT / "src/caddai/simulation/sampling.py",
         ),
         allowed_caddai_prefixes=("caddai.simulation", "caddai.statistics"),
         plan_reference=(

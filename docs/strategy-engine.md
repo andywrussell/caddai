@@ -5,10 +5,13 @@
 > [src/caddai/strategy/recommend.py](../src/caddai/strategy/recommend.py)
 > implement a deliberately primitive closest-expected-carry club selection
 > with placeholder wind/lie adjustment constants, proving the end-to-end
-> architecture. The real probabilistic golfer model / shot-outcome
-> simulation / expected-value model described below remains **planned** for
-> milestones M4.0 (research/architecture spike), M4, and M5 — see
-> [roadmap.md](roadmap.md); `src/caddai/simulation/` does not exist yet.
+> architecture. `src/caddai/simulation/` now exists: a deterministic
+> wind/elevation/air-density environment transform (M4.7, issue #55) and
+> seeded bivariate Student-t intrinsic shot-outcome sampling (M4.8, issue
+> #56, `sample_bivariate_student_t_shot_outcomes`) are implemented — see
+> the `simulation` responsibilities below. Course-relative mapping,
+> expected-strokes/Strokes Gained, and risk/reward club/target selection
+> described below remain **planned** for M5+ — see [roadmap.md](roadmap.md).
 >
 > Forward pointer: `Wind`/`LieType` are defined in `strategy/models.py` for
 > M1 because no `course`/`gps`/`simulation` package exists yet to own them.
@@ -53,16 +56,28 @@ the critical path. Neither module may take on a mandatory network dependency
   personalised from onboarding information and, over time, observed
   `ShotRecord` data (see [player-model.md](player-model.md) and
   [roadmap.md](roadmap.md) M4.0/M4) — rather than assuming arbitrary generic
-  dispersion parameters.
+  dispersion parameters. **Implemented (M4.8, issue #56):**
+  `sample_bivariate_student_t_shot_outcomes` in
+  `src/caddai/simulation/sampling.py` draws seeded, vectorised intrinsic
+  `ShotOutcome`s from a `caddai.statistics.PlayerShotDistribution` per ADR
+  0006's bivariate Student-t construction, exposed behind a
+  `ShotOutcomeSampler` `Protocol` so a future alternate technique can be
+  added without changing this contract. It is composable with M4.7's
+  `apply_environment_transform` via a plain caller-side loop.
 - Generate shot candidates (club + target combinations) for a given
-  situation (position, hole geometry, conditions).
+  situation (position, hole geometry, conditions) — **still M5+**.
 - Run seeded outcome simulation against course geometry (from `course`) and
   conditions (lie, wind, elevation), transforming the player's shot
   distribution into a resulting outcome distribution. Monte Carlo is an
   acceptable initial sampling technique but must not be the only supported
   one, and must not lock the model to a single probability distribution.
+  **Implemented so far:** intrinsic outcome sampling (M4.8) and the
+  environment/physics transform (M4.7); course-geometry-relative mapping
+  is **still M5+**.
 - Produce a distribution of simulated outcomes (resulting position, lie,
-  and any hazard/penalty incurred) per shot candidate.
+  and any hazard/penalty incurred) per shot candidate — **still M5+**:
+  course-relative mapping, expected strokes, Strokes Gained, and
+  risk/reward strategy selection are not implemented yet.
 
 ### `strategy` (M5)
 

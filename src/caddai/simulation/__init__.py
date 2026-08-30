@@ -26,6 +26,7 @@ from caddai.simulation.environment_config import (
     EnvironmentTransformConfig,
 )
 from caddai.simulation.models import EnvironmentInput, ShotOutcome, WindComponents
+from caddai.simulation.sampling import ShotOutcomeSampler, sample_bivariate_student_t_shot_outcomes
 
 __all__ = [
     "DEFAULT_ENVIRONMENT_TRANSFORM_CONFIG",
@@ -34,6 +35,8 @@ __all__ = [
     "EnvironmentTransformConfig",
     "EnvironmentTransformUnsupportedClubCategoryError",
     "ShotOutcome",
+    "ShotOutcomeSampler",
     "WindComponents",
     "apply_environment_transform",
+    "sample_bivariate_student_t_shot_outcomes",
 ]
