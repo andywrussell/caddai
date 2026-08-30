@@ -155,6 +155,20 @@
   separate future Orchestrator/Architect task uses M4.0's conclusions and
   this milestone description to generate that backlog.
 
+> Pre-mobile architecture scope has grown materially since M4 was defined
+> (M5.5's runtime/offline, monitoring/evaluation, Rules-of-Golf, and now
+> synthetic-validation scope). After M4 closeout, the project pauses before
+> detailed M5 implementation planning to jointly reassess M5+ milestones —
+> M5's golf-state/value/strategy scope, the round/decision model, the
+> synthetic validation requirement above, real-world evaluation, a possible
+> Rust production core, the mobile/Flutter boundary, cloud/API architecture,
+> course packaging/distribution, Rules-of-Golf conformance, DevOps/release
+> engineering, multi-repository structure, and agentic/multi-repo
+> development-harness considerations — together, rather than planning M5 in
+> isolation. This note does not restructure the milestone roadmap or assign
+> final milestone numbers or repository names; it precedes, and may refine,
+> the M5 planning pass described below.
+
 - **M5 — Expected-value / expected-strokes strategy model**
   `strategy` subsystem: club/target selection driven by expected strokes and
   risk, producing a structured deterministic recommendation. The
@@ -336,6 +350,95 @@
   environmental input (e.g. wind) must not be assumed sufficient on its
   own to make a mode rules-conforming.
 
+  Scope also includes an **offline synthetic round/scenario validation
+  harness** requirement: before broad mobile/on-course field testing (M7,
+  M10) begins, CaddAI should have a repeatable, deterministic offline
+  validation capability that runs large numbers of synthetic golf rounds
+  — configuration-driven synthetic golfer profiles (using the same
+  `PlayerShotDistribution`/`player`/`statistics` contracts as production,
+  not hard-coded personas) playing real/representative canonical CaddAI
+  course geometry (toy fixtures remain fine for targeted unit tests) — by
+  invoking the actual production `strategy`/`simulation` engine through its
+  existing public interface, never a separate mock/reimplemented strategy
+  engine. This is intended to bridge unit/integration tests and real
+  golfer field testing (M10), answering questions such as: does CaddAI
+  always produce a valid recommendation or an explicit unsupported/
+  fallback result; does strategy behave sensibly across golfer abilities;
+  are risk/reward recommendations internally coherent; do recommendation
+  changes between engine versions look intentional; can pathological
+  scenarios (extreme crosswind, severe Student-t tails, negative downrange
+  samples, very wide dispersion, missing/incomplete course geometry,
+  PUTTER/full-shot boundary cases) crash the engine or produce silently
+  invalid advice; and are strategy invariants preserved across many
+  decisions. Illustrative, not exhaustive — full design is deferred to
+  this checkpoint — validation should span at least three complementary
+  classes: **hard validity/invariants** that should never be violated
+  (e.g. NaN/inf in an evaluation, a recommendation referencing a club the
+  golfer doesn't own, a numerically invalid target/course coordinate, an
+  engine crash on a valid scenario, or an unsupported shot regime silently
+  treated as supported); **scenario/strategy sanity** (controlled
+  scenarios with an expected qualitative behaviour — e.g. a forced carry
+  the golfer cannot realistically make should not be preferred, a simple
+  unobstructed par-3 should generally target a sensible approach region,
+  increasing hazard exposure should not mysteriously decrease predicted
+  downside — without prescribing an exact club answer for every scenario);
+  and **statistical/policy regression** (comparing engine versions over
+  large deterministic scenario sets — e.g. percentage of recommendations
+  changed, expected-Strokes-Gained delta, penalty/hazard exposure,
+  distribution of recommended risk, invalid-recommendation count,
+  fallback/unsupported rate — without fixing pass/fail thresholds now).
+  Metamorphic/property-based scenarios (e.g. increasing headwind should
+  not increase expected carry from the same shot; increasing player
+  dispersion should not reduce symmetric hazard exposure; reducing golfer
+  carry should not make a long forced carry more attractive) may be
+  particularly valuable given golf recommendations rarely have one single
+  exact correct answer, but concrete invariants remain future design work,
+  not specified here. Every validation run should ultimately be
+  reproducible given the same scenario-set, course-package, player/
+  profile, CaddAI-core, strategy/config, environment-config, and
+  expected-strokes/Strokes-Gained model versions plus random seed — M4.8's
+  explicit `np.random.Generator`-based seeded sampling contract (no global
+  RNG state) is what makes this possible, and is essential for regression
+  debugging. This synthetic validation is explicitly distinct from the
+  MVP monitoring/evaluation architecture above: it is controlled,
+  reproducible, high-volume, and supports counterfactual scenarios,
+  whereas real-world evaluation (decision journal, M6/M7) uses real
+  golfers, real execution, and real conditions and remains essential for
+  calibration and product validation — neither replaces the other, and
+  synthetic run data must not flow into production telemetry by default.
+  A future pre-mobile release criterion may require this synthetic
+  validation suite to pass — e.g. zero hard-invariant failures, no
+  crashes, only known/accepted behavioural deltas, and statistically
+  sensible calibration/regression summaries — before broad mobile/field
+  testing proceeds, though no numeric thresholds are fixed here. If a
+  future Rust production core (informed by this spike) later replaces the
+  Python engine, this same harness — and the current Python
+  implementation retained as a reference — should support differential/
+  parity validation via language-neutral golden scenarios, reference
+  outputs, and deterministic seeds, distinguishing exact deterministic
+  parity, numerical-tolerance parity, statistical/distributional parity,
+  and strategic/semantic parity as appropriate; not all behaviour requires
+  bit-for-bit parity, and this is not designed here. This checkpoint must
+  also decide: whether the harness becomes a separate `caddai-sim`
+  repository/component, part of a future `caddai-evals` repository, or
+  another clearly separated testing/research/integration component (not
+  decided now); where synthetic validation fits in CI/CD — e.g. fast
+  repo-local tests on a normal PR, a broader synthetic regression suite
+  for integration/release-candidate branches, and large scenario matrices
+  only on a scheduled/nightly/manual basis (not decided now, and large-
+  scenario runs must not become a mandatory PR check without evidence that
+  runtime/cost make that practical); and, if CaddAI later moves to
+  multiple repositories, how this harness participates as a
+  cross-repository integration gate (repository ownership, how agents
+  trigger validation, how failures are associated with the responsible
+  repository/change, whether it becomes a release gate, and how
+  deterministic scenario definitions are versioned — not designed now).
+  The one property this checkpoint does not get to change: the harness
+  must invoke the real production engine through a stable contract and
+  must never duplicate or reimplement `strategy`/`simulation` decision
+  logic — this is [ADR 0001](adr/0001-deterministic-strategy-engine.md)'s
+  testability rationale applied at scale, not a change to it.
+
 - **M6 — Round tracking and decision journal**
   Recording situation, recommendation, rationale, player decision, shot
   outcome, resulting lie/position (see
@@ -357,8 +460,11 @@
   human decision on target platform (`AGENTS.md` escalation rules). Builds
   on the M5.5 research spike's findings; positioning must remain an
   active-round core capability per `AGENTS.md` §2.2 regardless of platform.
-  Scope also includes an MVP level of monitoring/evaluation instrumentation
-  building on M6's decision journal: local event capture during a round,
+  Broad mobile/on-course field testing under this milestone is expected to
+  be preceded by the M5.5 offline synthetic validation checkpoint passing,
+  not run instead of it. Scope also includes an MVP level of
+  monitoring/evaluation instrumentation building on M6's decision journal:
+  local event capture during a round,
   lightweight (occasional/post-round, not per-shot) issue reporting with
   automatically associated recommendation context, and optional post-round
   sync/export — enough to evaluate pilot use, not a full analytics or
@@ -387,7 +493,8 @@
   (and, if landed, the M8 LLM explanation layer), run on existing consumer
   mobile devices per the M5.5 research spike's runtime findings — no
   dedicated hardware. Purpose: prove CaddAI can actually be used during
-  real, on-course rounds before any dedicated hardware is designed. Field
+  real, on-course rounds before any dedicated hardware is designed, after
+  the M5.5 offline synthetic validation checkpoint has passed. Field
   validates the deterministic recommendation and offline-first active-round
   behaviour (`AGENTS.md` §2.2) under real conditions (real GPS signal
   quality, real battery drain, real between-shot workflow). Its findings —

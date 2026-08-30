@@ -116,6 +116,19 @@
   shape, target line, distinct from the achieved outcome) — deferred out of
   M4.4 (issue #52), no consumer yet. See
   [docs/plans/m4.4-shotrecord-provenance-quality.plan.md](plans/m4.4-shotrecord-provenance-quality.plan.md).
+- Decide the offline synthetic validation harness's repository/component
+  ownership (a separate `caddai-sim` repository, part of a future
+  `caddai-evals` repository, or another clearly separated component), its
+  CI/DevOps placement, and its future role as a cross-repository
+  integration gate, at the M5.5 pre-mobile architecture checkpoint (see
+  [roadmap.md](roadmap.md) M5.5).
+- At the post-M4 pause before detailed M5 implementation planning, jointly
+  reassess M5+ milestones (M5 scope, round/decision model, the synthetic
+  validation requirement, real-world evaluation, a possible Rust production
+  core, the mobile boundary, cloud/API architecture, course
+  packaging/distribution, Rules-of-Golf conformance, DevOps/release
+  engineering, multi-repository structure, agentic/multi-repo development
+  harness) rather than planning M5 in isolation — see [roadmap.md](roadmap.md).
 
 ## Process
 

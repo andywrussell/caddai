@@ -146,6 +146,30 @@ concrete hardware/sensor adapter design (real module boundaries, not
 research) is the trigger for a future ADR, or an amendment to ADR 0001
 naming this adapter category explicitly, per `AGENTS.md` §13.
 
+## Synthetic validation harness (future)
+
+Roadmap M5.5 (see [roadmap.md](roadmap.md)) records a future requirement for
+an offline synthetic round/scenario validation harness that exercises
+`strategy`/`simulation` at scale before broad mobile/field testing. This
+harness is not a subsystem and not a new decision path: it is a test-time
+*caller* of `strategy`/`simulation`'s existing public interface, in the same
+dependency-direction position as `api`/`cli` — it depends inward on
+`strategy`/`simulation`, never the reverse, and `strategy`/`simulation` must
+never import or become aware of it. Whatever "stable contract" the harness
+ultimately calls through (today's Python module surface, a later formal
+interface, or a post-Rust-migration binding/CLI boundary) is not decided
+here. The harness must invoke the real production engine and must never
+duplicate or reimplement `strategy`/`simulation` decision logic — this is
+[ADR 0001](adr/0001-deterministic-strategy-engine.md)'s testability
+rationale applied at scale, not a change to it. It is also distinct from the
+operational-monitoring/recommendation-evaluation architecture described in
+[decision-journal.md](decision-journal.md#monitoring-vs-evaluation): the
+harness is a controlled, reproducible, high-volume, synthetic-data
+capability, while monitoring/evaluation concerns real golfers, real
+execution, and real conditions — synthetic run data must not flow into
+production telemetry by default. No repository/component ownership,
+interface technology, or CI placement is decided by this section.
+
 ## Module ownership
 
 See `AGENTS.md` §4 and the [development-workflow.md](development-workflow.md)
