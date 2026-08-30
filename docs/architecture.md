@@ -2,14 +2,17 @@
 
 > Status: describes intended target architecture for the full roadmap.
 > Implemented so far: `gps`/`course` (M2, complete — see
-> [course-engine.md](course-engine.md)) and `player`/`statistics` (M3,
-> complete — see [player-model.md](player-model.md)). `simulation` has been
-> bootstrapped with a deterministic wind/elevation/air-density environment
-> transform (M4.7, issue #55) and seeded bivariate Student-t intrinsic
-> shot-outcome sampling (M4.8, issue #56,
-> `sample_bivariate_student_t_shot_outcomes`) — course-relative mapping,
-> expected strokes/Strokes Gained, and risk/reward strategy selection
-> remain future work (M5+). `llm`, `api`, and `cli` do not exist yet.
+> [course-engine.md](course-engine.md)); `player`/`statistics` (M3 core
+> primitives complete, plus M4's `PlayerShotDistribution`/`PopulationPrior`/
+> personalisation pipeline, complete — see [player-model.md](player-model.md),
+> [ADR 0006](adr/0006-player-shot-distribution-bivariate-student-t.md), and
+> [ADR 0007](adr/0007-population-prior-replaceability.md)); and `simulation`
+> (M4, complete for its forward shot-production scope — see
+> [M4 forward shot-production pipeline](#m4-forward-shot-production-pipeline)
+> below). Course-relative mapping, expected strokes/Strokes Gained, and
+> risk/reward strategy selection remain future work (M5+, see the M5
+> parent issue #11's prerequisite note). `llm`, `api`, and `cli` do not
+> exist yet.
 
 ## Guiding principle
 
@@ -114,6 +117,57 @@ they share a service, repository, or storage technology.
 
 Modules are created when their owning milestone is implemented, not
 pre-scaffolded as empty placeholders (see `AGENTS.md` §3).
+
+## M4 forward shot-production pipeline
+
+M4 (`player`/`statistics`/`simulation`) implements a **forward
+shot-production pipeline**: it produces a probabilistic shot outcome in
+landing/carry-relative space, not a course-relative result.
+
+```
+population prior (handicap x club-category, ADR 0007)
+        ↓
+onboarding personalisation (reported carry, common miss, shot shape)
+        ↓
+immutable cold-start baseline PlayerShotDistribution (ADR 0006)
+        ↓
+complete eligible ShotRecord history
+        ↓
+batch partial-pooling update (recomputed from scratch every call, never incremental)
+        ↓
+current PlayerShotDistribution (derived; never persisted over the baseline)
+        ↓
+seeded bivariate Student-t sampling (sample_bivariate_student_t_shot_outcomes)
+        ↓
+intrinsic ShotOutcome
+        ↓
+optional deterministic environment transform (apply_environment_transform)
+        ↓
+environment-adjusted landing/carry-space ShotOutcome
+```
+
+`PlayerShotDistribution` (`caddai.statistics`) is authoritative for this
+probabilistic pipeline. M3's `CarryDistribution`/`DirectionalDispersion`
+remain authoritative, **by convention only, not code-enforced**, for
+legacy deterministic `Club.expected_carry_metres`/`strategy.recommend_club()`
+behaviour during the M3→M4 transition — the two representations are not
+automatically synchronised, and no code keeps them in sync. Full semantics:
+[player-model.md](player-model.md), [strategy-engine.md](strategy-engine.md),
+[ADR 0006](adr/0006-player-shot-distribution-bivariate-student-t.md), and
+[ADR 0007](adr/0007-population-prior-replaceability.md).
+
+This forward pipeline is distinct from, and does not solve, the *inverse*
+problem of inferring latent landing/carry from a final observed endpoint
+(see [docs/backlog.md](backlog.md)'s carry-from-downrange-distance
+estimator item) — that inference, if ever built, must remain separate from
+this simulator.
+
+**Not yet produced by M4:** final resting position, terrain/bounce/
+rollout, fairway/rough/bunker/green/water/OB classification, resulting
+golf state, expected strokes, Strokes Gained, candidate-shot strategy
+value, or any other course-relative outcome — see the M5 parent issue
+(#11)'s explicit prerequisite note and the M5 entry in
+[roadmap.md](roadmap.md).
 
 ## Dependency direction
 

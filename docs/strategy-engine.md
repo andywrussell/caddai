@@ -9,9 +9,27 @@
 > wind/elevation/air-density environment transform (M4.7, issue #55) and
 > seeded bivariate Student-t intrinsic shot-outcome sampling (M4.8, issue
 > #56, `sample_bivariate_student_t_shot_outcomes`) are implemented — see
-> the `simulation` responsibilities below. Course-relative mapping,
-> expected-strokes/Strokes Gained, and risk/reward club/target selection
-> described below remain **planned** for M5+ — see [roadmap.md](roadmap.md).
+> the `simulation` responsibilities below. **M4 `simulation` is complete**
+> for its defined scope (M4.7 environment transform, M4.8 seeded sampling);
+> course-relative mapping, expected-strokes/Strokes Gained, and risk/reward
+> club/target selection described below remain **planned** for M5+ — see
+> [roadmap.md](roadmap.md).
+>
+> M4/M5 boundary: M4 produces probabilistic landing/carry-space shot
+> outcomes only. It does **not** produce final resting position,
+> terrain/bounce/rollout, fairway/rough/bunker/green/water/OB
+> classification, resulting golf state, expected strokes, Strokes Gained,
+> candidate-shot strategy value, WHS-aware strategy, round state/decision
+> journal, a synthetic full-round validation harness, mobile application,
+> or cloud behaviour — all of that is M5+ (see the M5 parent GitHub issue
+> #11, which already records course-relative outcome mapping as an
+> explicit M5 prerequisite dependency, and [roadmap.md](roadmap.md)'s M5
+> entry). This boundary is also distinct from a future *inverse* problem
+> (final observed endpoint → infer latent landing/carry → environment/
+> terrain inversion), which M4 does not attempt to solve and which must
+> remain architecturally separate from this forward simulator — see
+> [docs/backlog.md](backlog.md)'s carry-from-downrange-distance estimator
+> item.
 >
 > Forward pointer: `Wind`/`LieType` are defined in `strategy/models.py` for
 > M1 because no `course`/`gps`/`simulation` package exists yet to own them.
