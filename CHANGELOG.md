@@ -10,6 +10,37 @@ first public API is published.
 
 ### Added
 
+- Added seeded, vectorised bivariate Student-t shot-outcome sampling to
+  `caddai.simulation` (M4.8, issue #56):
+  `sample_bivariate_student_t_shot_outcomes` in the new
+  `src/caddai/simulation/sampling.py` draws intrinsic `ShotOutcome`s from a
+  `caddai.statistics.PlayerShotDistribution`, implementing ADR 0006's
+  `X = mu + Z / sqrt(W / nu)` construction exactly: the 2x2 Student-t
+  **scale** matrix is built directly from `carry_scale_metres`/
+  `lateral_scale_metres`/`correlation` (never from
+  `implied_covariance_metres_sq`, which already applies the `nu/(nu-2)`
+  factor and would double-apply it), `mean=[0.0, 0.0]` is passed to
+  `rng.multivariate_normal` with the location added after the
+  `z / sqrt(w/nu)` division, and the division reshapes `scale` to
+  `(count, 1)` (`scale[:, None]`) to avoid a `count == 2` broadcasting
+  pitfall that would otherwise silently cross-divide the two output rows.
+  Exposed behind a new `ShotOutcomeSampler` `Protocol` (no
+  enum/registry/dispatch — a typed contract for a technique that
+  `sample_bivariate_student_t_shot_outcomes` currently implements). `count
+  < 1` raises `ValueError` before any RNG use; no output value is
+  clamped/truncated/resampled/winsorized. Only methods on the caller-supplied
+  `np.random.Generator` are used — no module-level `numpy.random.*` calls,
+  so the legacy global NumPy random state is never touched. Composable with
+  M4.7's `apply_environment_transform` via a plain caller-side loop; no new
+  `SimulationResult` wrapper. `tests/test_architecture_boundaries.py`'s
+  `simulation` entry was extended to cover `sampling.py` (still restricted
+  to `caddai.simulation`/`caddai.statistics` imports only). No ADR required
+  (implements ADR 0006's already-binding formula; no new dependency, no
+  contract change, no ownership/dependency-direction change). Course-relative
+  mapping, expected strokes/Strokes Gained, and risk/reward strategy
+  selection remain M5+. `docs/architecture.md` and `docs/strategy-engine.md`
+  updated accordingly.
+
 - Bootstrapped a new `caddai.simulation` subsystem (M4.7, issue #55): a
   deterministic environment/physics transform (`apply_environment_transform`)
   applying wind (asymmetric headwind/tailwind response, symmetric
