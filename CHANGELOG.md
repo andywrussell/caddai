@@ -10,6 +10,12 @@ first public API is published.
 
 ### Added
 
+- Added a post-M4 roadmap reassessment proposal document at
+  [docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md)
+  for human review. This is analysis and recommendations only — it does
+  not modify [docs/roadmap.md](docs/roadmap.md), [docs/backlog.md](docs/backlog.md),
+  or any GitHub issue. Reviewed by the CaddAI Architect and Adversarial
+  Reviewer subagents (both approved).
 - **Closed milestone M4 — probabilistic golfer modelling & shot outcome
   simulation** (M4.9, issue #57), a documentation/closeout-only change.
   Verified M4.1–M4.8 (issues #49–#56) are complete, merged, and match ADR
