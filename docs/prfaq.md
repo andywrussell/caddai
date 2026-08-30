@@ -251,6 +251,8 @@ The golfer should be able to understand *why* a recommendation was made.
 
 CaddAI should also show uncertainty where appropriate rather than presenting weak information as certainty.
 
+Before that real-world proof, CaddAI should also be able to check itself: running many controlled, repeatable practice scenarios to confirm its own recommendations stay sensible and consistent. That internal check is a valuable complement, never a substitute, for real on-course testing.
+
 Ultimately, trust will need to be validated through real on-course testing.
 
 ---

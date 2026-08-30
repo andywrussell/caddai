@@ -557,6 +557,52 @@ first public API is published.
 
 ### Changed
 
+- Documented a pre-mobile/M5.5 architecture requirement, ahead of M4
+  closeout: CaddAI needs a future offline synthetic round/scenario
+  validation harness that runs large numbers of deterministic synthetic
+  golf rounds — configuration-driven synthetic golfer profiles (using the
+  same `PlayerShotDistribution`/`player`/`statistics` contracts as
+  production) on real/representative canonical CaddAI course geometry — by
+  invoking the actual production `strategy`/`simulation` engine through its
+  existing public interface, never a separate mock/reimplemented strategy
+  engine, to bridge unit/integration tests and real golfer mobile field
+  testing (M7/M10). Documents at least three validation classes (hard
+  validity/invariants; scenario/strategy sanity; statistical/policy
+  regression across engine versions) as illustrative, not an exhaustive
+  taxonomy; a metamorphic/property-based testing requirement; a
+  pathological/adversarial scenario requirement (the engine must produce a
+  valid recommendation or an explicit unsupported/fallback result, never
+  silent invalid advice); a deterministic reproducibility/versioning
+  requirement building on M4.8's explicit `np.random.Generator`-based
+  seeded sampling contract; an explicit distinction from the already-
+  documented MVP monitoring/evaluation architecture (synthetic data must
+  not flow into production telemetry by default); a future pre-mobile
+  quality-gate intent (no numeric thresholds fixed); Python/Rust
+  differential-parity validation framing for a possible future Rust
+  production core (exact/tolerance/statistical/semantic parity, not
+  bit-for-bit by default); repository/component options (`caddai-sim` vs. a
+  future `caddai-evals` vs. another component) and CI/DevOps placement
+  options, both deferred to the M5.5 checkpoint; and a future multi-repo/
+  agentic integration-gate possibility. Also records that, after M4
+  closeout, the project pauses before detailed M5 implementation planning
+  to jointly reassess M5+ milestones together (M5 scope, round/decision
+  model, synthetic validation, real-world evaluation, Rust core, mobile
+  boundary, cloud/API architecture, course packaging, Rules-of-Golf
+  conformance, DevOps/release engineering, multi-repo structure, agentic
+  harness) rather than in isolation — without restructuring the milestone
+  roadmap or assigning final milestone numbers/repository names now. No
+  ADR required (no new dependency, API, unit, ownership, or dependency-
+  direction change; reinforces, not changes, ADR 0001's testability
+  rationale). No implementation, synthetic player generator, round
+  simulator, course simulation, property-based framework, benchmark
+  infrastructure, Rust bindings, evaluation dashboard, regression
+  threshold, CI validation run, new repository, or DevOps infrastructure
+  was introduced — documentation/planning only. Updated
+  [docs/roadmap.md](docs/roadmap.md) (M5.5 scope; M4/M5 boundary note; M7/
+  M10 cross-references), [docs/prfaq.md](docs/prfaq.md) (trust FAQ),
+  [docs/architecture.md](docs/architecture.md) (new "Synthetic validation
+  harness (future)" section), and [docs/backlog.md](docs/backlog.md).
+
 - Redefined roadmap milestone M4 from a narrow "candidate-shot generation
   and Monte Carlo simulation" framing to **"M4 — Probabilistic golfer
   modelling & shot outcome simulation"**, and added a preceding research/
