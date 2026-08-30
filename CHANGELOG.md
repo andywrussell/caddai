@@ -10,6 +10,68 @@ first public API is published.
 
 ### Added
 
+- **Closed milestone M4 — probabilistic golfer modelling & shot outcome
+  simulation** (M4.9, issue #57), a documentation/closeout-only change.
+  Verified M4.1–M4.8 (issues #49–#56) are complete, merged, and match ADR
+  0006/ADR 0007's binding decisions (already `Accepted`) with no
+  implementation drift — reviewed with the CaddAI Architect subagent.
+  Confirmed no unresolved implementation dependency blocks closing the
+  milestone. Updated documentation to make the repository
+  self-explanatory about M4's final state without duplicating detail
+  already recorded per-issue:
+  - [docs/roadmap.md](docs/roadmap.md): fixed a duplicated/stale status
+    blockquote; marked M4 complete (matching the M1–M3 convention);
+    consolidated M4's completion note with the pre-mobile-architecture
+    post-M4 checkpoint note (added in parallel by PR #71) into a single
+    checkpoint — after M4 closes, the project deliberately pauses to
+    jointly reassess M5+ scope (M5 golf-state/value/strategy scope, the
+    round/decision journal model, the future synthetic validation harness,
+    real-world evaluation/monitoring, a possible Rust production-core
+    direction, the Flutter/mobile boundary, optional cloud/API
+    architecture, course package/distribution architecture, Rules-of-Golf
+    conformance, DevOps/release architecture, repository boundaries, and a
+    possible future multi-repository agentic development architecture)
+    before detailed M5 implementation planning begins — explicitly noting
+    a separate external agentic/multi-repository research report is
+    research input only, not an accepted CaddAI architecture decision.
+  - [docs/architecture.md](docs/architecture.md): updated the status
+    banner to reflect M4 complete; added a concise "M4 forward
+    shot-production pipeline" section (population prior → onboarding →
+    immutable cold-start baseline `PlayerShotDistribution` → complete
+    eligible `ShotRecord` history → batch partial-pooling update → current
+    `PlayerShotDistribution` → seeded Student-t sampling → intrinsic
+    `ShotOutcome` → optional environment transform →
+    environment-adjusted `ShotOutcome`), explicit that this is a forward
+    pipeline only (no course-relative outcome/final resting position yet)
+    and distinct from a future inverse (endpoint → latent carry) problem.
+  - [docs/player-model.md](docs/player-model.md) and
+    [docs/strategy-engine.md](docs/strategy-engine.md): status headers
+    updated to mark M4 complete for their respective scope, with an
+    explicit M4→M5 boundary statement (M4 produces probabilistic
+    landing/carry-space outcomes only — no course-relative outcome,
+    resulting golf state, expected strokes, Strokes Gained, round
+    state/decision journal, synthetic validation harness, mobile
+    application, or cloud behaviour).
+  - [docs/backlog.md](docs/backlog.md): removed stale pre-M4.0 items
+    already resolved by M4.0–M4.2 (e.g. whether `PlayerShotDistribution`
+    needed its own abstraction/ADR, whether a new distributional-modelling
+    dependency was needed — both resolved: yes and no, respectively, per
+    ADR 0006). Added the M4.0 research spike's explicitly-deferred items
+    not yet tracked: a severe-miss mixture component, a lateral-skew
+    parameter, lie-specific (rough/slope/bunker) numeric multipliers, a
+    learned/ML population-prior model, a handicap × club calibration
+    data-collection effort (with pointers to every provisional config
+    version this would inform), a generic psychological-pressure penalty
+    (rejected, not merely deferred), and unifying `strategy.Wind`/
+    `LieType` with `simulation.WindComponents`/`EnvironmentInput` into a
+    neutral shared-domain module.
+  - Confirmed the M5 parent GitHub issue (#11) already records
+    course-relative outcome mapping as an explicit M5 prerequisite
+    dependency (not a generic backlog item) — no change needed there.
+  - No production code, test, or dependency change; no new ADR (ADR
+    0006/ADR 0007 were already `Accepted`, confirmed still accurate); no
+    M5 implementation planning, M5 issue tree, or roadmap renumbering.
+
 - Added seeded, vectorised bivariate Student-t shot-outcome sampling to
   `caddai.simulation` (M4.8, issue #56):
   `sample_bivariate_student_t_shot_outcomes` in the new

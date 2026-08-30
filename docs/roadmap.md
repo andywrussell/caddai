@@ -1,19 +1,16 @@
 # Roadmap
 
-> Status: milestone sequencing for planned work. **M0**, **M1**, and **M2**
-> are complete. Milestones are directional, not date-committed. **M4.0** and
-> **M5.5** are numbered insertions (architecture/research spikes, not
-> functional milestones) chosen to avoid renumbering later milestones; M4.0
-> precedes the rest of M4 the same way M5.5 precedes M6, and neither implies
-> a fractional level of completeness. See [docs/prfaq.md](prfaq.md) for the
-> long-term product vision this sequencing works towards.
-> Status: milestone sequencing for planned work. **M0**, **M1**, **M2**, and
-> **M3** are complete. Milestones are directional, not date-committed.
-> **M5.5** is
-> a numbered insertion between M5 and M6 (an architecture/research spike,
-> not a functional milestone) chosen to avoid renumbering M6–M9; it does not
-> imply a fractional level of completeness. See [docs/prfaq.md](prfaq.md)
-> for the long-term product vision this sequencing works towards.
+> Status: milestone sequencing for planned work. **M0**, **M1**, **M2**,
+> **M3**, and **M4** are complete. Milestones are directional, not
+> date-committed. **M4.0** and **M5.5** are numbered insertions
+> (architecture/research spikes, not functional milestones) chosen to avoid
+> renumbering later milestones; M4.0 precedes the rest of M4 the same way
+> M5.5 precedes M6, and neither implies a fractional level of completeness.
+> After M4's closeout (M4.9, issue #57), the project deliberately pauses
+> before detailed M5 implementation planning begins — see the post-M4
+> checkpoint note between the M4 and M5 entries below. See
+> [docs/prfaq.md](prfaq.md) for the long-term product vision this
+> sequencing works towards.
 
 - **M0 — Agent development platform and repository foundation** *(complete)*
   Repository structure, documentation set, VS Code multi-agent development
@@ -130,44 +127,63 @@
   to be updated to M4.0/M4 once this redefinition is merged).
 
 - **M4 — Probabilistic golfer modelling & shot outcome simulation**
-  Builds on M4.0's conclusions. `player`/`statistics`/`simulation`
+  *(complete)*
+  Built on M4.0's conclusions. `player`/`statistics`/`simulation`
   subsystems, covering four concerns kept clearly separate: (1)
   **population/player modelling** — what shots a golfer of a given ability
-  is likely to produce, evidence-based per M4.0; (2) **personalisation** —
+  is likely to produce, evidence-based per M4.0 (M4.1 `PlayerShotDistribution`,
+  issue #49; M4.2 `PopulationPrior`, issue #50); (2) **personalisation** —
   how a golfer's onboarding information (handicap, self-reported carry,
   shot shape, common miss) transforms the population model into an initial
-  per-golfer model, with population assumptions progressively yielding
-  influence to observed `ShotRecord` data as sufficient high-quality
-  personal history accumulates; (3) **context/environment** — how lie,
-  wind, and elevation transform a player's shot-production uncertainty into
-  a resulting outcome distribution; and (4) **shot-outcome simulation** —
-  generating possible outcomes for a candidate shot from the resulting
-  model. Seeded Monte Carlo remains an acceptable initial sampling
-  technique for (4), but it is not the domain abstraction: the model must
-  not be locked to one probability distribution, deterministic seeded
-  testing must remain possible, and future simulation/evaluation techniques
-  must be able to operate on the same player shot model. Candidate-shot
-  generation for a given situation remains part of this subsystem grouping.
-  Expected-value/expected-strokes optimisation and shot/target selection
-  remain M5, unchanged in purpose — M4 provides the probabilistic outcomes
-  that strategy layer consumes. Detailed M4 implementation issues are
-  deliberately not created until this redefinition has been reviewed; a
-  separate future Orchestrator/Architect task uses M4.0's conclusions and
-  this milestone description to generate that backlog.
+  per-golfer model (M4.3, issue #51), with population assumptions
+  progressively yielding influence to observed `ShotRecord` data (M4.4
+  provenance/quality fields, issue #52) as sufficient high-quality personal
+  history accumulates via a batch partial-pooling update (M4.5, issue #53,
+  composed onto `Club`/`Player` by M4.6, issue #54); (3)
+  **context/environment** — a deterministic wind/elevation/air-density
+  transform of a forward-modelled shot outcome (M4.7, issue #55); and (4)
+  **shot-outcome simulation** — seeded bivariate Student-t intrinsic
+  outcome sampling (M4.8, issue #56) behind a pluggable
+  `ShotOutcomeSampler` contract, so the model is not locked to one
+  probability distribution and deterministic seeded testing remains
+  possible. Candidate-shot generation for a given situation, and
+  expected-value/expected-strokes optimisation/shot-target selection,
+  remain M5. Closed out (M4.9, issue #57): ADR 0006/ADR 0007 accepted and
+  verified against implementation; see
+  [player-model.md](player-model.md), [strategy-engine.md](strategy-engine.md),
+  and [architecture.md](architecture.md#m4-forward-shot-production-pipeline)
+  for the final pipeline, and [docs/backlog.md](backlog.md) for what
+  remains explicitly deferred (severe-miss mixture, lateral skew,
+  lie-specific multipliers, a learned/ML population prior, and other
+  items). Tracking issues: #10 (parent), #57 (closeout).
 
-> Pre-mobile architecture scope has grown materially since M4 was defined
-> (M5.5's runtime/offline, monitoring/evaluation, Rules-of-Golf, and now
-> synthetic-validation scope). After M4 closeout, the project pauses before
-> detailed M5 implementation planning to jointly reassess M5+ milestones —
-> M5's golf-state/value/strategy scope, the round/decision model, the
-> synthetic validation requirement above, real-world evaluation, a possible
-> Rust production core, the mobile/Flutter boundary, cloud/API architecture,
-> course packaging/distribution, Rules-of-Golf conformance, DevOps/release
-> engineering, multi-repository structure, and agentic/multi-repo
-> development-harness considerations — together, rather than planning M5 in
-> isolation. This note does not restructure the milestone roadmap or assign
-> final milestone numbers or repository names; it precedes, and may refine,
-> the M5 planning pass described below.
+> **Post-M4 checkpoint:** pre-mobile architecture scope has grown
+> materially since M4 was defined (M5.5's runtime/offline,
+> monitoring/evaluation, Rules-of-Golf, and synthetic-validation scope).
+> After M4 closeout, the project deliberately pauses before detailed M5
+> implementation planning begins, so M5+ scope is jointly reassessed
+> rather than planned in isolation — together considering: M5's
+> golf-state/value/strategy scope (see the M5 entry below and its parent
+> issue #11); the round/decision journal model (M6); the offline
+> synthetic round/scenario validation harness requirement described in
+> the M5.5 entry below; real-world recommendation-evaluation and
+> operational-monitoring architecture (M5.5/M6/M7); a possible future
+> Rust production-core direction; the Flutter/mobile boundary; optional
+> cloud/API architecture; course acquisition/package/distribution
+> architecture; Rules-of-Golf conformance (M5.5); DevOps/release
+> engineering; multi-repository structure; and agentic/multi-repo
+> development-harness considerations. A separate deep-research report on
+> agentic/multi-repository development architecture exists as **research
+> input** to this review only — it is **not** an accepted CaddAI
+> architecture decision, and none of its candidate technology choices
+> (e.g. a `caddai-product` split, Protobuf, a C ABI, PyO3, Copilot CLI
+> orchestration, or a specific agentic-workflow tool) are adopted by this
+> checkpoint; any such choice requires its own future ADR and human
+> approval (`AGENTS.md` §13). This note does not restructure the
+> milestone roadmap or assign final milestone numbers or repository
+> names, and does not itself constitute detailed M5 implementation
+> planning; it precedes, and may refine, the M5 planning pass described
+> below.
 
 - **M5 — Expected-value / expected-strokes strategy model**
   `strategy` subsystem: club/target selection driven by expected strokes and

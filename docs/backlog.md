@@ -6,31 +6,61 @@
 
 ## Candidate items
 
-- Derive/fit `CarryDistribution`/`DirectionalDispersion` (or a future
-  `PlayerShotDistribution`) from historical `ShotRecord` samples (deferred
-  out of M3 — see #9/#30; M3 uses only manually supplied statistical
-  parameters). M4.0 must define the future-compatible personal-learning
-  mechanism conceptually (Bayesian updating, hierarchical/empirical Bayes,
-  shrinkage, robust incremental statistics) and determine whether actual
-  implementation belongs in M4 or a later milestone — see
-  [roadmap.md](roadmap.md) M4.0/M4.
-- Decide whether M4.0 concludes a higher-level `PlayerShotDistribution`
-  abstraction is needed beyond M3's `CarryDistribution`/
-  `DirectionalDispersion`; if adopted, it requires an ADR (cross-subsystem
-  `player`/`statistics` ↔ `simulation` contract) before M4 implementation
-  begins, per Architect review of the M4 roadmap redefinition.
-- Decide whether M4's initial probabilistic golfer-model representation
-  needs a distributional-modelling library beyond NumPy/Pydantic (e.g.
-  `scipy`); if so, this is a new runtime dependency requiring an ADR and
-  human approval (`AGENTS.md` §9) before M4 implementation begins.
-- Identify and evaluate specific public/legitimately reusable golf-
-  performance datasets or published research (R&A/USGA, academic,
-  launch-monitor) for M4.0's population model, and record licensing/
-  representativeness findings (feeds M4.0 directly; see
-  [roadmap.md](roadmap.md)).
-- Update GitHub tracking issue #10 (currently titled "M4 — Candidate-shot
-  generation and Monte Carlo simulation") to reflect the M4.0/M4 roadmap
-  redefinition once this documentation change is merged.
+- A severe-miss mixture component for `PlayerShotDistribution` (an
+  explicit core-shot + severe-miss two-part model) — deliberately not
+  part of M4; the M4.0 research spike found public evidence does not
+  currently support estimating a defensible miss probability/severity by
+  handicap × club. Revisit once CaddAI has its own calibration data. See
+  [docs/research/m4-probabilistic-golfer-model.md](research/m4-probabilistic-golfer-model.md)'s
+  "Explicitly deferred, not M4" section and
+  [ADR 0006](adr/0006-player-shot-distribution-bivariate-student-t.md)'s
+  "Alternatives considered".
+- A lateral-skew parameter for `PlayerShotDistribution` — exploratory
+  public data shows visible lateral skew, but magnitude by handicap/club
+  is not established; deferred out of M4 pending calibration data. See
+  [docs/research/m4-probabilistic-golfer-model.md](research/m4-probabilistic-golfer-model.md).
+- Lie-specific (rough/slope/bunker) numeric effect multipliers on carry/
+  lateral outcome and dispersion — deferred out of M4; the current
+  `PopulationPrior`/`PlayerShotDistribution`/environment-transform models
+  have no lie-conditional behaviour. See
+  [docs/research/m4-probabilistic-golfer-model.md](research/m4-probabilistic-golfer-model.md).
+- A learned/ML population-prior model, replacing the M4.2 config-table
+  `PopulationPrior` implementation behind the same
+  [ADR 0007](adr/0007-population-prior-replaceability.md) interface, once
+  CaddAI has enough first-party calibration/round data to justify it — no
+  distributional-modelling/ML dependency is approved for this yet (new
+  runtime dependency requiring its own ADR and human approval,
+  `AGENTS.md` §9).
+- A handicap × club repeated-shot calibration data-collection effort (a
+  research/data activity, not code) to replace the "unresolved evidence
+  gaps" the M4.0 research spike identified — the specific provisional
+  numeric parameters this would inform live in
+  [src/caddai/statistics/population_prior_config.py](../src/caddai/statistics/population_prior_config.py)
+  (`m4.2-provisional-v1`),
+  [src/caddai/player/onboarding.py](../src/caddai/player/onboarding.py)
+  (`m4.3-provisional-v2`),
+  [src/caddai/statistics/personalisation.py](../src/caddai/statistics/personalisation.py)/
+  [src/caddai/player/personalisation.py](../src/caddai/player/personalisation.py)
+  (`m4.5-provisional-v1`), and
+  [src/caddai/simulation/environment_config.py](../src/caddai/simulation/environment_config.py)
+  (`m4.7-provisional-v1`). See
+  [docs/research/m4-probabilistic-golfer-model.md](research/m4-probabilistic-golfer-model.md)'s
+  "Unresolved evidence/calibration gaps" section.
+- A generic psychological-pressure penalty for shot dispersion —
+  **rejected, not merely deferred**: the M4.0 research spike found
+  controlled/observational studies disagree on direction and individual
+  golfer response varies, so no defensible generic penalty exists absent
+  new evidence. Revisit only if CaddAI's own data supports a specific,
+  defensible effect.
+- Unify `strategy.Wind`/`strategy.LieType` and `simulation.WindComponents`/
+  `simulation.EnvironmentInput` into a single neutral shared-domain
+  representation — `strategy/models.py` defined `Wind`/`LieType` in M1
+  before `simulation` existed to own them; `simulation` (M4.7) has since
+  defined its own overlapping `WindComponents`/`EnvironmentInput` types.
+  Not resolved in M4 (no consumer forces the merge yet); flagged as a
+  forward pointer since M1 — see
+  [docs/plans/m1-core-domain-vertical-slice.plan.md](plans/m1-core-domain-vertical-slice.plan.md)
+  and [docs/strategy-engine.md](strategy-engine.md).
 - A dedicated putting-shot probabilistic model for `ClubCategory.PUTTER`,
   distinct from the stock full-swing `PopulationPrior`/
   `population_prior_config.py` table — putting is a behaviourally distinct

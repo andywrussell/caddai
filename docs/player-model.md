@@ -1,7 +1,15 @@
 # Player model
 
-> Status: M3 is complete — `player`/`statistics` are implemented, not
-> planned. [src/caddai/statistics/models.py](../src/caddai/statistics/models.py)
+> Status: M4 is now also complete, in addition to M3 — `player`/`statistics`
+> (M3's `CarryDistribution`/`DirectionalDispersion` core primitives) and
+> M4's `PlayerShotDistribution`/`PopulationPrior`/personalisation pipeline
+> are all implemented, not planned. See
+> [ADR 0006](adr/0006-player-shot-distribution-bivariate-student-t.md) and
+> [ADR 0007](adr/0007-population-prior-replaceability.md) (both Accepted)
+> and
+> [docs/research/m4-probabilistic-golfer-model.md](research/m4-probabilistic-golfer-model.md)
+> for the underlying design rationale. M3 is complete —
+> [src/caddai/statistics/models.py](../src/caddai/statistics/models.py)
 > defines `CarryDistribution` (`mean_metres`/`stddev_metres`, finite-value
 > validated per issue #38) and `DirectionalDispersion` (lateral stddev +
 > signed lateral bias, finite-value validated per issue #38, with a fixed
@@ -337,6 +345,34 @@
 > `existing Club + fresh history -> current`) — collapsing them would force
 > every M4.8 read-path call to also carry onboarding scalars it doesn't
 > have.
+>
+> **M4 closeout (issue #57):** M4's finished pipeline is a *forward*
+> shot-production pipeline: population prior -> onboarding personalisation
+> -> immutable cold-start baseline `PlayerShotDistribution` -> complete
+> eligible `ShotRecord` history -> batch partial-pooling update (always
+> recomputed from scratch, never incremental) -> current
+> `PlayerShotDistribution` (derived on demand, never persisted over the
+> baseline) -> seeded sampling (consumed by `caddai.simulation`) ->
+> intrinsic `ShotOutcome` -> optional environment transform. It does not
+> yet produce a course-relative outcome or a final resting position on an
+> actual hole — that is M5+, gated on the M5 parent issue #11's explicit
+> prerequisites. `PlayerShotDistribution` is authoritative for
+> probabilistic simulation; M3's `CarryDistribution`/`DirectionalDispersion`
+> remain authoritative, by convention only (not code-enforced), for legacy
+> `Club.expected_carry_metres`/`strategy.recommend_club()` during the
+> M3->M4 transition — the two are not automatically synchronised (see the
+> M3-vs-M4 authority note above). Deliberately **not** part of M4: a
+> severe-miss mixture component, a lateral-skew parameter, lie-specific
+> (rough/slope/bunker) numeric multipliers, a learned/ML population-prior
+> model, and a generic psychological-pressure penalty — the last of these
+> rejected outright absent new evidence, not merely deferred; see
+> `docs/backlog.md` for the corresponding tracked items and
+> [docs/research/m4-probabilistic-golfer-model.md](research/m4-probabilistic-golfer-model.md)'s
+> "Explicitly deferred, not M4" section. `ClubCategory.PUTTER` remains a
+> valid category whose own population model is `DEFERRED` (not invalid),
+> and `ClubCategory.OTHER` remains `NOT_MODELABLE` — both already
+> implemented via `ClubCategorySupportStatus`. Milestone M4 is complete;
+> tracking issues #10 (parent) and #57 (this closeout).
 >
 > **M3-vs-M4 authority note:** M3 (`CarryDistribution`/`DirectionalDispersion`)
 > remains authoritative for unmigrated consumers (`Club.expected_carry_metres`,
