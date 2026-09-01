@@ -13,6 +13,76 @@ roadmap/issues only after explicit approval.
 Reviewed by the **CaddAI Architect** subagent (read-only) during drafting;
 its findings are folded in throughout, with one open disagreement flagged
 explicitly in [§8](#8-needs_decision-items) and [§6](#6-current-roadmap-critique).
+See "Human review and decisions" immediately below for how the human
+resolved that disagreement and the other open questions this analysis
+raised.
+
+---
+
+## Human review and decisions
+
+> **Human review completed 2026-09-01.** The decisions below resolve the
+> two `NEEDS_DECISION` items in [§8](#8-needs_decision-items), the
+> `GolfState`-ownership suggestion in [§4](#4-course-relative-outcome-model-terrainrollout--assessment),
+> the status of the workstream labels in
+> [§7](#7-proposed-m5-roadmap-structure-proposal-only), the runtime
+> sequencing principle touched on in §5/§9, and the recommended immediate
+> next action in [§14](#14-recommended-immediate-next-action-exactly-one).
+> They are recorded here as decisions; the original reasoning is left
+> intact in each referenced section, with a pointer back to this list, so
+> it stays clear *why* each option existed. **This document remains a
+> roadmap-analysis artifact, not accepted detailed architecture** —
+> `docs/roadmap.md`, `docs/backlog.md`, and the GitHub issue tree remain
+> unmodified pending the follow-up roadmap/issue migration task these
+> decisions authorise (§14). Research recommendations such as Protobuf,
+> Rust, a C ABI, PyO3, `caddai-product`, and Copilot CLI orchestration
+> remain hypotheses requiring their own future decisions — nothing below
+> adopts any of them.
+
+1. **WHS / scoring-context ([§8](#8-needs_decision-items) item 1): Option 3
+   accepted.** Tee-specific WHS-relevant *data* requirements (tee identity,
+   par, Course Rating, Slope Rating, Stroke Index) are preserved early and
+   should be considered during M5/course-package architecture where
+   relevant. WHS *scoring policy*/strategic-objective logic — Course
+   Handicap/Playing Handicap arithmetic, gross/net strategic context,
+   handicap-aware target-score logic, goal-sensitive "protect my handicap"
+   policy — is deferred until after the baseline expected-value/
+   Strokes-Gained recommendation path exists. The physical model / value
+   model / strategic objective separation is preserved; WHS must not alter
+   intrinsic shot physics.
+2. **Expected strokes ([§8](#8-needs_decision-items) item 2): Option 1
+   accepted**, with one addition: the research spike and its
+   implementation are **not** one automatically continuous sub-milestone.
+   A human/model decision gate sits between them — research spike → gate →
+   implementation — because the research outcome may materially change
+   the eventual V1 implementation approach.
+3. **`GolfState` ownership.** This document's suggestion in §4 that the
+   canonical golf-state/course-relative state belongs in `caddai.simulation`
+   is **not adopted**. It is recorded as an unresolved architecture-design
+   question for the first M5 design work: `GolfState` will potentially be
+   consumed by course-relative mapping, expected strokes, strategy, the
+   round model, synthetic validation, the decision journal, and scoring, so
+   its canonical ownership and dependency direction must be deliberately
+   resolved rather than defaulted to the first plausible-sounding module.
+   No new module or ADR is created by this decision. If the first M5
+   design work concludes a new foundational module or a new dependency
+   direction (e.g. `simulation -> course`) is needed, the Architect must
+   explicitly assess whether an ADR is required at that time.
+4. **Milestone labels ([§7](#7-proposed-m5-roadmap-structure-proposal-only)).**
+   M5.1–M5.4, MR, MC, MV, MO, MRULES, M7a, and M7b are confirmed to be
+   **analysis/workstream identifiers only**, not accepted final milestone
+   numbering. The follow-up roadmap task must translate the approved
+   dependency analysis into a clean, coherent integer milestone structure
+   rather than mechanically copying these labels.
+5. **Runtime timing.** The following sequencing principle is approved:
+   first, implement enough M5 domain/value semantics to establish a
+   meaningful reference implementation; then perform the production-
+   runtime/Rust-mobile architecture decision; before undertaking
+   substantial round/mobile/product implementation that would otherwise
+   create immediate rewrite risk. This document does not perform that
+   runtime decision — see the revised [§14](#14-recommended-immediate-next-action-exactly-one).
+6. **Immediate next action.** Revised — see
+   [§14](#14-recommended-immediate-next-action-exactly-one).
 
 ---
 
@@ -149,14 +219,24 @@ already store a *final* position/lie concept (M4.4 reworked `ShotRecord`
 around final-resting-position semantics for exactly this reason), so this
 can be deferred/refined later without breaking the observation contract.
 
-**Where it belongs:** in `simulation` (composes `course` geometry with M4's
-`ShotOutcome`), not inside `course` itself — `course` owns geometry only,
-never shot-outcome semantics (Architect-confirmed, no ADR required for this
-ownership call). The golf-state type should get one canonical owning
-module (likely `simulation`, alongside its outcome types) rather than being
-duplicated across `strategy`/`simulation`, echoing the still-open backlog
-item to unify `strategy.Wind`/`LieType` with `simulation.WindComponents`/
-`EnvironmentInput`.
+**Where it belongs:** classification logic that composes `course` geometry
+with M4's `ShotOutcome` does not belong inside `course` itself — `course`
+owns geometry only, never shot-outcome semantics (Architect-confirmed, no
+ADR required for this narrower ownership call).
+
+> **Superseded by human review (see "Human review and decisions" item 3):**
+> this section originally went on to suggest the canonical `GolfState` type
+> itself should live in `simulation`. **That suggestion is not adopted.**
+> `GolfState`'s canonical owning module and dependency direction — it will
+> potentially be consumed by course-relative mapping, expected strokes,
+> strategy, the round model, synthetic validation, the decision journal,
+> and scoring — is left as an explicit open question for the first M5
+> design work, not defaulted to `simulation` here. The still-open backlog
+> item to unify `strategy.Wind`/`LieType` with `simulation.WindComponents`/
+> `EnvironmentInput` is related context for that future design work, not a
+> resolution of it. No new module or ADR is created by this document; the
+> first M5 design work, with Architect input, decides whether one is
+> needed.
 
 ---
 
@@ -170,7 +250,11 @@ item to unify `strategy.Wind`/`LieType` with `simulation.WindComponents`/
   usable/licensable, what a defensible V1 approximation looks like, and
   what remains provisional pending CaddAI's own data. **Do not invent the
   implementation in this document** (per instruction) — only recommend the
-  spike.
+  spike. **Confirmed by human review ("Human review and decisions" item
+  2):** the spike and its implementation are not one automatically
+  continuous sub-milestone — a human/model decision gate sits between
+  them, since the spike's outcome may materially change the eventual V1
+  implementation approach.
 - **Strokes Gained** is correctly understood as *the* value framework, not
   one optional strategy among several — issue #11 and `strategy-engine.md`
   already state this clearly, and this document doesn't need to re-argue
@@ -200,16 +284,19 @@ baseline EV strategy (a design+implementation task), and WHS/scoring
 context (a large, separable concern — see below). Recommend splitting into
 an ordered sequence rather than one monolithic milestone.
 
-> **Open disagreement to flag explicitly, not silently resolve:** issue #11
-> already contains a deliberate addendum (added recently, per
+> **Resolved by human review ("Human review and decisions" item 1):** issue
+> #11 already contains a deliberate addendum (added recently, per
 > `docs/plans/cross-cutting-monitoring-evaluation-requirement.plan.md`'s
 > note that the issue is "mid-flight") stating M5 planning "must jointly
 > resolve, rather than design as unrelated features," course-relative
-> mapping *and* WHS/scoring context together. This proposal recommends
-> pulling WHS out into a later, separate milestone. That is a genuine scope
-> reversal of recently-landed planning text, not a neutral reorganisation —
-> see [§8](#8-needs_decision-items) for why this must go back to the human
-> before being adopted, via the same reviewed process M4.0 used.
+> mapping *and* WHS/scoring context together. This document originally
+> recommended pulling WHS out wholesale into a later, separate milestone —
+> a genuine scope reversal of recently-landed planning text, so it was
+> raised as [§8](#8-needs_decision-items)'s `NEEDS_DECISION` rather than
+> silently adopted. The human has since accepted Option 3: WHS *data-shape*
+> requirements stay with M5/course-package work now; WHS *scoring-policy*
+> logic is deferred to a later milestone. The follow-up roadmap task must
+> reflect this hybrid outcome, not the original wholesale-deferral framing.
 
 **M5.5 — Runtime & Offline Architecture (research spike).** Has clearly
 outgrown ".5" status. Its current prose bundles: runtime/Rust
@@ -254,17 +341,22 @@ into the runtime spike as a subtopic later, but low priority to change).
 ## 7. Proposed M5+ roadmap structure (proposal only)
 
 Numbering below is illustrative, not a commitment — any coherent numbering
-is the human's call.
+is the human's call. **Confirmed by human review ("Human review and
+decisions" item 4):** every label in this table (M5.1–M5.4, MR, MC, MV, MO,
+MRULES, M7a, M7b) is an **analysis/workstream identifier only**, not
+accepted final milestone numbering — the follow-up roadmap task must
+translate this dependency analysis into a clean, coherent integer
+milestone structure rather than mechanically copying these labels.
 
 | # | Name | Category | Objective | MVP blocking | Production code? | Repo restructuring? |
 |---|---|---|---|---|---|---|
 | M5 | Course-relative golf state & outcome mapping | DOMAIN | Classify a simulated outcome against course geometry into a minimal, stable golf state | Yes | Yes | No |
-| M5.1 | Expected-strokes v0 (research spike, then implementation) | DOMAIN | Resolve a defensible V1 expected-strokes approach; implement it behind a stable interface (ADR 0007-style replaceability) | Yes | Yes (post-spike) | No |
+| M5.1 | Expected-strokes v0 — research spike, **human/model decision gate**, then implementation | DOMAIN | Resolve a defensible V1 expected-strokes approach via a scoped evidence spike; per human review, implementation does not start automatically — the spike's outcome must pass a decision gate before implementing behind a stable interface (ADR 0007-style replaceability) | Yes | Yes (post-spike, post-gate) | No |
 | M5.2 | Strokes Gained & distribution-aware candidate evaluation | DOMAIN | Turn expected-strokes deltas into a preserved outcome-value distribution per candidate | Yes | Yes | No |
 | M5.3 | Baseline expected-value strategy & recommendation assembly | DOMAIN | Produce the first structured, trustworthy `strategy` recommendation | Yes | Yes | No |
 | M5.4 | WHS/scoring-context & risk/goal-sensitive strategy layer | DOMAIN / PRODUCT | Layer handicap/scoring context and risk preference on top of M5.3 without touching physical shot modelling | **No** (deferred — see §8) | Yes | No |
 | M6 | Round tracking & decision journal | PRODUCT / ROUND | Minimal round lifecycle + immutable decision-time record; storage ADR | Partial (minimal capture: yes; full analytics: no) | Yes | No |
-| MR | Runtime & production-core architecture (spike) | ARCHITECTURE | Determine whether/when a non-Python production core is justified; define parity tiers | No (spike itself); informs MVP blocking work | Spike/PoC code only, isolated | Only if it concludes a split is needed |
+| MR | Runtime & production-core architecture (spike) | ARCHITECTURE | Determine whether/when a non-Python production core is justified; define parity tiers. Per the approved runtime-timing sequencing (human review item 5), this follows enough M5 domain/value semantics to benchmark and precedes substantial round/mobile/product implementation | No (spike itself); informs MVP blocking work | Spike/PoC code only, isolated | Only if it concludes a split is needed |
 | MC | Offline course data & package architecture | ARCHITECTURE / PLATFORM | Manifest/versioning/format for real offline course packages | Yes, for real courses | Yes | No |
 | MV | Synthetic validation harness | VALIDATION | Repeatable, deterministic large-scale scenario validation of the real `strategy`/`simulation` engine | Yes, before broad field testing | Yes (test-time harness) | No |
 | MO | Monitoring & recommendation-evaluation architecture | VALIDATION / PLATFORM | Event contracts distinguishing operational health from recommendation quality | Partial (minimal local capture: yes) | Yes | No |
@@ -292,8 +384,15 @@ produces a second language/runtime or a mobile app codebase.
 
 ## 8. NEEDS_DECISION items
 
+> **Resolved by human review 2026-09-01** — see "Human review and
+> decisions" items 1 and 2 above. The original `NEEDS_DECISION` text is
+> preserved below verbatim so the context/options/consequences reasoning
+> remains visible; each block is annotated with its resolution rather than
+> rewritten.
+
 ```
-NEEDS_DECISION
+NEEDS_DECISION [RESOLVED — Option 3 accepted, see "Human review and
+decisions" item 1]
 
 Context
 Issue #11 (M5 parent) already contains a deliberate addendum stating that
@@ -335,7 +434,8 @@ M5.4.
 ```
 
 ```
-NEEDS_DECISION
+NEEDS_DECISION [RESOLVED — Option 1 accepted, see "Human review and
+decisions" item 2]
 
 Context
 No expected-strokes data source, model, or formula is defined anywhere in
@@ -396,6 +496,14 @@ milestone that actually triggers them, not decided now.
 | Repository split before DevOps/agent workflow | Low today (no split is imminent). If/when MR or M7b triggers a split, the DevOps/agent-workflow questions should be decided together with it, not retrofitted after. |
 | New production language before cross-language parity exists | High — this is precisely the "long-term duplicate strategy authorities" risk the instructions warn against. Rust must not become authoritative before a parity harness (built on MV) proves equivalence against the Python reference for real scenarios. |
 
+> **Approved sequencing ("Human review and decisions" item 5):** implement
+> enough M5 domain/value semantics for a meaningful Python reference
+> implementation first, then perform the production-runtime/Rust-mobile
+> architecture decision, before undertaking substantial round/mobile/
+> product implementation that would otherwise create immediate rewrite
+> risk. This document does not perform that runtime decision itself — see
+> the revised [§14](#14-recommended-immediate-next-action-exactly-one).
+
 ---
 
 ## 10. MVP readiness gates (candidate, not exhaustive)
@@ -447,7 +555,7 @@ No numeric thresholds are assigned to any of these, per instruction.
 
 | Issue | Milestone | Classification | Notes |
 |---|---|---|---|
-| #11 | M5 | **KEEP BUT REWRITE SCOPE** | Narrow to the M5–M5.3 sequence (§7); WHS/scoring-context addendum needs an explicit human decision (§8) before being moved to M5.4 or left in place |
+| #11 | M5 | **KEEP BUT REWRITE SCOPE** | Narrow to the golf-state/expected-strokes/Strokes-Gained/baseline-strategy sequence (§7); WHS/scoring-context addendum is **resolved** (Option 3 accepted, "Human review and decisions" item 1) — data-shape requirements stay with M5/course-package work, scoring-policy logic is deferred to a later milestone; the follow-up roadmap task executes this re-scope |
 | #12 | M6 | **KEEP BUT REWRITE SCOPE** | Narrow to round lifecycle + decision journal + storage ADR, now that a minimal golf-state type is proposed to land earlier (in M5) |
 | #13 | M7 | **KEEP BUT REWRITE SCOPE** | Split conceptually into M7a (PoC) and M7b (MVP) per §6/§7; still correctly gated by MR/MC/MV |
 | #14 | M8 | **KEEP AS-IS** | No change identified |
@@ -492,10 +600,42 @@ project.)
 
 ## 14. Recommended immediate next action (exactly one)
 
-> **Run a scoped M5-equivalent research/design task: course-relative golf
+> **Revised by human review ("Human review and decisions" item 6).** Once
+> this PR merges, the immediate next action is a **follow-up roadmap/issue
+> migration task**, not the technical golf-state/expected-strokes work this
+> section originally recommended — that work now follows the roadmap
+> update, as the *second* step.
+
+**Step 1 — follow-up roadmap/issue migration task.** Its purpose is to:
+
+- convert the approved dependency analysis (§2, §3, §7) into the durable
+  M5+ roadmap in `docs/roadmap.md`, replacing the illustrative labels in §7
+  with a clean, coherent integer milestone structure ("Human review and
+  decisions" item 4) — not a mechanical copy of M5.1/M5.2/M5.3/M5.4/MR/MC/
+  MV/MO/MRULES/M7a/M7b;
+- supersede the overloaded M5.5 structure per §6/§7;
+- encode the accepted WHS decision (item 1: data-shape requirements stay
+  early, scoring-policy logic is deferred) and the accepted expected-
+  strokes decision (item 2: research spike, then a human/model decision
+  gate, then implementation — not one continuous sub-milestone) into the
+  durable roadmap text;
+- migrate/re-scope issues #11–#15 per §12 (rewrite scope text rather than
+  close/replace, per that table's classifications), and formally record
+  the M5.5 supersession (no GitHub issue exists for M5.5 today, so this is
+  a clean documentation-level change, not an issue-tree mutation);
+- preserve the runtime-architecture checkpoint (item 5: the runtime
+  decision follows enough M5 domain/value semantics to benchmark, and
+  precedes substantial round/mobile/product implementation) as a
+  roadmap-level gate, without performing that runtime decision itself;
+- explicitly stop before detailed M5 implementation issues are created.
+
+**Step 2 — only after Step 1 lands — the original technical recommendation
+this section made:**
+
+> Run a scoped M5-equivalent research/design task: course-relative golf
 > state design plus an expected-strokes v0 research spike (mirroring the
 > M4.0 format) — not general M5 implementation, not a production-runtime
-> spike, and not a roadmap/issue rewrite.**
+> spike, and not a roadmap/issue rewrite.
 
 Rationale, derived directly from the dependency graph (§3): course-relative
 classification and a minimal golf state are the first hard blocking
@@ -504,15 +644,17 @@ Gained, baseline strategy, the round/decision model, the monitoring event
 contracts, and even the runtime spike (which needs real domain code to
 benchmark against). Expected strokes carries genuine research uncertainty
 identical in kind to M4.0's, and per ADR 0007's precedent deserves the same
-scoped, evidence-first treatment before implementation. This path requires
-no infrastructure decision, no new dependency, and no repository change,
-preserving solo-developer productivity while directly unblocking the
-highest-value next work — it is deliberately **not** "start M5
-implementation" (would risk locking in a golf-state/strategy API before the
-expected-strokes research settles), **not** a production-runtime spike
+scoped, evidence-first treatment, with a human/model decision gate before
+implementation begins (item 2). This path requires no infrastructure
+decision, no new dependency, and no repository change, preserving
+solo-developer productivity while directly unblocking the highest-value
+next work — it remains deliberately **not** general M5 implementation
+(would risk locking in a golf-state/strategy API before the
+expected-strokes research settles, or before `GolfState`'s ownership
+question — item 3 — is resolved), **not** a production-runtime spike
 (premature — no domain functionality yet exists to benchmark), and **not**
-a roadmap/issue rewrite (this document is the proposal; adopting it is the
-human's decision, per §8's `NEEDS_DECISION` items).
+a roadmap/issue rewrite (that is now Step 1, executed before this step
+begins, not folded into it).
 
 ---
 
@@ -526,3 +668,10 @@ human's decision, per §8's `NEEDS_DECISION` items).
   the CaddAI Architect review).
 - This document itself is the deliverable requiring human review before
   any follow-up task updates the durable roadmap/issues.
+- Human review (2026-09-01, see "Human review and decisions") recorded
+  **decisions about direction** — accepting/rejecting the `NEEDS_DECISION`
+  options, declining the `GolfState`-ownership suggestion, clarifying the
+  status of the workstream labels, and re-ordering the recommended next
+  action. It did **not** itself edit `docs/roadmap.md`, `docs/backlog.md`,
+  or any GitHub issue — that remains the follow-up roadmap/issue migration
+  task's job (§14, Step 1).
