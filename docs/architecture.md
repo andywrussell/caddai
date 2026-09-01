@@ -90,7 +90,7 @@ deterministic recommendation rather than withholding one.
 
 No storage technology, mobile runtime, or infrastructure component is
 selected by this constraint — those are future decisions, informed by the
-production runtime & cross-language architecture checkpoint (roadmap M6;
+production system architecture & runtime checkpoint (roadmap M6;
 see [roadmap.md](roadmap.md)) that precedes committing to the full mobile
 MVP (roadmap M10).
 

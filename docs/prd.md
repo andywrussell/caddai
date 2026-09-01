@@ -131,7 +131,7 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
   dependency for course geometry access *during* a round; see `AGENTS.md`
   §2.2.)
 - What GPS hardware/mobile platform is targeted for M10? (Deferred — see the
-  production runtime & cross-language architecture checkpoint, roadmap M6,
+  production system architecture & runtime checkpoint, roadmap M6,
   which precedes this decision.)
 - What LLM provider (if any) will be used for M12, and how are costs/privacy
   handled? (Deferred — requires explicit human approval; see escalation

@@ -90,9 +90,12 @@
   likely needs an ADR if it requires external strokes-gained reference
   data).
 - Decide the production runtime / possible Rust core, mobile/core runtime
-  boundary, cross-language contracts, repository architecture, and
-  DevOps/release architecture (feeds M6; each remains its own future
-  ADR/human-approval decision).
+  boundary, cross-language contracts, logical component boundaries,
+  repository architecture, CI/CD architecture, release/version
+  compatibility model, the future multi-repo agentic-development workflow,
+  and any cross-repo security/permissions model (feeds M6; each remains
+  its own future ADR/human-approval decision — M6 decides and proves
+  these, it does not implement the full future platform).
 - Decide a commercial/legitimate offline course-data provider and package
   format (feeds M7; requires human decision on the provider; no provider is
   selected today).

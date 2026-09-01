@@ -14,8 +14,8 @@ first public API is published.
   ([docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md))
   into the durable CaddAI roadmap: rewrote [docs/roadmap.md](docs/roadmap.md)
   M5 onward into a clean integer sequence (M5 course-relative golf state &
-  expected-value strategy; M6 production runtime & cross-language
-  architecture checkpoint; M7 offline course package architecture; M8 round
+  expected-value strategy; M6 production system architecture & runtime
+  checkpoint; M7 offline course package architecture; M8 round
   tracking, decision journal & WHS scoring-policy layer; M9 field-readiness
   validation, evaluation & Rules-of-Golf gate; M10 mobile MVP
   implementation; M11 mobile real-round validation; M12 LLM caddie layer;
@@ -25,7 +25,17 @@ first public API is published.
   build) via `M9 + M10 -> gate M11`; reframed M10 as a build/integration
   milestone only; and moved mobile real-round validation from M13 to M11 so
   it precedes the optional LLM (M12) and on-device-inference (M13)
-  enrichment milestones, rather than following them. Reconciled
+  enrichment milestones, rather than following them. A second narrow
+  amendment broadened M6 from "Production runtime & cross-language
+  architecture checkpoint" to "Production system architecture & runtime
+  checkpoint", making explicit that M6 decides and proves the full future
+  production-system architecture (runtime, Python reference/migration
+  strategy, mobile/core boundary, contracts/FFI, logical component
+  boundaries, repository topology, CI/CD architecture, release/versioning,
+  multi-repo agentic development, cross-repo security) as a bounded
+  decide-and-prove checkpoint, not an implementation mega-milestone —
+  while confirming operational logging stays with M9 and the decision
+  journal stays with M8. Reconciled
   [docs/backlog.md](docs/backlog.md) and fixed stale milestone
   cross-references across [docs/architecture.md](docs/architecture.md),
   [docs/prd.md](docs/prd.md), [docs/decision-journal.md](docs/decision-journal.md),

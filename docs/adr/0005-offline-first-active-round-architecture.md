@@ -84,8 +84,8 @@ round state, recommendations, player decisions, and shot outcomes. This ADR
 does not select a storage technology, mobile runtime, course-package format,
 or any cloud/database/infrastructure component — those remain future
 decisions (each still individually subject to the ADR/escalation
-requirements in `AGENTS.md` §13/§14), informed by the production runtime &
-cross-language architecture checkpoint (roadmap M6, see
+requirements in `AGENTS.md` §13/§14), informed by the
+production system architecture & runtime checkpoint (roadmap M6, see
 [docs/roadmap.md](../roadmap.md)) that precedes committing to the full
 mobile MVP (roadmap M10).
 
@@ -110,8 +110,8 @@ mobile MVP (roadmap M10).
   on-device (likely mobile) raises open questions about packaging a Python
   core, compute/battery budget, and local persistence — this ADR
   deliberately does not resolve those; it hands them to the M6 production
-  runtime & architecture checkpoint and to whichever future ADR each
-  individually triggers.
+  system architecture & runtime checkpoint and to whichever future ADR
+  each individually triggers.
 - Negative/neutral: connectivity-enhanced features (sync, cloud analytics,
   cloud LLM) must be designed to degrade gracefully rather than assuming
   connectivity, which is a small amount of extra design discipline for those
@@ -138,7 +138,8 @@ mobile MVP (roadmap M10).
   it.
 - **Resolve mobile runtime/storage technology now**: rejected — premature.
   This ADR fixes the constraint those decisions must satisfy; the
-  technology choices themselves are deferred to the M6 production runtime &
-  architecture checkpoint and the individual ADRs it will likely produce
+  technology choices themselves are deferred to the M6 production system
+  architecture & runtime checkpoint and the individual ADRs it will
+  likely produce
   (M8 decision-journal storage, M10 mobile runtime, M13 on-device LLM
   feasibility).

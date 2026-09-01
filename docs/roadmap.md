@@ -17,7 +17,8 @@
 > the note immediately before M9 below). The
 > previous **M5.5** entry ("Runtime & Offline Architecture") never had a
 > GitHub milestone of its own and is **superseded** — its scope is now
-> split across **M6** (production runtime & architecture checkpoint), **M7**
+> split across **M6** (production system architecture & runtime
+> checkpoint), **M7**
 > (offline course package architecture), and **M9** (field-readiness
 > validation, evaluation & Rules-of-Golf gate) below, per the
 > dependency/decision-timing analysis in the reassessment. See
@@ -195,9 +196,9 @@
 > (`AGENTS.md` §13). **M5–M14 below are the resolved outcome of that
 > reassessment.** The previous M5.5 entry never had a GitHub milestone of
 > its own and is **superseded**: its scope is now split across M6
-> (production runtime & architecture checkpoint), M7 (offline course
-> package architecture), and M9 (field-readiness validation, evaluation &
-> Rules-of-Golf gate) below. This resolution is
+> (production system architecture & runtime checkpoint), M7 (offline
+> course package architecture), and M9 (field-readiness validation,
+> evaluation & Rules-of-Golf gate) below. This resolution is
 > itself documentation/roadmap-structure only — it does not constitute
 > detailed M5 implementation planning, which remains a separate, later
 > task.
@@ -222,6 +223,25 @@
 > M13. No dependency, WHS, expected-strokes, `GolfState`, runtime-timing,
 > or synthetic-validation decision already approved earlier in this
 > reassessment was reopened by this amendment.
+>
+> **Second subsequent narrow amendment (still pre-M5-implementation,
+> still documentation-only).** M6 was originally named "Production
+> runtime & cross-language architecture checkpoint", which read as a
+> narrower "should we use Rust?" spike. M6 is renamed **"Production
+> system architecture & runtime checkpoint"** and its scope made explicit
+> to cover the full production-system decision — production runtime,
+> Python reference/migration strategy, the mobile/core boundary,
+> cross-language/FFI/contract strategy, logical component boundaries,
+> repository topology and split timing, CI/CD architecture, release/
+> versioning architecture, the future multi-repository agentic-
+> development workflow, and cross-repo security where applicable — as a
+> bounded **decide + prove** architecture checkpoint, never an
+> implementation mega-milestone: no full production-system capability is
+> required to be built to close M6, only researched, prototyped where
+> genuinely necessary, and recorded (via ADR where a binding decision is
+> made). Operational logging/observability and recommendation-evaluation
+> architecture remain M9's; the round/decision journal remains M8's; no
+> other milestone's scope, numbering, or ordering changed.
 
 - **M5 — Course-relative golf state & expected-value strategy**
   `strategy`/`simulation` subsystems: the first milestone that turns M4's
@@ -336,42 +356,161 @@
   the policy layer waits, not the underlying course/tee data shape.
 
   **What this milestone is not:** general M5 implementation planning
-  beyond this scope note, a production-runtime decision (M6), a full
-  round/product model (M8), or WHS scoring-policy implementation (M8).
+  beyond this scope note, a production-system architecture decision (M6),
+  a full round/product model (M8), or WHS scoring-policy implementation
+  (M8).
 
-- **M6 — Production runtime & cross-language architecture checkpoint
+- **M6 — Production system architecture & runtime checkpoint
   (research/architecture spike)**
-  Architecture/decision milestone, not a large implementation effort.
-  Follows the approved runtime-timing principle: implement enough M5
-  domain/value semantics to establish a meaningful Python reference
-  implementation first, then perform this production-runtime/mobile
-  architecture decision, before undertaking substantial round/mobile/
-  product implementation that would otherwise create immediate rewrite
-  risk (see M8, sequenced after this milestone for exactly that reason).
-  Scope: whether/when a non-Python production core (e.g. Rust) is
-  justified for mobile packaging, performance, or battery reasons, and if
-  so what parity tiers apply (exact deterministic parity, numerical-
-  tolerance parity, statistical/distributional parity, strategic/semantic
-  parity — not all behaviour requires bit-for-bit parity); the mobile/core
-  runtime boundary; the Python-reference/parity strategy for validating
-  any future non-Python core against it (built on M9's synthetic
-  validation harness); contracts/cross-language boundaries if a second
-  language is introduced; a repository-architecture decision point (only
-  if a second language/runtime or mobile app codebase genuinely forces a
-  split — avoid architecture by symmetry); a DevOps/release-architecture
-  decision point; and the point at which a multi-repository
-  agentic-development architecture (informed by, but not adopting,
-  [docs/research/agentic-development-multi-repo-devops.md](research/agentic-development-multi-repo-devops.md))
-  would first become relevant. This milestone also includes a throwaway/
-  PoC-grade mobile runtime vertical slice proving the chosen approach
-  works end-to-end on a real device with a trivial recommendation request
-  — not the mobile MVP itself (M10). Rust must not become authoritative
-  before a parity harness (M9) proves equivalence against the Python
-  reference for real scenarios — this milestone decides *whether/when*,
-  never assumes it. No mobile framework, runtime language, database, or
-  cloud provider is selected by this roadmap entry; each remains its own
-  future ADR/human-approval decision (`AGENTS.md` §13/§14). Tracking
-  issue: #74 (supersedes part of the old M5.5 entry).
+  Architecture/decision milestone, not a large implementation effort:
+  **M6 is where CaddAI decides and proves how the future production
+  system is structured — runtime, component/repository boundaries,
+  contracts, delivery, release/versioning, and multi-repo development
+  architecture — not where the entire future platform is built.** Follows
+  the approved runtime-timing principle: implement enough M5 domain/value
+  semantics to establish a meaningful Python reference implementation
+  first, then perform this production-system architecture decision,
+  before undertaking substantial round/mobile/product implementation
+  (M8, M10) that would otherwise create immediate rewrite risk. Every
+  area below is **decide + prove** work — research, evidence, and a
+  bounded PoC where one is genuinely needed to de-risk a decision — never
+  full implementation of the capability itself. **A–K below is the
+  bounded scope of this checkpoint**: a new architecture question belongs
+  in M6 only if it materially affects one of these areas, not merely
+  because it is architecture-adjacent.
+
+  **A. Production runtime.** Python vs. Rust vs. other viable production-
+  runtime options; what requirements actually justify a non-Python core;
+  performance/battery/mobile-packaging implications; when a new
+  production runtime becomes authoritative. Rust (or any other non-Python
+  runtime) is **not** assumed selected — this milestone decides
+  *whether/when*, never assumes it.
+
+  **B. Python reference / migration strategy.** Which Python
+  implementation remains the reference/specification; which behaviour is
+  ported; when duplicate implementations are temporarily allowed; how
+  long-term duplicate strategy authorities are prevented. Defines future
+  parity categories — exact, floating-point-tolerance, statistical, and
+  semantic/strategy equivalence — without performing the full migration
+  here unless required by a bounded PoC.
+
+  **C. Mobile ↔ core boundary.** The conceptual production boundary
+  between the eventual mobile application and the golf engine: lifecycle/
+  ownership, threading/concurrency, error handling, reproducibility,
+  state transfer, packaging, API ergonomics. A small vertical PoC — a
+  throwaway/PoC-grade mobile runtime vertical slice proving the chosen
+  approach works end-to-end on a real device with a trivial
+  recommendation request — may be used to prove assumptions; this is
+  **not** the M10 mobile MVP itself.
+
+  **D. Cross-language / FFI / contract strategy.** Which boundaries need
+  in-process APIs, FFI, serialised/persisted contracts, or versioned
+  schemas. Candidates such as Protocol Buffers, Buf, a C ABI, PyO3, or
+  generated bindings remain hypotheses — none is adopted merely because
+  [docs/research/agentic-development-multi-repo-devops.md](research/agentic-development-multi-repo-devops.md)
+  recommended it. Explicitly considers whether an FFI contract and a
+  persisted/wire contract should be the same mechanism or separate
+  concerns.
+
+  **E. Logical component boundaries.** The logical production components
+  CaddAI actually requires — potential examples: production golf core,
+  mobile, course tooling/package support, simulation/evaluation,
+  connected/cloud services, product/integration control plane — are
+  hypotheses, not mandatory components; avoid architecture by symmetry.
+
+  **F. Repository structure.** The explicit decision point for repository
+  topology: what remains in the current repository; what, if anything,
+  should split; when the first split should happen; whether a mobile repo
+  should be the first natural split; whether eval/sim should remain
+  colocated initially; whether a product/integration repo is justified
+  yet; what should explicitly **not** become its own repo. A valid
+  conclusion is keeping the current repository intact and deferring
+  splitting until a concrete second runtime/application exists — multiple
+  repositories are not created merely because M6 discusses them.
+
+  **G. CI/CD architecture.** Candidate elements of the future delivery
+  model — not commitments to build them all now — for the future
+  multi-component system: repository-local PR quality gates,
+  native/runtime builds, mobile builds, cross-language parity checks,
+  cross-repository compatibility tests where applicable, exact-SHA
+  integration, release-candidate validation, synthetic-validation
+  integration (M9), scheduled/manual large validation runs, artifact
+  production, and rollback/reproducibility. Only enough CI/PoC work to
+  validate decisions that would otherwise be speculative — not every
+  future workflow is built here.
+
+  **H. Release/versioning architecture.** How future releases identify
+  compatible versions of relevant components: production-core version,
+  source SHA, contract/schema version, model/config version,
+  course-package schema (M7), mobile build, and release
+  manifest/compatibility metadata — defined at a level appropriate now,
+  not over-designed into a full release platform before it is needed.
+
+  **I. Multi-repository agentic development.** Uses
+  [docs/research/agentic-development-multi-repo-devops.md](research/agentic-development-multi-repo-devops.md)
+  as **research input only**. Assesses how the current CaddAI agent
+  workflow should evolve if/when repository splitting occurs, preserving:
+  GitHub Issues/dependencies as durable work truth; deterministic CI as
+  verification authority; human merge/release authority; bounded
+  repo-local workers; thin product-level coordination. Determines whether
+  risk-sensitive workflows should replace the current full agent chain
+  for every task. No specific orchestration tooling (e.g. Copilot CLI
+  cross-repo orchestration, GitHub Agentic Workflows) is adopted without
+  a PoC.
+
+  **J. Cross-repo security/permissions.** If M6 concludes cross-
+  repository automation is required: least privilege, repo-scoped
+  `GITHUB_TOKEN` limitations, restricted cross-repository identity,
+  GitHub App vs. other credential approaches, agent write permissions,
+  and human merge/release controls. No broad founder-token automation as
+  a shortcut.
+
+  **K. Architectural decision recording.** M6 is expected to produce ADRs
+  where binding decisions are actually made, per the existing (unchanged)
+  ADR process (`AGENTS.md` §13). Potential ADR triggers: production
+  runtime selection, repository topology, production-core/mobile
+  boundary, contract/FFI strategy, release/version compatibility model.
+  No ADR is created prematurely by this roadmap entry itself — only where
+  M6's own work concludes a binding decision.
+
+  **What M6 does not own.** Detailed operational logging/observability
+  architecture ("is the system healthy?") belongs primarily to **M9** —
+  M6 may decide cross-component logging/interface constraints only where
+  required by the production architecture itself. Recommendation-
+  evaluation event semantics emerge from **M5/M8**, and **M9** owns the
+  evaluation/monitoring architecture ("was the prediction/recommendation
+  good?"). The round/decision journal ("what did CaddAI know, recommend,
+  what did the golfer choose, and what happened next?") is **M8**'s.
+  Cloud telemetry ingestion is **not** pulled into M6 — it remains
+  later/optional unless a real MVP requirement makes it necessary.
+
+  **Exit criteria** (approximately, no numeric thresholds): the
+  production runtime decision is evidence-backed; the Python
+  reference/migration strategy is explicit; the mobile/core boundary has
+  been proven sufficiently through a bounded PoC; logical component
+  boundaries are documented; repository topology and split timing are
+  deliberately decided; contract/FFI strategy is decided or narrowed
+  through empirical evidence; CI/CD and integration architecture is
+  documented; release/version compatibility approach is defined at an
+  appropriate level; a future agentic/multi-repo workflow is defined
+  enough to support the chosen repo topology **if repository splitting is
+  concluded to be needed** (as with the cross-repo security model below,
+  not required if F concludes no split yet); the cross-repo security
+  model is understood if applicable; required binding decisions are
+  recorded through ADRs; and no major production-architecture assumption
+  remains untested that would make M8/M10 likely to require immediate
+  structural rewrite. **Full implementation of every production-system
+  capability is not required to close M6** — decide, prototype where
+  necessary, record decisions, and prove high-risk assumptions; do not
+  build the entire future platform here.
+
+  Rust must not become authoritative before a parity harness (M9) proves
+  equivalence against the Python reference for real scenarios — this
+  milestone decides *whether/when*, never assumes it. No mobile
+  framework, runtime language, database, or cloud provider is selected by
+  this roadmap entry; each remains its own future ADR/human-approval
+  decision (`AGENTS.md` §13/§14). Tracking issue: #74 (supersedes part of
+  the old M5.5 entry).
 
 - **M7 — Offline course package architecture**
   Architecture/platform milestone, transitioning from today's fixture-only
@@ -513,8 +652,9 @@
   Live GPS position feeding the engine; mobile/UI integration; full
   offline round: GPS, offline course package (M7), local engine,
   recommendation, decision recording (M8). Requires a human decision on
-  target platform (`AGENTS.md` escalation rules). Builds on M6's runtime
-  checkpoint (and its PoC vertical slice) and M7's course-package
+  target platform (`AGENTS.md` escalation rules). Builds on M6's
+  production system architecture checkpoint (and its mobile/core boundary
+  PoC vertical slice) and M7's course-package
   architecture; positioning must remain an active-round core capability
   per `AGENTS.md` §2.2 regardless of platform. **This milestone is a
   build/integration milestone, not proof that CaddAI performs well on
@@ -540,7 +680,8 @@
   provide trustworthy value during real golf rounds? Explicitly gated by
   **both** M9 (field-readiness validation passing) and M10 (mobile MVP
   implementation complete) — `M9 + M10 -> gate M11`. Run on existing
-  consumer mobile devices per M6's runtime findings — no dedicated
+  consumer mobile devices per M6's production runtime findings — no
+  dedicated
   hardware. Scope: controlled pilot rounds; recommendation acceptance/
   override observation; offline reliability; course-data failures; GPS/
   product usability; predicted-vs-observed outcomes where available;
