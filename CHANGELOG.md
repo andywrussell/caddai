@@ -41,6 +41,27 @@ first public API is published.
   point-in-polygon containment primitive) as candidate items feeding M5.
   No other documentation was modified.
 
+- Amended the M5.0 research/design spike with a follow-up live-research
+  pass (dated 2026-09-01, same document/branch): performed live web
+  research verifying eight external sources (Broadie 2008/2011,
+  Golfmetrics, DataGolf, Arccos, Shot Scope, a University of Padova
+  thesis, and Wikipedia's World Handicap System summary), superseding the
+  original "no live web tool" disclosure in sections H/K. Verified
+  evidence strongly supports the distance/lie/ability-conditioned
+  expected-strokes **concept**, but no legally reusable public numeric
+  baseline table was found, so the previously-recommended monotonic-
+  interpolation-plus-handicap-band model is downgraded to a **leading
+  engineering candidate for the model family/contract shape only** — not
+  an approved or provisionally-adopted V0. Replaced the `Expected-Strokes
+  V0` decision block with `Expected-Strokes V0 Contract Direction` and
+  added a new `FOLLOW-ON REQUIRED: Expected-Strokes Numeric Baseline /
+  Data Source` block recording the still-unresolved numeric-baseline/
+  licensing decision. Updated [docs/backlog.md](docs/backlog.md) and
+  [docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md](docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md)
+  to match. No `GolfState`, classification, expected-strokes, or other
+  production code, and no ADR or GitHub issue, was created by this
+  amendment.
+
 - Converted the approved post-M4 roadmap reassessment
   ([docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md))
   into the durable CaddAI roadmap: rewrote [docs/roadmap.md](docs/roadmap.md)

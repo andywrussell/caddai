@@ -8,29 +8,33 @@
 > [docs/research/m4-probabilistic-golfer-model.md](m4-probabilistic-golfer-model.md)'s
 > (M4.0's) format and rigour, per the M5 roadmap entry and GitHub issue #11.
 
-## ⚠️ CRITICAL TOOLING LIMITATION — read before trusting section H
+## VERIFIED EXTERNAL EVIDENCE vs. STILL UNVERIFIED — read before trusting section H
 
-**This research session had no live web-fetch/browsing tool available.**
-Unlike M4.0's research document, whose evidence table cites sources
-verified via live research tooling (DOIs/URLs checked at the time of
-writing), **nothing in [section H](#h-expected-strokes-evidence-review) or
-[section K](#k-datalicensing-table) below was freshly verified this
-session.** Every claim in those sections is limited to stable, extremely
-well-established public golf-analytics knowledge the author is highly
-confident about from general training knowledge, not from a verified
-citation. Every such claim is explicitly flagged inline as
-**`[UNVERIFIED THIS SESSION — recommend human verification]`**.
+**Amendment (dated 2026-09-01):** this document was amended after a
+follow-up session that had live web-fetch/browsing tool access. That
+session performed live web research and verified the sources listed in
+[section H](#h-expected-strokes-evidence-review) and
+[section K](#k-datalicensing-table) below by directly fetching and reading
+each source — **this supersedes the original document's "no live web tool
+available" disclosure**, which applied only to the first drafting session
+and no longer describes the evidence in sections H/K/the amateur-evidence
+subsection.
 
-**This evidence review does NOT meet M4.0's verification bar.** The human
-must treat [section H](#h-expected-strokes-evidence-review) as a **starting
-hypothesis**, not settled evidence, and must independently verify — before
-relying on it for any implementation decision — exact table values,
-licensing terms, current URLs/DOIs, and publication currency of every
-source discussed. No specific numeric expected-strokes table or formula is
-invented anywhere in this document; only the *structural shape* of known
-public expected-strokes research is described. This limitation is repeated
-at the top of section H and again in the final decision-gate block for
-visibility.
+A small number of items remain genuinely unverified even after this
+amendment — see
+["STILL UNVERIFIED / PROPRIETARY / LICENSING-UNCLEAR"](#h-expected-strokes-evidence-review)
+in section H for the explicit list: the official USGA/R&A World Handicap
+System primary PDF documentation, PGA TOUR's explicit ShotLink licensing
+terms, the University of Padova thesis's full text, and Shot Scope's/
+Arccos's underlying numeric benchmark tables (as opposed to their
+marketing/feature descriptions). These gaps are recorded honestly, not
+silently dropped.
+
+Sections outside H/K (e.g. sections A–G on `GolfState` architecture and
+ownership) were not the subject of this amendment's live research and
+remain unchanged in substance — this amendment only narrows the
+expected-strokes evidence/decision, not the `GolfState`
+architecture/ownership conclusions.
 
 ---
 
@@ -58,17 +62,22 @@ visibility.
    consistent with the roadmap's own explicit statement that "a real
    rollout/bounce physics model is explicitly not required for V1."
 4. **No expected-strokes model, table, or formula should be implemented
-   yet.** The evidence available without live verification this session
-   supports only a *structural* recommendation (a distance/lie-conditioned
-   lookup/interpolation approach, in the spirit of Mark Broadie's Strokes
-   Gained methodology and the USGA/R&A World Handicap System's adoption of
-   a similar baseline), not a specific numeric table. A **decision gate**
-   (per the roadmap's own explicit requirement) must follow independent
-   human verification of sources before any implementation issue is
-   opened.
-5. **This spike recommends, but does not decide,** both the `GolfState`
-   ownership question and the expected-strokes V0 approach — see the two
-   `DECISION REQUIRED` blocks at the end of this document.
+   yet.** A follow-up amendment (2026-09-01) performed live-verified web
+   research (see [section H](#h-expected-strokes-evidence-review)) and
+   found the distance/lie/ability-conditioned expected-strokes *concept*
+   well-supported by independent, verified sources, but found **no**
+   legally reusable public numeric baseline table or dataset. The
+   previously-recommended monotonic-interpolation-plus-handicap-band
+   combination is therefore recorded as a **leading engineering candidate
+   for the model family/contract shape only**, not an approved or
+   provisionally-adopted V0 (see [section J](#j-recommended-expected-strokes-v0)).
+   A separate, still-unresolved follow-on decision covers the numeric
+   baseline/data source itself (see the `FOLLOW-ON REQUIRED` block at the
+   end of this document).
+5. **This spike recommends, but does not decide,** the `GolfState`
+   ownership question, the expected-strokes contract direction, or the
+   still-open expected-strokes numeric-baseline/data-source follow-on —
+   see the decision/follow-on blocks at the end of this document.
 
 ## B. Current-state audit
 
@@ -346,6 +355,16 @@ belong on `GolfState`.
 
 ## E. `GolfState` ownership options
 
+> **Amendment note (2026-09-01):** this amendment **reconfirms, and does
+> not reopen**, the neutral-module ownership conclusion below. Narrowing
+> the expected-strokes evidence/decision (sections H–K) has no bearing on
+> `GolfState`'s ownership — `GolfState` is a physical/course-relative state
+> contract, while expected strokes is a value model that consumes that
+> contract; evidence quality and numeric-model maturity for expected
+> strokes are orthogonal to where the state type lives. See the Architect's
+> confirmation items 1–3 and 7 folded into this section and
+> [section F](#f-course-relative-classification-ownership) below.
+
 *The following is the CaddAI Architect subagent's read-only architecture
 analysis (issue-referenced, already reviewed), adapted directly into this
 document per the task brief. It is authoritative input to this spike's
@@ -465,7 +484,35 @@ input, not avoided by defaulting into an existing module for convenience.
 **This is a recommendation for the human to weigh against option (b)'s
 lower documentation-diff, not a decided outcome.**
 
+### Rejected options — reconfirmed (Architect item 7, 2026-09-01 amendment)
+
+- **`GolfState` inside `strategy` "merely for convenience" — REJECTED.**
+  It would force `simulation` (the classifier) to import `strategy` to
+  construct/return the type it produces, inverting the documented
+  `strategy -> simulation` direction (`AGENTS.md` §3/§13) — a structural
+  violation, not a style preference.
+- **`strategy` performing low-level course geometry classification —
+  REJECTED.** Duplicates `simulation`'s (and `course`'s) capability, risks
+  correctness drift, risks an undocumented `strategy -> course` edge. See
+  [section F](#f-course-relative-classification-ownership) for the full
+  reasoning.
+- **Course-provider-specific data leaking into `GolfState` — REJECTED.**
+  Would reintroduce an implicit `course`/provider dependency into what
+  must remain a leaf type, undermining portability and violating
+  `course`'s non-goal of golfer-semantics leakage (see domain invariant 8
+  in [section D](#d-golfstate-requirements)).
+
 ## F. Course-relative classification ownership
+
+> **Amendment note (2026-09-01):** this amendment **reconfirms, and does
+> not reopen**, the classification-ownership conclusion below, and the
+> dependency-direction reasoning behind it. See the Architect's
+> confirmation item 2: classification remains a `simulation`
+> responsibility; edges are `simulation -> course` (already documented)
+> and `simulation -> caddai.golf_state` (new, one-directional, into the
+> neutral module only) — no reverse edges, and no `strategy`-owned
+> low-level geometry classification (see the rejected-options list at the
+> end of [section E](#e-golfstate-ownership-options)).
 
 *Also adapted directly from the Architect's analysis.*
 
@@ -566,149 +613,314 @@ named in the original brief:
 
 ### Recommendation
 
-**Option B — a coarse, clearly-labelled deterministic rollout
-approximation**, applied as a distinct, separately-named, swappable step
-from classification (per the Architect's guidance below), not fused into
-one non-decomposable operation.
+> **Amendment note (2026-09-01), Architect item 6:** softened per the
+> Architect's confirmation below. The rollout-stage boundary itself (a
+> distinct, separately-named, swappable step inside `simulation`, never
+> fused with classification) is unchanged and still correct.
+
+**Provide a replaceable rollout/final-position transformation stage.** V0
+may use a deliberately coarse deterministic rollout approximation (option
+B above) if defensible parameters can be established. If they cannot, the
+system must support an explicit **identity/no-rollout approximation with
+known limitations** (option A above, visibly labelled as such) rather than
+fake precision. Either way, rollout is applied as a distinct,
+separately-named, swappable step from classification, not fused into one
+non-decomposable operation — this does not commit to specific rollout
+constants/percentages here; that remains an implementation-time decision
+once (or if) defensible parameters exist.
 
 **Ownership (from the Architect's analysis):** rollout and classification
 should live in the **same module** (`simulation`), but as two distinct,
 separately named, swappable functions — never merged into one operation.
 Reasoning: rollout approximation and classification answer conceptually
 different questions with very different maturity trajectories (rollout is
-an explicit placeholder pending real bounce/terrain physics; classification
-is comparatively stable once course geometry exists). This mirrors the
-existing pattern of M4.7's `apply_environment_transform` and M4.8's
-sampling being kept as separately composable steps (via the
-`ShotOutcomeSampler` `Protocol`) specifically so a technique can be
-swapped without changing the call shape.
+an explicit placeholder pending real bounce/terrain physics — including,
+if no defensible parameters exist, a labelled identity transform — while
+classification is comparatively stable once course geometry exists). This
+mirrors the existing pattern of M4.7's `apply_environment_transform` and
+M4.8's sampling being kept as separately composable steps (via the
+`ShotOutcomeSampler` `Protocol`) specifically so a technique — including a
+trivial identity function — can be swapped without changing the call
+shape or downstream consumers.
+
 
 ## H. Expected-strokes evidence review
 
-> **⚠️ REPEATED DISCLOSURE: this section was written without live
-> web-fetch/browsing tool access this session.** Every claim below is
-> limited to stable, extremely well-established public golf-analytics
-> knowledge, and is explicitly flagged
-> `[UNVERIFIED THIS SESSION — recommend human verification]`. This does
-> **not** meet M4.0's verification bar (M4.0's evidence table cited
-> sources with DOIs verified via live research tooling at the time of
-> writing). No exact numeric expected-strokes value, table, or formula is
-> stated anywhere in this section — only the *structural shape* of known
-> methodology. The human must independently verify every source's exact
-> content, current availability, licensing terms, and publication currency
-> before any of this is relied upon for implementation.
+> **Amendment (2026-09-01):** this section was rewritten after a follow-up
+> session with live web-fetch/browsing tool access. Every source below was
+> directly fetched and read this session (not recalled from training
+> knowledge), unlike the original version of this section. This
+> supersedes every `[UNVERIFIED THIS SESSION — recommend human
+> verification]`-tagged claim previously in this section — those claims
+> are replaced by the verified findings below, or explicitly carried
+> forward into
+> ["STILL UNVERIFIED / PROPRIETARY / LICENSING-UNCLEAR"](#still-unverified--proprietary--licensing-unclear)
+> where genuinely still unverified. No exact numeric expected-strokes
+> table value is stated or invented anywhere in this section — every
+> quantitative figure below is a verified, directly-cited figure from a
+> named source, not an invented or interpolated one.
 
-### What evidence can plausibly be used
+### VERIFIED EXTERNAL EVIDENCE
 
-- **Mark Broadie's "Strokes Gained" methodology** — originally developed
-  using PGA Tour ShotLink data, and published in his book *Every Shot
-  Counts* (2014) and in earlier academic work (e.g. a 2012 paper commonly
-  cited as "Assessing Golfer Performance Using Strokes Gained")
-  `[UNVERIFIED THIS SESSION — recommend human verification]`. The
-  well-known structural idea — not a specific number — is that Broadie's
-  work publishes an **expected-strokes-to-holeout baseline conditioned on
-  distance-to-hole and lie/category** (e.g. tee, fairway, rough, sand,
-  green, recovery), separately for different reference-skill populations
-  (commonly a "PGA Tour scratch-level" baseline and, in later
-  work/handicap-methodology adoption, baselines for higher-handicap/
-  "bogey golfer" populations)
-  `[UNVERIFIED THIS SESSION — recommend human verification]`.
-- **USGA/R&A World Handicap System (WHS) Strokes Gained-based
-  handicap methodology** — the WHS's underlying statistical framework is
-  understood to be built on, or closely related to, a Strokes-Gained-style
-  expected-strokes baseline, which the governing bodies are understood to
-  publish or reference in some form as part of handicap calculation
-  methodology, conditioned on distance and category, for a range of
-  handicap/ability levels (not only scratch)
-  `[UNVERIFIED THIS SESSION — recommend human verification]`. The exact
-  current publication, its scope, and its licensing/reuse terms were not
-  checked this session.
-- **Amateur-golf performance research** (the same general body of work
-  referenced by [docs/research/m4-probabilistic-golfer-model.md](m4-probabilistic-golfer-model.md)'s
-  evidence table, e.g. Broadie's amateur-scoring analysis) already
-  established, for M4.0's purposes, that a relatively small number of very
-  poor ("awful") shots materially affects amateur scoring outcomes — this
-  is *directionally* relevant to expected strokes (a handicap-conditioned
-  baseline must reflect a realistically wide outcome distribution, not
-  only a scratch-golfer's tight one), but M4.0's own citation of this
-  point should be treated as the more-verified source; this section adds
-  no new verification of it.
+1. **Broadie, M. (2011). "Assessing Golfer Performance on the PGA TOUR."**
+   PDF: https://www.columbia.edu/~mnb2/broadie/Assets/strokes_gained_pga_broadie_20110408.pdf
+   (to appear in *Interfaces*, a peer-reviewed INFORMS journal). VERIFIED
+   full text (31 pages, downloaded and read this session). Uses PGA TOUR
+   ShotLink data, ~8 million shots, 299 golfers with 120+ rounds,
+   2003–2010. The paper explicitly thanks "the PGA TOUR for providing the
+   ShotLink data" — this acknowledgment language confirms ShotLink access
+   was granted/restricted by the PGA TOUR to the author, not a publicly
+   downloadable dataset. Population: PGA TOUR professionals only
+   (tour-average baseline) — **not** an amateur/handicap population.
+   **Classification: peer-reviewed academic source; tour-only population;
+   underlying ShotLink data NOT publicly accessible/redistributable
+   (methodology described, data proprietary).**
+2. **Broadie, M. (2008). "Assessing Golfer Performance Using
+   Golfmetrics."** Chapter 34 in *Science and Golf V: Proceedings of the
+   2008 World Scientific Congress of Golf*, eds. D. Crews & R. Lutz,
+   Energy in Motion Inc., Mesa, Arizona, pp. 253–262. PDF:
+   https://www.columbia.edu/~mnb2/broadie/Assets/broadie_wscg_v_200804.pdf.
+   VERIFIED full text (9 pages, downloaded and read this session) — **the
+   primary amateur-relevant academic source, peer-reviewed conference
+   proceedings.** Verified facts:
+   - The Golfmetrics database (at time of writing) contained "almost
+     40,000 shots representing about 500 rounds of golf from over 130
+     golfers on six courses... primarily during 2005–2007." Golfer ages
+     9–70, scores 64–120. Includes PGA/LPGA tour pros, club
+     professionals, and amateurs.
+   - Golfers were divided into 5 skill groups by score range: Pro1
+     (64–71), Pro2 (72–79), Am1/low-handicap (70–83), Am2/middle-handicap
+     (84–97), Am3/high-handicap (98–120).
+   - Defines **"fractional par"**: an expected-strokes-to-holeout quantity
+     conditioned on distance AND starting lie/situation (fairway, rough,
+     sand, tee, green, putt distance), "estimated from Golfmetrics data,"
+     explicitly benchmarked to **"a scratch golfer's average shot from a
+     given situation"** — i.e. ONE population baseline (scratch), not a
+     separate baseline curve fitted per handicap band, in this specific
+     paper. Illustrative example values given in the paper (not a full
+     table): a 140-yd par-3 has fractional par 3.2; a 200-yd hole has
+     fractional par 3.5; a 14-ft putt has fractional par 1.8.
+   - **Shot value formula: v = f_s - f_e - 1** (fractional-par-at-start
+     minus fractional-par-at-end minus 1) — this is EXACTLY CaddAI's
+     roadmap Strokes Gained formula
+     (`strokes_gained = expected_strokes(current_state) - (1 +
+     expected_strokes(resulting_state))`), confirming the roadmap's SG
+     formula is a direct, verified application of Broadie's original
+     methodology, not an invented convention.
+   - Defines "awful shot" as shot value < -0.8, "great shot" as > +0.8 —
+     a precedent (from a peer-reviewed source) for a severe-outcome/tail
+     classification, relevant to M4's Student-t tail-risk discussion.
+   - **Table 1 (verified, real quantitative data)** shows, by skill group,
+     putting 50%-holing-probability distance (ft), sand-shot 2-putt-avg /
+     sand-save %, and long-tee-shot median/75th-percentile distance (yds)
+     and directional standard deviation (degrees): Pro (64–79): 8.2 / 30 /
+     50% / [FRL 16%] / 297yd / 4.0°; Am1 (70–83): 5.8 / 25 / 26% / [FRL
+     30%] / 248yd / 5.4°; Am2 (84–97): 5.1 / 19 / 17% / [FRL 40%] / 237yd
+     / 6.4°. This is **real, verified, peer-reviewed quantitative evidence
+     that ability/handicap materially affects distance, dispersion, and
+     short-game/sand performance** — but it evidences ability-conditioned
+     *performance metrics*, not a full ability-conditioned
+     expected-strokes-by-distance-and-lie table (the paper's "fractional
+     par" function itself is fit once, to the whole dataset, against a
+     single scratch-golfer benchmark).
+   - No data-availability/open-license statement exists in the paper — it
+     is a conference proceedings chapter, not accompanied by a public
+     dataset release.
+   **Classification: peer-reviewed academic source; SMALL (n≈130 golfers,
+   ~40,000 shots), DATED (2005–2007), narrow (6 courses) amateur sample;
+   provides real evidence for the ability→performance relationship and
+   for the distance+lie-conditioned expected-strokes CONCEPT; the
+   underlying dataset itself was never published as open/redistributable
+   data.**
+3. **Golfmetrics today** (https://legacy.golfmetrics.com/ and
+   https://new.golfmetrics.com/home) — VERIFIED fetched this session.
+   Legacy site states verbatim: "The Golfmetrics effort was begun nearly
+   fifteen years ago and its database of over 100,000 amateur golf shots
+   allows the accurate benchmarking of golfers of all skill levels." New
+   site markets itself as "the leading app for Strokes Gained... Brought
+   to you by the inventor of Strokes Gained himself, Mark Broadie." It is
+   now a commercial, account-gated app (login at app.golfmetrics.com).
+   **Classification: the ~100,000-shot amateur database is NOT publicly
+   downloadable or redistributable — it is proprietary and monetized
+   inside a commercial app. Confirms the CONCEPT (amateur benchmarking
+   across skill levels) at larger scale than the 2008 paper, but is not a
+   usable/embeddable data source.**
+4. **DataGolf, "Using the true strokes-gained metric in amateur golf"**
+   (https://datagolf.com/true-strokes-gained-in-amateur-golf, dated May
+   7, 2020). VERIFIED fetched this session. DataGolf's amateur SG
+   coverage is built from events eligible for the World Amateur Golf
+   Rankings (WAGR) plus U.S. college golf events — i.e. **elite
+   competitive amateur golf, not recreational handicap-index golfers.**
+   **Classification: important population mismatch — "amateur" here means
+   near-scratch competitive golfers, not CaddAI's target population.
+   Evidence/methodology only, not a usable population match.**
+5. **Arccos Golf, "Strokes Gained Analytics" marketing page**
+   (https://www.arccosgolf.com/pages/strokes-gained-analytics). VERIFIED
+   fetched this session. Explicit marketing text: "Benchmark against your
+   goal handicap, tour pros, or golfers at your level. See exactly where
+   you stand." **Classification: confirms handicap-conditioned SG
+   benchmarking is an established, shipping commercial product concept,
+   built on Arccos's own proprietary GPS-sensor shot database. No public
+   data-sharing/open-license terms found. Evidence for the CONCEPT's
+   commercial viability; proprietary, not a usable data source.**
+6. **Shot Scope, "Strokes Gained" feature page**
+   (https://shotscope.com/uk/discover/features/strokes-gained/). VERIFIED
+   fetched this session. Explicit text: "With every shot you hit on the
+   golf course we collect two data points, where the ball starts, and
+   where the ball ends, taking into consideration lie type and distance.
+   We then use this data to give each shot a Strokes Gained (SG) value...
+   golfers can set a handicap benchmark, allowing them to compare their
+   own game against their target handicap." Shot Scope also sells an
+   "Annual Golf Report" as a paid ebook
+   (https://shotscope.com/uk/shop/products/ebooks/shot-scope-data-report-26/).
+   **Classification: same conclusion as Arccos — confirms the concept
+   commercially, proprietary data, monetized rather than freely published
+   (evidence that even aggregate insights are sold, not given away).**
+7. **University of Padova thesis**: "Statistica e golf: Modelli
+   predittivi per il calcolo degli Strokes Gained" ["Statistics and golf:
+   predictive models for calculating Strokes Gained"], author Mirko
+   Gabriel Briglia, advisor Prof. Francesco Lisi, Department of
+   Statistical Sciences, University of Padova. Repository:
+   https://thesis.unipd.it/handle/20.500.12608/77754 (direct PDF URL
+   found:
+   https://thesis.unipd.it/retrieve/e4062e48-de97-4e0e-810b-bf6a06a0a9cb/Briglia_MirkoGabriel.pdf).
+   A search-engine-cached abstract snippet (Italian) was recoverable:
+   "Questo studio esplora l'applicazione delle analisi statistiche
+   avanzate nel gioco del golf, con un focus particolare sugli Strokes
+   Gained... Basato su dati raccolti tra il 2023 e il 2024, lo studio
+   propone una metodologia alternativa per calcolare il benchmark delle
+   performance nel golf attraverso un'ampia gamma di [snippet
+   truncated]" (translation: "explores advanced statistical analysis
+   applied to golf, focused on Strokes Gained... based on data collected
+   2023–2024, proposes an alternative methodology for calculating
+   performance benchmarks across a wide range of [truncated]"). **BOTH
+   the repository page and the direct PDF URL returned a Cloudflare
+   bot-challenge this session ("Just a moment...") — full text,
+   methodology, sample population, and results could NOT be verified this
+   session.** **Classification: identified and partially verified
+   (title/author/advisor/institution/abstract snippet only) via
+   search-engine caching; full content inaccessible this session; it is
+   an unreviewed student thesis (not peer-reviewed), so its evidence tier
+   is lower than the Broadie sources even once/if accessed. Flagged
+   explicitly for human follow-up with non-automated browser access — see
+   "STILL UNVERIFIED" below.**
+8. **Wikipedia, "Handicap (golf)"**
+   (https://en.wikipedia.org/wiki/Handicap_(golf), includes the "World
+   Handicap System" section). VERIFIED fetched this session (full section
+   text read). Confirms WHS mechanics: Course Rating (~67–77 for a par-72
+   course; average "good score" for a scratch golfer), Slope Rating
+   (55–155 range, 113 = standard difficulty), Stroke Index (per-hole 1–18
+   handicap-stroke allocation), Course Handicap = handicap_index ×
+   slope_rating / 113 (+ course_rating - par for WHS/EGA/RSA systems),
+   handicap differential = (adjusted_score - course_rating) × 113 /
+   slope_rating. WHS launched globally in 2020, jointly governed by USGA
+   and The R&A. **Critically: WHS's entire mechanism is ROUND-LEVEL
+   scoring/handicap arithmetic relative to par via Course/Slope Rating —
+   it is NOT a distance/lie-granular expected-strokes-to-holeout model.**
+   **Classification: verified secondary source (Wikipedia, well-cited);
+   confirms — does not merely assume — the architectural separation
+   already in the CaddAI roadmap: WHS Course Rating/Slope Rating/Stroke
+   Index data is scoring/handicap POLICY data (M8's concern), categorically
+   distinct from a Broadie-style shot-level expected-strokes-to-holeout
+   VALUE model (M5's concern). Reusable as methodology confirmation; not
+   a numeric source for expected-strokes-to-holeout at all.**
 
-### Tour vs. amateur/handicap-conditioned transferability
+### STILL UNVERIFIED / PROPRIETARY / LICENSING-UNCLEAR
 
-The **single most important transferability caveat** for CaddAI: Broadie's
-original, most widely known Strokes Gained baseline was built from PGA
-Tour ShotLink data — elite, highly consistent players.
-`[UNVERIFIED THIS SESSION — recommend human verification]` CaddAI's actual
-target user is very unlikely to be a scratch/tour-level golfer. Using a
-tour-level expected-strokes baseline directly for an amateur/handicap
-golfer would very likely **systematically understate** the amateur's
-actual expected strokes from every non-trivial lie/distance (amateurs take
-measurably more strokes to hole out from the same distance/lie than tour
-professionals). The more relevant transfer question for CaddAI, exactly as
-the roadmap's own M5 entry states, is **amateur/handicap-conditioned
-expected-strokes baselines**, not tour-level ones. Published handicap-level
-or bogey-golfer baseline tables are understood to exist in some form
-(commonly discussed alongside WHS methodology and in some published
-Strokes Gained literature extensions)
-`[UNVERIFIED THIS SESSION — recommend human verification]`, but their
-exact scope, granularity, and licensing were not verified this session.
+- **Official USGA/R&A World Handicap System PDF documentation** — could
+  not be fetched directly this session (usga.org returned an Akamai
+  "Access Denied" to automated requests; a guessed randa.org URL 404'd) —
+  only the Wikipedia secondary summary (item 8 above) was accessible.
+- **PGA TOUR's explicit ShotLink licensing/access-terms page** — not
+  directly located this session; the access restriction is inferred from
+  Broadie 2011's acknowledgment language (item 1 above), not from an
+  explicit licensing document.
+- **The Padova thesis's full text, methodology, sample population, and
+  results** (item 7 above) — inaccessible this session (Cloudflare
+  bot-challenge on both the repository page and the direct PDF URL); only
+  title/author/advisor/institution and a cached abstract snippet were
+  recoverable.
+- **Shot Scope's and Arccos's own underlying numeric benchmark tables**
+  (as opposed to their marketing/feature-page descriptions, items 5/6
+  above) — not accessed this session; both companies' benchmarking
+  numbers remain proprietary and unpublished as far as this session could
+  determine.
+- **Golfmetrics's ~100,000-shot amateur database composition** (item 3
+  above) — the aggregate size is publicly stated on the legacy marketing
+  page, but the underlying shot-level data is not publicly downloadable
+  or inspectable; it is now folded into a commercial, account-gated app.
 
-### Conditioning variables
+These gaps are recorded honestly as **not resolved by this amendment**,
+not silently dropped — see the `FOLLOW-ON REQUIRED` block at the end of
+this document for how they might be resolved in a future, narrower
+research pass.
 
-- **Required for V0 (structurally, per all known Strokes Gained
-  methodology):**
-  - **Distance to hole** (continuous, the primary conditioning axis in all
-    known public methodology) `[UNVERIFIED THIS SESSION — recommend human
-    verification]`.
-  - **Lie/category** (tee, fairway, rough, sand/bunker, green, recovery —
-    at minimum some coarse categorical split; exact category granularity
-    in any specific published table was not verified this session)
-    `[UNVERIFIED THIS SESSION — recommend human verification]`.
-- **Desirable later, not required for V0:**
-  - Handicap/skill-level-specific baseline selection (multiple baseline
-    curves, not just one) — desirable given the tour-vs-amateur
-    transferability caveat above, but a full continuum (rather than a
-    small number of discrete bands) would require either a licensed
-    detailed dataset or CaddAI's own calibration data.
-  - Slope/uphill-downhill or green-speed-conditioned putting baselines —
-    plausible refinements, not established as a public, freely reusable
-    conditioning axis at the granularity CaddAI would need
-    `[UNVERIFIED THIS SESSION — recommend human verification]`.
-- **Unsupported by any evidence reviewed this session (must not be
-  invented):**
-  - Course-specific or hole-specific expected-strokes adjustments beyond
-    distance/lie/category (e.g. a specific green's slope or firmness
-    affecting expected strokes numerically) — no public source for this
-    was identified or recalled with any confidence this session.
-  - Weather/wind-conditioned expected-strokes baselines — plausible in
-    principle (a wet, into-wind approach plausibly changes expected
-    strokes) but not something this session can point to a specific
-    public source for.
+### OVERALL CONCLUSION
 
-### Putting, penalty, and recovery states
+**A. EXPECTED-STROKES SEMANTICS/CONDITIONING: WELL-SUPPORTED.** Multiple
+independent, methodologically different, verified sources (two
+peer-reviewed Broadie papers using real distance+lie+scratch/tour-
+benchmark data; three independent commercial products — Golfmetrics,
+Arccos, Shot Scope — all convergently built around "distance + lie +
+ability/handicap benchmark") confirm that expected-strokes-style models
+conditioned on distance, lie/state, and golfer ability are a
+well-established, evidence-backed, commercially-proven CONCEPT.
 
-Known Strokes Gained methodology treats putting as **its own
-distance-conditioned baseline category** (an expected number of putts to
-holeout from a given distance on the green), separate from full-swing
-approach/tee-shot baselines
-`[UNVERIFIED THIS SESSION — recommend human verification]`. Penalty
-states (water, OB) in known methodology are typically handled by
-adding the penalty stroke(s) plus the expected strokes from the resulting
-(replay or drop) position, rather than requiring a wholly separate
-"penalty" expected-strokes curve
-`[UNVERIFIED THIS SESSION — recommend human verification]` — but the
-*exact* mechanics of how any specific published methodology treats a
-penalty are not verified here and must be checked independently.
-"Recovery" lies (deep rough, trees, awkward stances) are the category
-where public methodology is likely **thinnest and least granular** — this
-session cannot point to any specific, well-established public
-recovery-lie expected-strokes table with confidence.
+**B. SHIPPABLE NUMERIC BASELINE: NOT CURRENTLY SUPPORTED.** Every numeric
+source identified this session is either (i) tour-only and
+access-restricted (ShotLink/Broadie 2011), (ii) a small (n≈130), dated
+(2005–2007), narrow (6-course) academic amateur sample never published as
+open data and now folded into a commercial app (Golfmetrics), (iii) a
+proprietary commercial product with no public licensing terms found
+(Arccos, Shot Scope), or (iv) an inaccessible-this-session,
+non-peer-reviewed student thesis of unknown reliability (Padova). **No
+public, sufficiently-documented, legally-reusable numeric
+expected-strokes-by-distance/lie/handicap-band table or dataset was found
+or verified.**
 
-**Nothing in this section should be read as establishing that a specific
-numeric expected-strokes value exists or is known for any distance/lie
-combination.** Only the *category structure* (distance × lie × skill-level
-baseline) is described.
+Therefore the concrete monotonic-interpolation-plus-handicap-band V0
+proposal from the original document must be **downgraded from
+"recommended V0" to "leading engineering candidate for the model
+FAMILY/contract shape, pending a still-unresolved
+numeric-baseline/data-source decision."** It is not presented as an
+approved or even provisionally-adopted V0 model anywhere in this document
+— see [section J](#j-recommended-expected-strokes-v0).
+
+## H.1 Amateur evidence extra scrutiny
+
+Using only the verified findings above:
+
+- **(a) Does expected strokes change meaningfully with ability?**
+  **Evidence indirectly supports YES**: Broadie 2008's Table 1 evidences
+  material skill-band differences in the underlying *performance metrics*
+  (putting-holing distance, sand-save rate, tee-shot distance/dispersion,
+  cited in full under item 2 above) that expected-strokes-to-holeout is
+  computed from — the paper does not itself report a separate
+  expected-strokes-by-distance/lie curve per skill band (see (b) below),
+  so this is a defensible inference from verified performance-metric
+  differences, not a direct measurement of expected strokes varying by
+  ability.
+- **(b) Are handicap bands empirically supported?** **Partially** —
+  Broadie 2008 divides golfers into discrete skill/score bands and finds
+  real differences, but does not itself fit a separate
+  expected-strokes-by-distance/lie curve per band (its "fractional par"
+  function is fit once, to a scratch baseline). Commercial products
+  (Arccos/Shot Scope) claim to do per-band/per-goal-handicap
+  benchmarking, but their methodology/data are proprietary and unverified
+  this session.
+- **(c) How broad are existing amateur samples?** **Narrow** — Broadie
+  2008's academic sample is ~130 golfers/6 courses/2005–2007;
+  Golfmetrics's current commercial database (~100,000+ shots) is broader
+  but proprietary and unverified in composition; DataGolf's "amateur"
+  sample is elite/competitive, not representative of CaddAI's target
+  population.
+- **(d) Does handicap-conditioning appear preferable to a single
+  universal baseline?** **YES conceptually** — multiple independent
+  sources converge on this.
+- **(e) Is there sufficient PUBLIC numeric evidence to construct it
+  today?** **NO.**
+
+**The evidence supports the CONCEPT but not the NUMBERS.**
 
 ## I. Expected-strokes V0 options
 
@@ -721,9 +933,14 @@ modelling sophistication.
 ### 1. Lookup/bucket table (discrete distance bands × lie category)
 
 - **Evidence support.** Best-matched to how expected-strokes baselines are
-  understood to be published (a table of values, not a continuous
-  parametric formula) — though the exact published granularity is
-  unverified this session.
+  verified to be published: Broadie 2008's "fractional par" (section H,
+  item 2) is itself a distance-and-lie-conditioned table-like quantity
+  (illustrative values given for a 140-yd par-3, a 200-yd hole, a 14-ft
+  putt), confirming the table shape is a real, precedented methodology —
+  though no full published table's exact granularity was found or
+  verified this session, and Broadie 2008's own table is fit once against
+  a single scratch baseline, not published as a reusable multi-band
+  table.
 - **Interpretability.** Highest — a human (or a future explanation layer)
   can point directly at "expected strokes from 120m fairway = X."
 - **Offline performance.** Excellent — a small embedded table, O(1)
@@ -742,7 +959,9 @@ modelling sophistication.
   precedent).
 - **Calibration path.** Good — CaddAI's own future round/decision-journal
   data could refine table cells directly.
-- **Licensing.** Depends entirely on the specific source table (see
+- **Licensing.** Verified this session: every specific numeric source
+  identified (Broadie 2008/2011, Golfmetrics, Arccos, Shot Scope) is
+  either proprietary or never published as a redistributable dataset (see
   [section K](#k-datalicensing-table)) — this is the biggest open risk
   for this option specifically, since a table (rather than a described
   methodology) is the most literally reproducible/copyable artifact and
@@ -781,15 +1000,17 @@ modelling sophistication.
 
 ### 3. Parametric curve (e.g. a fitted closed-form function of distance per lie category)
 
-- **Evidence support.** Plausible in principle (expected strokes vs.
-  distance is known to follow a smooth, roughly monotonic, diminishing-
-  returns-shaped curve in most published discussions of Strokes Gained)
-  `[UNVERIFIED THIS SESSION — recommend human verification]`, but fitting
-  a defensible closed-form curve requires either (a) access to enough raw
-  or aggregate data points to fit against, or (b) reusing already-fitted
-  published coefficients (which raises the same licensing question as a
-  raw table, since published fitted-curve coefficients are themselves a
-  reproducible, potentially copyrighted artifact).
+- **Evidence support.** Broadie 2008's "fractional par" concept (section
+  H, item 2, verified) confirms expected strokes vs. distance follows a
+  smooth, roughly monotonic, diminishing-returns-shaped relationship in
+  at least one peer-reviewed source, but fitting a defensible closed-form
+  curve requires either (a) access to enough raw or aggregate data points
+  to fit against — none were found or verified this session — or (b)
+  reusing already-fitted published coefficients (which raises the same
+  licensing question as a raw table, since published fitted-curve
+  coefficients are themselves a reproducible, potentially copyrighted
+  artifact, and no such coefficients were found published openly this
+  session).
 - **Interpretability.** Moderate — a formula is explainable in principle,
   but a specific functional form (e.g. a particular power-law or
   logarithmic shape) is less immediately intuitive to a golfer-facing
@@ -833,7 +1054,11 @@ modelling sophistication.
 - **Data requirements.** Highest of the options that don't involve ML —
   needs a real dataset to fit against, which CaddAI does not currently
   have and no verified public raw dataset was identified this session
-  (mirroring M4.0's own conclusion for the player model: "no verified
+  (confirmed by this amendment's live research: Broadie 2011's ~8-million-
+  shot ShotLink dataset is tour-only and access-restricted; Broadie 2008's
+  ~40,000-shot amateur dataset was never published as open data;
+  Golfmetrics/Arccos/Shot Scope's larger amateur datasets are proprietary
+  — mirroring M4.0's own conclusion for the player model: "no verified
   public dataset... combines" the needed variables).
 - **Interpolation/extrapolation behaviour.** Depends on the chosen
   regression family; broadly similar considerations to option 3.
@@ -851,7 +1076,10 @@ modelling sophistication.
 
 - **Evidence support.** Same underlying data dependency as options 1/2,
   but adds an explicit structural guarantee (monotonicity) that is a
-  physically reasonable prior even without extra data.
+  physically reasonable prior even without extra data — and one with
+  direct peer-reviewed precedent: Broadie 2008's fractional-par values
+  (section H, item 2) are themselves monotonically increasing with
+  distance in the paper's own illustrative examples.
 - **Interpretability.** Similar to option 2.
 - **Offline performance.** Excellent.
 - **Deterministic reproducibility.** Excellent.
@@ -877,7 +1105,18 @@ modelling sophistication.
 - **Evidence support.** Directly addresses the tour-vs-amateur
   transferability gap identified in [section H](#h-expected-strokes-evidence-review)
   — the single most important structural feature any V0 needs, in this
-  spike's assessment.
+  spike's assessment. This amendment's live-verified research strengthens
+  the CONCEPT specifically: Broadie 2008's Table 1 gives real, verified
+  quantitative evidence that putting/sand/tee-shot performance differs
+  materially by skill band (section H.1), and Arccos's and Shot Scope's
+  marketing pages both explicitly, verifiably describe shipping
+  handicap-conditioned Strokes Gained benchmarking as a commercial
+  product feature today. **However, none of Arccos's, Shot Scope's, or
+  Golfmetrics's underlying per-band numeric data is usable or public** —
+  all three are proprietary with no public licensing terms found this
+  session (section H, items 3/5/6). Evidence for the concept's viability
+  is now verified and strong; evidence for a usable per-band numeric
+  table is unchanged at zero.
 - **Interpretability.** Same as whichever underlying representation
   (table/interpolation/curve) is chosen per band — this is an
   orthogonal, additive axis (like `PopulationPrior`'s handicap banding),
@@ -915,50 +1154,63 @@ modelling sophistication.
 
 ## J. Recommended expected-strokes V0
 
-**Recommendation (structural only — no formula, no table values, no
-implementation):** a **monotonic, interpolated lookup table, conditioned
-on distance and lie category, with an explicit handicap/ability-band axis**
-— i.e. **option 5 (monotonic interpolation) combined with option 6
-(handicap-conditioned banding)** from [section I](#i-expected-strokes-v0-options),
-deliberately **not** options 3/4 (parametric curve / regression), since
-both require either data CaddAI does not have or reused published
-coefficients whose licensing is exactly the open question this section
-cannot resolve without live verification.
+```
+Status: LEADING ENGINEERING CANDIDATE (model family/contract shape) — NOT an approved V0, pending a still-unresolved numeric-baseline/data-source decision.
+```
 
-This recommendation is **explicitly provisional and gated**, for two
-independent reasons:
+**Candidate model family (structural only — no formula, no table values,
+no implementation):** a **monotonic, interpolated lookup table,
+conditioned on distance and lie category, with an explicit
+handicap/ability-band axis** — i.e. **option 5 (monotonic interpolation)
+combined with option 6 (handicap-conditioned banding)** from
+[section I](#i-expected-strokes-v0-options), deliberately **not** options
+3/4 (parametric curve / regression), since both require either data
+CaddAI does not have or reused published coefficients whose licensing
+this amendment's live research found to be unresolved for every candidate
+source (section H/K).
 
-1. It is offered without the live source verification this session lacked
-   (see the disclosure at the top of this document and of
-   [section H](#h-expected-strokes-evidence-review)) — the human must
-   independently verify candidate sources, their exact table shape,
-   licensing terms, and currency before this recommendation is actionable.
-2. The roadmap's own M5 entry explicitly requires "an explicit human/model
-   decision gate... between" this spike and implementation — this
-   recommendation does **not** itself constitute that gate having passed.
+**This is not presented as "recommended" in isolation, and must always be
+paired with the status qualifier above.** Why: this amendment's
+live-verified research (section H's OVERALL CONCLUSION) found the
+underlying **semantic/conditioning structure** — distance + lie +
+ability-conditioned expected strokes — strongly supported by multiple
+independent, verified sources (section A conclusion). It found **no**
+legally reusable public numeric baseline for the actual table/coefficient
+values (section B conclusion). The model family/contract shape is
+therefore a defensible **engineering direction to design around now**, but
+the monotonic-interpolation-plus-handicap-band combination itself is
+**not adopted, approved, or provisionally accepted as V0** anywhere in
+this document — it remains gated on the still-unresolved numeric-baseline/
+data-source follow-on (see the `FOLLOW-ON REQUIRED` block at the end of
+this document).
 
 No specific numeric table, formula, or coefficient is proposed anywhere in
 this document.
 
 ## K. Data/licensing table
 
-Every entry below reuses the tooling-limitation disclosure above:
-**none of this table's licensing/availability assessments were verified
-live this session** — every row must be independently re-checked by the
-human before being relied upon.
+Every entry below reflects this amendment's live-verified research
+(section H) — every classification label below (**reusable**, **likely
+reusable with attribution**, **proprietary**, **licensing unclear**,
+**methodology only**, **evidence only, not a data source**) is a direct
+consequence of a source verified this session, not a placeholder.
 
-| Source | Contents (structural description only) | Population | Sample scope | Publication date | Accessibility | Licensing/reuse status | Offline-embeddability | Caveats |
-|---|---|---|---|---|---|---|---|---|
-| Mark Broadie, *Every Shot Counts* (book, 2014) `[UNVERIFIED THIS SESSION — recommend human verification]` | Describes Strokes Gained methodology and (in some editions/appendices) reference expected-strokes-by-distance/lie tables | PGA Tour (primary), some amateur discussion | Not verified this session | 2014 (approximate, unverified) | Commercial book — not freely redistributable | **Unclear — likely copyrighted book content; any table reproduced from it is almost certainly not freely licensable for redistribution inside an app without explicit permission** | Would require manual/licensed transcription, not an open dataset | Tour-level bias (see section H); exact table contents/edition not verified |
-| Broadie's earlier academic paper(s) (e.g. a 2012 "Assessing Golfer Performance Using Strokes Gained"-titled paper) `[UNVERIFIED THIS SESSION — recommend human verification]` | Academic exposition of the Strokes Gained methodology | PGA Tour ShotLink-derived | Not verified this session | ~2012 (approximate, unverified) | Depends on the specific journal/repository — some academic papers are open-access, others are paywalled | **Unclear — depends on specific publication venue, not verified this session** | Would need explicit re-verification of open-access status | Same tour-level bias caveat |
-| USGA/R&A World Handicap System documentation `[UNVERIFIED THIS SESSION — recommend human verification]` | Understood to reference or embed a Strokes-Gained-style expected-strokes baseline as part of handicap methodology, across a range of ability levels | Broader than tour-only (this is the most promising *amateur-relevant* source category identified, but unverified) | Not verified this session | Ongoing/versioned (WHS is a maintained standard) | Publicly documented in some form (governing-body publications) | **Unclear — governing-body handicap methodology documents are often publicly viewable but may carry usage restrictions on embedding derived data commercially; must be checked explicitly** | Plausible if licensing permits — this is the most promising candidate for a locally-embeddable, amateur-relevant baseline, but **not confirmed this session** | Highest-priority source for the human to verify first |
-| Any third-party "Strokes Gained calculator" web tool or app `[UNVERIFIED THIS SESSION — recommend human verification]` | Various — some publish underlying baseline tables, most do not | Varies | Not verified this session | Not verified this session | **Almost certainly not licensed for reuse** — typically a derived commercial product | Not embeddable without explicit licensing | Not recommended as a source without direct outreach/licensing |
-| CaddAI's own future round/decision-journal data (M8+) | Not a currently existing source — a future first-party dataset | CaddAI's actual users | N/A (does not exist yet) | Future | Fully owned by CaddAI once collected | **Fully licensable (first-party data)** | Fully embeddable once collected and aggregated | The only source in this table requiring **no** licensing verification, but not available for V0 |
+| Source/Owner | Contents | Population | Tour vs Amateur | Handicap range known? | Publicly documented? | Raw data/values accessible? | Embeddable/redistributable? | Licensing status | Confidence in reuse conclusion | Relevance to CaddAI |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Broadie 2011, *Assessing Golfer Performance on the PGA TOUR* (peer-reviewed, PGA TOUR ShotLink, ~8M shots) | Strokes Gained methodology + tour-average baseline | PGA TOUR pros (299 golfers, 2003–2010) | Tour only | No (single tour-average baseline) | Yes (paper is public) | No — underlying ShotLink data is PGA TOUR-restricted, not published | No | **Proprietary** (data) / **methodology only** (paper itself) | High — verified full text this session | Confirms methodology precedent; wrong population for CaddAI's amateur users |
+| Broadie 2008, *Assessing Golfer Performance Using Golfmetrics* (peer-reviewed conference proceedings, ~40,000 shots, ~130 golfers, 2005–2007) | "Fractional par" expected-strokes concept + Table 1 skill-band performance data | Pro + amateur (5 skill bands, scratch-benchmarked) | Both, mixed | Partially (5 discrete skill/score bands, not a full handicap continuum) | Yes (paper is public) | Illustrative example values only; no full reusable table published | No | **Evidence only, not a data source** (paper) / dataset never published | High — verified full text this session | Best available amateur-relevant methodology and concept evidence; not a usable numeric source |
+| Golfmetrics (commercial app, ~100,000+ amateur shots) | Amateur SG benchmarking across skill levels | Amateur (broad, composition unverified) | Amateur-focused | Unverified | Marketing claims only | No — account-gated commercial app | No | **Proprietary** | High (proprietary status verified) / composition unverified | Confirms concept at scale; not usable as a data source |
+| DataGolf, amateur Strokes Gained | SG methodology applied to elite amateur competitions (WAGR/college) | Elite competitive amateur, not recreational | Amateur (elite, non-representative) | No | Yes (blog post public) | No underlying dataset published | No | **Methodology only** | High — verified page this session | Population mismatch for CaddAI's target users |
+| Arccos Golf, Strokes Gained Analytics | Handicap/goal-handicap-conditioned SG benchmarking (commercial, GPS-sensor data) | Amateur, handicap-banded | Amateur | Yes (marketed, not published) | Marketing page only | No | No | **Proprietary** | High — verified page this session | Confirms handicap-conditioned SG is a shipping commercial concept; no usable data |
+| Shot Scope, Strokes Gained feature | Handicap-benchmark-conditioned SG from GPS-sensor shot data | Amateur, handicap-banded | Amateur | Yes (marketed, not published) | Marketing page + paid ebook | No (ebook is paid, not a raw dataset) | No | **Proprietary** | High — verified page this session | Same conclusion as Arccos; aggregate insights are sold, not given away |
+| University of Padova thesis (Briglia, advisor Lisi, 2023–2024 data) | Alternative SG benchmark methodology (per cached abstract snippet only) | Unknown (full text inaccessible) | Unknown | Unknown | Repository listing found; full text blocked (Cloudflare) | No — full text not retrievable this session | Unknown | **Licensing unclear** + **not verified this session** | Low — title/author/abstract snippet only | Potential future lead; requires non-automated follow-up |
+| Wikipedia, "Handicap (golf)" / World Handicap System summary | WHS Course/Slope Rating, Stroke Index, Course Handicap mechanics | General golfer population (round/handicap policy, not shot-level) | N/A (round-level, not shot-level) | N/A | Yes (public, well-cited) | Yes, but it is not an expected-strokes-to-holeout numeric source at all | N/A | **Methodology only** | High — verified full section text this session | Confirms M5/M8 separation (WHS is scoring policy, not a shot-level value model); no expected-strokes numbers |
+| CaddAI's own future round/decision-journal data (M8+) | Not a currently existing source — a future first-party dataset | CaddAI's actual users | Amateur (CaddAI's target population) | Yes, if collected | N/A (does not exist yet) | Fully owned once collected | Fully embeddable once collected and aggregated | **Reusable** (first-party) | N/A — future only | The only source requiring no licensing verification, but unavailable for V0 |
 
-**Every "Unclear" licensing status above must be resolved by the human
-before any V0 implementation embeds derived numeric content from that
-source.** This spike does not resolve licensing; it only flags where the
-question exists.
+**Every non-"reusable" status above must be resolved (or the source
+abandoned) by the human before any V0 implementation embeds derived
+numeric content from it.** This amendment narrows the evidence and
+licensing picture; it does not resolve licensing for any external source.
 
 ## L. Putting / penalty / recovery treatment
 
@@ -1019,6 +1271,40 @@ question exists.
   journal/the M9 harness consume.** This mirrors ADR 0007's core
   guarantee almost exactly, applied to a new value-model contract instead
   of a population-prior contract.
+- **Ability-conditioned contract direction (Architect items 4/5, 2026-09-01
+  amendment).** A future
+  `expected_strokes(state, ability_context?) -> value` contract shape is
+  architecturally sound to record now:
+  - **(a) Where ability/handicap lives — a separate parameter, not inside
+    `GolfState`.** `GolfState` is physical/course-relative fact
+    independent of who is playing; ability/handicap is golfer context.
+    This mirrors the existing separation between
+    `PlayerShotDistribution` (`caddai.statistics`, golfer-specific) and
+    course-relative facts (`course`/`simulation`) — the same seam, one
+    layer up.
+  - **(b) Does this foreclose a population-only V0? No.** An optional
+    parameter that, when absent, collapses to a documented "population
+    baseline" behavior mirrors ADR 0007's `PopulationPrior` shape exactly
+    (config-table-backed today, replaceable later, no signature change).
+    Recording the optional-parameter shape now does not commit CaddAI to
+    shipping handicap-conditioning in V0.
+  - **(c) Dependency-direction concern — none beyond what's already
+    documented.** `docs/architecture.md` already states `strategy`/
+    `simulation` depend on `course`, `player`, `statistics`, and shared
+    domain types. An expected-strokes model reading player-ability data
+    would depend on `caddai.player`/`caddai.statistics` — both
+    already-approved, already-diagrammed edges, not new ones.
+  - **Contract semantics vs. numeric implementation — confirmed
+    compatible with ADR 0007's precedent.** Recording a stable
+    expected-strokes contract (accepting `GolfState` + optional ability
+    context, returning a value + explicit unsupported-state signal +
+    model/version provenance) without committing to numeric
+    tables/coefficients is architecturally sound now — this is ADR 0007's
+    "stable interface, replaceable implementation" pattern reapplied.
+    Recording this direction in this research document is **not itself
+    the ADR** — a separate future ADR is still required for the
+    expected-strokes interface at its own implementation time (see
+    [section P](#p-adr-requirements)).
 - **Explicit model/version provenance.** Any expected-strokes result
   should be traceable to which underlying table/model version produced
   it (mirroring `population_prior_config.py`'s `config_version` /
@@ -1045,8 +1331,13 @@ question exists.
   analogous `confidence`/`provenance` pairing) so downstream consumers
   (and, eventually, a user-facing explanation) can distinguish "a
   provisional, evidence-informed guess" from "CaddAI's own calibrated
-  data" — never silently presented as validated fact, especially given
-  this spike's own tooling-verification limitation.
+  data" — never silently presented as validated fact. This amendment's
+  live-verified research (section H) narrows *why* this matters: the
+  concept is well-evidenced, but no numeric content sourced from Broadie
+  2008/2011, Golfmetrics, Arccos, or Shot Scope may be embedded at all
+  until licensing is separately resolved (section K) — "provisional" here
+  means "CaddAI-authored placeholder," not "an unverified transcription of
+  someone else's proprietary table."
 
 ## N. Performance / batch-evaluation implications
 
@@ -1236,6 +1527,37 @@ Explicitly out of scope for M5.0 / this document, and not designed here:
   expected-strokes (distinct from, though possibly reusable alongside,
   `population_prior_config.py`'s existing player-model banding).
 
+## Q.1 Rejected and deferred options — this amendment
+
+### REJECTED NOW
+
+- Blindly using PGA TOUR/ShotLink values as amateur benchmarks (verified:
+  ShotLink is tour-only and access-restricted; Broadie 2011 itself only
+  covers PGA TOUR players — section H, item 1).
+- Copying or reconstructing proprietary Arccos/Shot Scope/Golfmetrics
+  numeric values (verified: all three are proprietary commercial products
+  with no public licensing terms found — section H, items 3/5/6).
+- Building an ML/regression model without a dataset to fit against (no
+  dataset was found this session — section I, option 4).
+- Pretending licensing is solved for any of the above (explicitly not
+  solved — section K).
+- Putting `GolfState` inside `strategy` merely for convenience (Architect
+  item 1/7 — see [section E](#e-golfstate-ownership-options)'s rejected
+  options).
+
+### DEFERRED
+
+- CaddAI-personalised expected-strokes learning.
+- Richer handicap-conditioned models beyond a coarse band structure.
+- Sophisticated rollout physics.
+- Putting-shot simulation (`PUTTER` in the M4 shot-distribution model).
+- M8 WHS strategic policy.
+- M9 formal Rules behaviour.
+- Full verification of the Padova thesis, official USGA/R&A WHS primary
+  documentation, and PGA TOUR's explicit ShotLink licensing terms (a
+  narrower future research follow-on, not blocking this decision gate —
+  see the `FOLLOW-ON REQUIRED` block at the end of this document).
+
 ## Fixture/scenario validation
 
 `tests/fixtures/sample_course.geojson` currently has two holes, each with
@@ -1331,6 +1653,11 @@ future, undecided architecture checkpoint.
 DECISION REQUIRED: GolfState ownership and course-relative mapping
 ```
 
+> **Amendment note (2026-09-01):** this decision block is otherwise
+> unchanged in substance. This amendment's Architect confirmation (see
+> sections E/F) **reconfirms — does not reopen** — the recommendation
+> below.
+
 **Recommended ownership:** `GolfState` (the type) lives in a new, neutral,
 dependency-free top-level module (illustratively `caddai.golf_state`),
 alongside `course`/`player`/`statistics` as a fourth domain-primitive
@@ -1370,53 +1697,80 @@ future migration timeline (see the Batch/vectorisation + M6 compatibility
 note above).
 
 ```
-DECISION REQUIRED: Expected-Strokes V0
+DECISION REQUIRED: Expected-Strokes V0 Contract Direction
 ```
 
-**Recommended option:** a monotonic, interpolated lookup table, conditioned
-on distance-to-hole and lie/category, with an explicit handicap/ability-
-band axis (combining options 5 and 6 from section I) — deliberately not a
-regression/ML approach (no data to fit against) and not a raw parametric
-curve reused from a specific published fit (same licensing risk as a raw
-table, with less transparency).
+**Question:** Should CaddAI's expected-strokes contract support distance +
+lie/state + golfer-ability/handicap conditioning, with the concrete
+numeric baseline/model remaining replaceable and unresolved until
+usable-data/licensing verification is complete?
 
-**Alternatives considered:** plain lookup table without interpolation
-(discontinuous at bucket edges); parametric curve (licensing risk on
-reused coefficients, or no data to fit CaddAI's own); regression model (no
-dataset currently available to fit against); single-baseline table without
-handicap conditioning (fails the tour-vs-amateur transferability concern
-that is this domain's single most important structural fact).
+**Recommended answer:** **YES**, supported by verified evidence per
+[section H](#h-expected-strokes-evidence-review)'s OVERALL CONCLUSION
+(part A) and [section H.1](#h1-amateur-evidence-extra-scrutiny)'s amateur
+evidence scrutiny.
 
-**Evidence:** ⚠️ **limited to stable, well-known public golf-analytics
-knowledge, NOT verified via live tooling this session** — Mark Broadie's
-Strokes Gained methodology and the USGA/R&A World Handicap System's
-Strokes-Gained-based methodology are the two candidate evidence bases
-identified, both flagged `[UNVERIFIED THIS SESSION — recommend human
-verification]` throughout section H. **This does not meet M4.0's
-verification bar.**
+**Verified evidence:** two peer-reviewed Broadie papers (2008, 2011) using
+real distance+lie+scratch/tour-benchmark data, plus three independently
+verified commercial products (Golfmetrics, Arccos, Shot Scope) all
+convergently built around a distance + lie + ability/handicap benchmark —
+see section H's VERIFIED EXTERNAL EVIDENCE list.
 
-**Consequences:** enables a defensible, distance/lie/ability-conditioned
-expected-strokes baseline without requiring data CaddAI does not have;
-defers exact numeric content and licensing resolution to a follow-up,
-explicitly gated implementation step.
+**Alternatives considered:** a population-only V0 with no ability
+conditioning at all (simpler, but fails the tour-vs-amateur
+transferability concern that Broadie 2011 vs. Broadie 2008/commercial
+products' population differences make explicit); waiting for a full
+licensed dataset before defining any contract (defers a design decision
+that does not itself require data — the contract *shape* is separable
+from the numeric baseline, per ADR 0007's precedent — and would stall
+`GolfState`/classification-dependent design work with no offsetting
+benefit).
 
-**Provisional assumptions:** that a licensable or first-party-derivable
-distance/lie/ability-conditioned baseline can be found or built at all;
-that the roadmap's own required "amateur/handicap-conditioned" framing
-(not tour-only) is achievable from currently identifiable sources — **not
-confirmed this session.**
+**Consequences:** enables `GolfState`, classification, and rollout design
+to proceed on a contract shape that will not need to change when the
+numeric baseline is eventually resolved; keeps the contract stable for
+`strategy`, the decision journal, and the M9 harness.
 
-**Licensing implications:** every candidate source identified in section K
-carries an "Unclear" or worse licensing status except CaddAI's own
-(not-yet-collected) future data — **no numeric content from any external
-source should be embedded until the human explicitly verifies and
-documents its licensing terms.**
+**Remaining uncertainty:** section H's OVERALL CONCLUSION part B (no
+usable public numeric baseline was found) is **not** resolved by this
+decision — see the `FOLLOW-ON REQUIRED` block below.
 
-**Implementation implications:** an implementation sub-issue must not be
-opened until (a) the human has independently re-verified sources per the
-tooling-limitation disclosure at the top of this document, and (b) the
-roadmap's own required decision gate has explicitly accepted this spike's
-findings — mirroring M4.0's own gating precedent exactly.
+**Licensing implications:** all specific numeric sources identified this
+session (Broadie 2008/2011, Golfmetrics, Arccos, Shot Scope) are
+proprietary, access-restricted, or never published as open data (section
+K) — no numeric content from any of them may be embedded until licensing
+is separately resolved, which this decision does not attempt to resolve.
+
+**Implementation implications:** the expected-strokes *contract* (function
+signature, optional ability-context parameter, population-baseline
+collapse behaviour, model/version provenance — section M) can be designed
+now, gated on its own future ADR (section P). The expected-strokes
+*numeric baseline* cannot be implemented yet — see the follow-on below.
+
+**What later decision is still required:** the numeric-baseline/data-source
+follow-on immediately below.
+
+```
+FOLLOW-ON REQUIRED: Expected-Strokes Numeric Baseline / Data Source
+```
+
+This follow-on must determine one of:
+
+- a legally reusable public baseline (**none currently identified** —
+  section H/K);
+- a derived/open baseline CaddAI builds itself;
+- an explicitly provisional CaddAI-authored approximation (clearly
+  labelled as such, not presented as validated);
+- licensed data (e.g. approaching Golfmetrics/Arccos/Shot Scope
+  commercially — unverified feasibility/cost);
+- or another defensible approach not listed above.
+
+**This is NOT resolved by this amendment and is not automatically started
+now.** It remains a separate, explicitly gated future decision — see
+[section Q.1](#q1-rejected-and-deferred-options--this-amendment)'s
+DEFERRED list for the narrower research items (Padova thesis full text,
+USGA/R&A primary WHS documentation, PGA TOUR's explicit ShotLink licensing
+terms) that a future pass toward this follow-on might start from.
 
 ---
 

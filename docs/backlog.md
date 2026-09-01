@@ -96,10 +96,15 @@
   (a new neutral `caddai.golf_state` module, per the spike's
   recommendation, vs. folding it into `simulation` or `strategy`) and the
   course-relative classification operation's home; (2) the expected-
-  strokes V0 approach (a distance/lie/ability-conditioned interpolated
-  lookup table), whose evidence review was not verified via live research
-  tooling this session and must be independently re-verified (sources,
-  licensing, currency) before acceptance.
+  strokes V0 contract direction — a follow-up amendment performed live
+  verified web research and found the distance/lie/ability-conditioned
+  expected-strokes CONCEPT well-supported (Broadie 2008/2011, Golfmetrics,
+  Arccos, Shot Scope) but no legally reusable public numeric baseline
+  table, so the monotonic-interpolation-plus-handicap-band model is now
+  recorded as a leading engineering candidate for the contract shape only,
+  not an approved V0. A separate, still-unresolved follow-on item tracks
+  the numeric-baseline/data-source decision itself (see the research
+  document's `FOLLOW-ON REQUIRED` block).
 - Course-geometry gaps the M5.0 spike identified as needed (not built by
   the spike) before course-relative classification can be implemented: a
   `ROUGH` `FeatureType` (today's `FeatureType` enum has no rough
