@@ -10,6 +10,37 @@ first public API is published.
 
 ### Added
 
+- Added the M5.0 research/design spike,
+  [docs/research/m5-golf-state-expected-strokes.md](docs/research/m5-golf-state-expected-strokes.md)
+  (plan:
+  [docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md](docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md)),
+  resolving the two highest-uncertainty domain-semantics questions ahead of
+  detailed M5 implementation planning (mirroring M4.0's format and rigour):
+  (1) how an M4 golfer-relative `ShotOutcome` becomes a course-relative
+  resulting golf state using existing `course` geometry, and (2) the
+  minimal `GolfState` representation, its recommended owning module, and a
+  structural (not numeric) expected-strokes-to-hole-out V0 evidence
+  review. Reviewed by the CaddAI Architect (design-space input) and the
+  Adversarial Reviewer (`APPROVE`, after one round of fixes for
+  Rules-of-Golf hedging). This is a **research/design spike only** — no
+  `GolfState`, course-relative classification, rollout, expected-strokes,
+  Strokes Gained, strategy utility, round lifecycle, WHS calculation, ADR,
+  M5 implementation issue tree, or production code was created. The
+  document ends in two explicit `DECISION REQUIRED` blocks (`GolfState`
+  ownership and course-relative mapping; expected-strokes V0) that a human
+  must review before any M5 implementation issue is opened. The
+  expected-strokes evidence review (document sections H/K) was built
+  without a live web-fetch/browsing tool this session, so it reflects
+  stable general public golf-analytics knowledge rather than freshly
+  verified sources, and does **not** meet M4.0's citation-verification bar
+  — every claim is flagged inline and the human must independently verify
+  sources/licensing before treating it as an accepted evidence base. Added
+  a small, scoped [docs/backlog.md](docs/backlog.md) entry recording the
+  two pending decision gates and the course-geometry gaps the spike
+  identified (missing `ROUGH`/generic-penalty-area `FeatureType`s, no
+  point-in-polygon containment primitive) as candidate items feeding M5.
+  No other documentation was modified.
+
 - Converted the approved post-M4 roadmap reassessment
   ([docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md))
   into the durable CaddAI roadmap: rewrote [docs/roadmap.md](docs/roadmap.md)

@@ -89,6 +89,27 @@
   `strategy` (feeds M5, after its evidence/research spike and decision gate;
   likely needs an ADR if it requires external strokes-gained reference
   data).
+- The M5.0 research spike
+  ([docs/research/m5-golf-state-expected-strokes.md](research/m5-golf-state-expected-strokes.md))
+  ends in two explicit `DECISION REQUIRED` blocks the human must resolve
+  before any M5 implementation issue is opened: (1) `GolfState` ownership
+  (a new neutral `caddai.golf_state` module, per the spike's
+  recommendation, vs. folding it into `simulation` or `strategy`) and the
+  course-relative classification operation's home; (2) the expected-
+  strokes V0 approach (a distance/lie/ability-conditioned interpolated
+  lookup table), whose evidence review was not verified via live research
+  tooling this session and must be independently re-verified (sources,
+  licensing, currency) before acceptance.
+- Course-geometry gaps the M5.0 spike identified as needed (not built by
+  the spike) before course-relative classification can be implemented: a
+  `ROUGH` `FeatureType` (today's `FeatureType` enum has no rough
+  category at all), a generic penalty-area `FeatureType` distinct from
+  `WATER`, and a point-in-polygon containment query against
+  `Feature.boundary` (no such primitive exists in `course/distance.py`
+  today, though Shapely — already an approved dependency — can supply it
+  directly). See
+  [docs/research/m5-golf-state-expected-strokes.md](research/m5-golf-state-expected-strokes.md)'s
+  "Current-state audit" section.
 - Decide the production runtime / possible Rust core, mobile/core runtime
   boundary, cross-language contracts, logical component boundaries,
   repository architecture, CI/CD architecture, release/version
