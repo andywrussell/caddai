@@ -30,7 +30,7 @@ shows `UI --> API --> STRAT`; read literally, with `api` deployed as a
 conventional remote FastAPI service, this would make the deterministic
 engine unreachable without a network connection. That reading needs to be
 foreclosed explicitly before `api`/`cli` adapters, GPS/mobile integration
-(roadmap M7), or a decision-journal storage technology (roadmap M6) are
+(roadmap M10), or a decision-journal storage technology (roadmap M8) are
 designed, since each of those future decisions must satisfy this constraint
 rather than contradict it after the fact.
 
@@ -72,7 +72,7 @@ This is a **complementary, orthogonal** constraint to ADR 0001, not a
 change to it: ADR 0001 governs *who* decides (deterministic code, never an
 LLM); this ADR governs *what network reachability the active-round path may
 assume*. In particular, if a future LLM explanation layer (ADR 0001,
-roadmap M8) is unreachable, the system must degrade to the structured
+roadmap M12) is unreachable, the system must degrade to the structured
 deterministic recommendation (no natural-language phrasing), not withhold a
 recommendation. Cloud LLM availability must never determine whether the
 golfer receives a recommendation at all.
@@ -84,10 +84,10 @@ round state, recommendations, player decisions, and shot outcomes. This ADR
 does not select a storage technology, mobile runtime, course-package format,
 or any cloud/database/infrastructure component — those remain future
 decisions (each still individually subject to the ADR/escalation
-requirements in `AGENTS.md` §13/§14), informed by the "Runtime & Offline
-Architecture" research spike (roadmap M5.5, see
-[docs/roadmap.md](../roadmap.md)) that precedes committing to a full mobile
-runtime architecture (roadmap M7).
+requirements in `AGENTS.md` §13/§14), informed by the
+production system architecture & runtime checkpoint (roadmap M6, see
+[docs/roadmap.md](../roadmap.md)) that precedes committing to the full
+mobile MVP (roadmap M10).
 
 ## Consequences
 
@@ -98,9 +98,9 @@ runtime architecture (roadmap M7).
 - Positive: forces `api`/`cli` to be designed as adapters that *can* run
   on-device, rather than assuming a client/server split by default — this
   is checked earlier (now, as a standing principle) rather than discovered
-  as a costly redesign during roadmap M7.
+  as a costly redesign during roadmap M10.
 - Positive: gives every future ADR that touches persistence, mobile runtime,
-  or LLM integration (M6, M7, M8, M9) an explicit, pre-existing constraint
+  or LLM integration (M6, M8, M10, M12) an explicit, pre-existing constraint
   to satisfy, rather than requiring each to re-derive it independently.
 - Negative: rules out a "thin client, all logic in the cloud" architecture
   as the default deployment shape for the active-round path — a cloud-only
@@ -109,8 +109,9 @@ runtime architecture (roadmap M7).
 - Negative: local execution of `strategy`/`simulation`/`course`/`player`
   on-device (likely mobile) raises open questions about packaging a Python
   core, compute/battery budget, and local persistence — this ADR
-  deliberately does not resolve those; it hands them to the M5.5 research
-  spike and to whichever future ADR each individually triggers.
+  deliberately does not resolve those; it hands them to the M6 production
+  system architecture & runtime checkpoint and to whichever future ADR
+  each individually triggers.
 - Negative/neutral: connectivity-enhanced features (sync, cloud analytics,
   cloud LLM) must be designed to degrade gracefully rather than assuming
   connectivity, which is a small amount of extra design discipline for those
@@ -137,6 +138,8 @@ runtime architecture (roadmap M7).
   it.
 - **Resolve mobile runtime/storage technology now**: rejected — premature.
   This ADR fixes the constraint those decisions must satisfy; the
-  technology choices themselves are deferred to the M5.5 research spike and
-  the individual ADRs it will likely produce (M6 storage, M7 mobile
-  runtime, M9 on-device LLM feasibility).
+  technology choices themselves are deferred to the M6 production system
+  architecture & runtime checkpoint and the individual ADRs it will
+  likely produce
+  (M8 decision-journal storage, M10 mobile runtime, M13 on-device LLM
+  feasibility).

@@ -55,7 +55,7 @@ is necessarily a remote network service: for the active-round path, `api`
 (or `cli`) may run co-located with, or embedded in, the device performing
 the round — see [Offline-first active round](#offline-first-active-round).
 Whether/where a network boundary exists in the deployed system is a roadmap
-M7 (GPS/mobile integration) decision, not something this diagram settles.
+M10 (mobile MVP) decision, not something this diagram settles.
 
 ## Offline-first active round
 
@@ -85,14 +85,14 @@ course-data download/updates before a round, player-profile/round-history/
 cross-device synchronisation, cloud analytics, account management, weather
 refresh, model/software updates, optional cloud-based LLM enhancement, and
 optional cloud-based player-model training. If a future LLM explanation
-layer (M8) is unreachable, the system degrades to the structured
+layer (M12) is unreachable, the system degrades to the structured
 deterministic recommendation rather than withholding one.
 
 No storage technology, mobile runtime, or infrastructure component is
 selected by this constraint — those are future decisions, informed by the
-"Runtime & Offline Architecture" research spike (roadmap M5.5; see
-[roadmap.md](roadmap.md)) that precedes committing to the full mobile
-runtime architecture (roadmap M7).
+production system architecture & runtime checkpoint (roadmap M6;
+see [roadmap.md](roadmap.md)) that precedes committing to the full mobile
+MVP (roadmap M10).
 
 Recording a decision/outcome locally (item 7 above) is distinct from
 *deriving* operational or recommendation-evaluation analytics from that
@@ -111,7 +111,7 @@ they share a service, repository, or storage technology.
 | Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics, the `ClubCategory` taxonomy, and the `PopulationPrior` contract/config |
 | Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes, Strokes Gained |
 | Simulation | `src/caddai/simulation/` | Deterministic wind/elevation/air-density environment transform of a forward-modelled shot outcome (M4.7); seeded bivariate Student-t intrinsic shot-outcome sampling composed with `player`'s shot distribution (M4.8); course-relative mapping, expected strokes/Strokes Gained, and risk/reward strategy are future work (M5+) |
-| LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M8+) |
+| LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M12+) |
 | API | `src/caddai/api/` | FastAPI adapter; translates HTTP ↔ domain calls, no business logic |
 | CLI | `src/caddai/cli/` | Typer adapter; translates CLI ↔ domain calls, no business logic |
 
@@ -184,11 +184,11 @@ value, or any other course-relative outcome — see the M5 parent issue
 
 ## Future hardware/sensor adapters
 
-Roadmap M11 (see [roadmap.md](roadmap.md)) explores dedicated CaddAI
+Roadmap M14 (see [roadmap.md](roadmap.md)) explores dedicated CaddAI
 hardware and on-device sensing (camera-based lie assessment, GNSS, IMU,
 compass, barometer, other environmental sensors, microphone/voice) as
-research only, not committed scope, and not before roadmap M10 validates
-the mobile software prototype in real rounds. Architecturally, any such
+research only, not committed scope, and not before roadmap M11 validates
+the mobile MVP in real rounds. Architecturally, any such
 hardware/sensor input system is just another adapter, subject to the same
 rule as `api`/`cli`/`llm`: it must produce canonical domain inputs already
 defined in [domain-model.md](domain-model.md) — e.g. camera/manual input ->
@@ -202,7 +202,7 @@ naming this adapter category explicitly, per `AGENTS.md` §13.
 
 ## Synthetic validation harness (future)
 
-Roadmap M5.5 (see [roadmap.md](roadmap.md)) records a future requirement for
+Roadmap M9 (see [roadmap.md](roadmap.md)) records a future requirement for
 an offline synthetic round/scenario validation harness that exercises
 `strategy`/`simulation` at scale before broad mobile/field testing. This
 harness is not a subsystem and not a new decision path: it is a test-time
