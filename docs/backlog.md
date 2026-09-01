@@ -101,16 +101,16 @@
 - Decide the target mobile/GPS platform and integration approach (feeds
   M10; requires human decision).
 - Decide the LLM provider and integration approach for the explanation layer
-  (feeds M11; requires human approval — LLM provider selection is an
+  (feeds M12; requires human approval — LLM provider selection is an
   escalation trigger).
-- Investigate on-device inference feasibility for the M11 explanation layer
-  (feeds M12; research only, not committed scope).
-- Decide the target mobile devices/OS versions for the M13 real-round
-  validation prototype (feeds M13; no dedicated hardware, reuses M10's
+- Investigate on-device inference feasibility for the M12 explanation layer
+  (feeds M13; research only, not committed scope).
+- Decide the target mobile devices/OS versions for the M11 real-round
+  validation (feeds M11; no dedicated hardware, reuses M10's
   platform decision).
 - Decide whether/which hardware/sensor inputs (camera lie assessment, GNSS,
   IMU, compass, barometer, microphone) warrant dedicated hardware (feeds
-  M14; research only — not committed scope until M13 real-round validation
+  M14; research only — not committed scope until M11 real-round validation
   is complete; a concrete hardware/sensor adapter design requires a future
   ADR per `AGENTS.md` §13).
 - Decide the payment/billing mechanism (if any) for optional paid rounds,
@@ -158,7 +158,7 @@
   ownership (a separate `caddai-sim` repository, part of a future
   `caddai-evals` repository, or another clearly separated component), its
   CI/DevOps placement, and its future role as a cross-repository
-  integration gate, at the M9 pre-mobile validation gate (see
+  integration gate, at the M9 field-readiness validation gate (see
   [roadmap.md](roadmap.md) M9), informed by M6's repository-architecture
   decision point if a split occurs.
 - Full analytics/calibration tooling and dashboards beyond M9/M10's MVP

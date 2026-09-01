@@ -40,16 +40,19 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
   outcomes M4 produces.
 - **Round tracking** (M8): a decision journal recording recommendations,
   player choices, and outcomes.
-- **Mobile/GPS integration** (M10): live GPS position feeding the engine.
-- **Natural-language explanation** (M11): an LLM explains the deterministic
-  recommendation in caddie-style language — never generates it.
-- **On-device inference research** (M12): exploratory, not committed scope.
-- **Mobile software prototype** (M13): field-validate CaddAI on existing
-  consumer mobile devices during real rounds, before any dedicated
-  hardware is designed.
+- **Mobile/GPS integration** (M10): live GPS position feeding the engine
+  — a build/integration milestone, not yet field-proven.
+- **Mobile real-round validation** (M11): validate CaddAI on existing
+  consumer mobile devices during real rounds, gated by field-readiness
+  validation (M9) and the mobile MVP build (M10), before any dedicated
+  hardware is designed or any LLM explanation layer is added.
+- **Natural-language explanation** (M12): an LLM explains the deterministic
+  recommendation in caddie-style language — never generates it —
+  deliberately sequenced after real-round validation (M11).
+- **On-device inference research** (M13): exploratory, not committed scope.
 - **Hardware / on-device intelligence research** (M14): exploratory
   research into dedicated hardware and on-device sensing; not committed
-  scope until M13 has validated real-round usability and its actual
+  scope until M11 has validated real-round usability and its actual
   sensor, compute, UX, latency, and battery requirements are understood.
 
 ## 4. Product & commercial principles
@@ -68,7 +71,7 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 - **Cloud LLM is optional enrichment, never a gate.** Per
   [ADR 0001](adr/0001-deterministic-strategy-engine.md) and
   [ADR 0005](adr/0005-offline-first-active-round-architecture.md), any
-  cloud-based LLM functionality (M11+) is optional enrichment layered on top
+  cloud-based LLM functionality (M12+) is optional enrichment layered on top
   of the deterministic recommendation. Failure, unreachability, or
   exhaustion of cloud LLM functionality (including any future usage-credit
   exhaustion under the principle above) must never prevent a deterministic
@@ -100,7 +103,8 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 
 ## 6. Out of scope for now
 
-- Any production LLM integration (deliberately deferred to M11).
+- Any production LLM integration (deliberately deferred to M12, after
+  real-round validation, M11).
 - Cloud services, hosted databases, or paid external APIs (require ADR +
   human approval whenever proposed).
 - Swing mechanics, coaching, or biomechanical analysis.
@@ -129,14 +133,14 @@ See [roadmap.md](roadmap.md) for full milestone detail. At a high level:
 - What GPS hardware/mobile platform is targeted for M10? (Deferred — see the
   production runtime & cross-language architecture checkpoint, roadmap M6,
   which precedes this decision.)
-- What LLM provider (if any) will be used for M11, and how are costs/privacy
+- What LLM provider (if any) will be used for M12, and how are costs/privacy
   handled? (Deferred — requires explicit human approval; see escalation
   rules in `AGENTS.md`. Whatever is chosen, the deterministic recommendation
   must remain fully available without it — cloud LLM unreachability degrades
   to the structured recommendation, never to no recommendation.)
 - What, if any, dedicated hardware should CaddAI build? (Deferred — see
-  roadmap M14. Must not be committed to until the M13 mobile software
-  prototype has been validated in real rounds and its actual sensor,
+  roadmap M14. Must not be committed to until the M11 mobile real-round
+  validation has been completed in real rounds and its actual sensor,
   compute, UX, latency, and battery requirements are understood from that
   experience.)
 - What payment/billing mechanism (if any) recovers recurring cloud costs

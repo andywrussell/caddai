@@ -56,7 +56,7 @@ Strategy Engineer (see `.github/agents/strategy-engineer.agent.md`).
 `strategy` and `simulation` must **never** import `llm`, `api`, `cli`, or any
 UI package, directly or transitively, and must never call an LLM to make a
 golf decision. An LLM may only read a finished `strategy` recommendation to
-phrase it in natural language (M11+).
+phrase it in natural language (M12+).
 
 `strategy` and `simulation` are also **active-round core functionality**
 (`AGENTS.md` §2.2): they must be able to produce a recommendation using only

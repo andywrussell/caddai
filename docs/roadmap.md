@@ -10,12 +10,16 @@
 > scope rather than planning M5 in isolation — see
 > [docs/plans/post-m4-roadmap-reassessment.plan.md](plans/post-m4-roadmap-reassessment.plan.md)
 > for the approved analysis this M5+ structure implements. That pause is
-> now resolved: **M5–M14** below reflect the human-approved outcome. The
+> now resolved: **M5–M14** below reflect the human-approved outcome, with
+> one subsequent narrow ordering/naming amendment (M9 reframed as
+> "field-readiness", and M11–M13 reordered so mobile real-round
+> validation precedes optional LLM/on-device-inference enrichment — see
+> the note immediately before M9 below). The
 > previous **M5.5** entry ("Runtime & Offline Architecture") never had a
 > GitHub milestone of its own and is **superseded** — its scope is now
 > split across **M6** (production runtime & architecture checkpoint), **M7**
-> (offline course package architecture), and **M9** (pre-mobile validation,
-> monitoring/evaluation & Rules-of-Golf conformance gate) below, per the
+> (offline course package architecture), and **M9** (field-readiness
+> validation, evaluation & Rules-of-Golf gate) below, per the
 > dependency/decision-timing analysis in the reassessment. See
 > [docs/prfaq.md](prfaq.md) for the long-term product vision this sequencing
 > works towards.
@@ -192,11 +196,32 @@
 > reassessment.** The previous M5.5 entry never had a GitHub milestone of
 > its own and is **superseded**: its scope is now split across M6
 > (production runtime & architecture checkpoint), M7 (offline course
-> package architecture), and M9 (pre-mobile validation, monitoring/
-> evaluation & Rules-of-Golf conformance gate) below. This resolution is
+> package architecture), and M9 (field-readiness validation, evaluation &
+> Rules-of-Golf gate) below. This resolution is
 > itself documentation/roadmap-structure only — it does not constitute
 > detailed M5 implementation planning, which remains a separate, later
 > task.
+>
+> **Subsequent narrow amendment (still pre-M5-implementation, still
+> documentation-only).** M9 was originally named "pre-mobile validation"
+> and M13 was "mobile real-round validation prototype", which implied M9
+> blocked M10's build and that mobile real-round validation was a distant,
+> lower-priority afterthought behind optional LLM/on-device-inference
+> work. Both were corrected before merge: **M9** is renamed
+> "field-readiness validation, evaluation & Rules-of-Golf gate" and
+> explicitly does **not** block M10's implementation (`M9 + M10 -> gate
+> M11`, run in parallel where genuinely independent); **M10** is reframed
+> as a build/integration milestone only ("Mobile MVP implementation"),
+> not proof of real-round performance; the mobile real-round validation
+> capability moves from M13 to **M11**, immediately after the mobile MVP
+> build, gated by both M9 and M10; and the LLM (M12) and on-device
+> inference research (M13) milestones move down to sit after real-round
+> validation, preserving "golf engine decides, LLM explains" but now also
+> "prove it works for real before enriching it." Hardware research (M14)
+> is unaffected in substance beyond its gate now naming M11 instead of
+> M13. No dependency, WHS, expected-strokes, `GolfState`, runtime-timing,
+> or synthetic-validation decision already approved earlier in this
+> reassessment was reopened by this amendment.
 
 - **M5 — Course-relative golf state & expected-value strategy**
   `strategy`/`simulation` subsystems: the first milestone that turns M4's
@@ -394,14 +419,16 @@
   `strategy`'s deterministic decision logic, and never alter intrinsic
   shot dispersion or physics.
 
-- **M9 — Pre-mobile validation, monitoring/evaluation & Rules-of-Golf
-  conformance gate**
-  Validation milestone gating **broad** mobile field testing (M13), not
-  gating M10's mobile MVP build itself. Bundles three workstreams that
-  belong in the same pre-mobile validation category but must remain
-  **distinctly tracked sub-issues**, not one undifferentiated task —
-  mirroring how M4.1–M4.9 stayed distinct sub-issues under one milestone
-  number:
+- **M9 — Field-readiness validation, evaluation & Rules-of-Golf gate**
+  Validation milestone gating **M11** (mobile real-round validation) —
+  together with M10 — not gating M10's *implementation* itself:
+  `M9 + M10 -> gate M11`. M9's validation work may proceed in parallel
+  with M10's build; do not read "field-readiness" as "pre-mobile" in the
+  sense of blocking mobile development — it is pre-*field-exposure*, not
+  pre-*build*. Bundles three workstreams that belong in the same
+  pre-field-exposure validation category but must remain **distinctly
+  tracked sub-issues**, not one undifferentiated task — mirroring how
+  M4.1–M4.9 stayed distinct sub-issues under one milestone number:
 
   1. **Synthetic validation harness.** A repeatable, deterministic offline
      validation capability that runs large numbers of synthetic golf
@@ -473,71 +500,89 @@
      dependency** on the other two workstreams above or on M6/M7/M8 — it
      may be completed opportunistically at any point once M5 lands, even
      before this milestone formally opens; it is grouped here because it
-     is a pre-mobile validation/product gate, not because it depends on
-     anything else in this milestone.
+     is a pre-field-exposure validation/product gate, not because it
+     depends on anything else in this milestone.
 
-  A future pre-mobile release criterion may require the synthetic
-  validation suite to show zero hard-invariant failures, no crashes, and
-  only known/accepted behavioural deltas before broad field testing (M13)
+  A future release criterion may require the synthetic validation suite
+  to show zero hard-invariant failures, no crashes, and only known/
+  accepted behavioural deltas before broad real-round field testing (M11)
   proceeds — no numeric thresholds are fixed here. Tracking issue: #76
   (supersedes part of the old M5.5 entry).
 
-- **M10 — Mobile MVP (GPS/mobile application integration)**
+- **M10 — Mobile MVP implementation**
   Live GPS position feeding the engine; mobile/UI integration; full
   offline round: GPS, offline course package (M7), local engine,
   recommendation, decision recording (M8). Requires a human decision on
   target platform (`AGENTS.md` escalation rules). Builds on M6's runtime
   checkpoint (and its PoC vertical slice) and M7's course-package
   architecture; positioning must remain an active-round core capability
-  per `AGENTS.md` §2.2 regardless of platform. This milestone is the MVP
-  *build*; **broad** mobile/on-course field testing is a distinct,
-  later concern (M13) explicitly gated by M9's synthetic validation
-  checkpoint passing — building the MVP itself is not gated by M9.
-  Includes an MVP level of monitoring/evaluation instrumentation building
-  on M8's decision journal and M9's event-contract design: local event
-  capture during a round, lightweight post-round issue reporting, and
-  optional post-round sync/export. Tracking issue: #13 (rewritten scope).
+  per `AGENTS.md` §2.2 regardless of platform. **This milestone is a
+  build/integration milestone, not proof that CaddAI performs well on
+  real golf rounds.** Its exit condition is approximately: a complete
+  offline mobile application can execute a representative round
+  end-to-end in controlled/integration conditions using the production
+  core, local course data, round lifecycle, and local decision/event
+  capture. **Broad** real-round field validation is a distinct, later
+  milestone (M11), explicitly gated by **both** this milestone's
+  completion **and** M9's field-readiness validation passing —
+  `M9 + M10 -> gate M11`. Building this MVP itself is **not** gated by
+  M9, and M9's validation work may proceed in parallel with this
+  milestone's implementation. Includes an MVP level of monitoring/
+  evaluation instrumentation building on M8's decision journal and M9's
+  event-contract design: local event capture during a round, lightweight
+  post-round issue reporting, and optional post-round sync/export.
+  Tracking issue: #13 (rewritten scope).
 
-- **M11 — LLM caddie communication layer**
+- **M11 — Mobile real-round validation**
+  Validation milestone — **not** a second mobile build. Takes the
+  completed M10 mobile MVP into real, on-course rounds to answer: does
+  the completed offline mobile CaddAI system behave coherently and
+  provide trustworthy value during real golf rounds? Explicitly gated by
+  **both** M9 (field-readiness validation passing) and M10 (mobile MVP
+  implementation complete) — `M9 + M10 -> gate M11`. Run on existing
+  consumer mobile devices per M6's runtime findings — no dedicated
+  hardware. Scope: controlled pilot rounds; recommendation acceptance/
+  override observation; offline reliability; course-data failures; GPS/
+  product usability; predicted-vs-observed outcomes where available;
+  recommendation-quality evidence; user-reported bad recommendations; and
+  evaluation of whether the product is ready for broader use. Field
+  validates the deterministic recommendation and offline-first
+  active-round behaviour (`AGENTS.md` §2.2) under real conditions (real
+  GPS signal quality, real battery drain, real between-shot workflow).
+  Its findings — not assumptions made now — are the evidence base for
+  whether an LLM explanation layer (M12) is worth pursuing next, and for
+  whether dedicated hardware (M14) is worth building, and for that
+  milestone's actual sensor, compute, UX, latency, and battery
+  requirements. Tracking issue: #78 (new).
+
+- **M12 — LLM caddie communication layer**
   An LLM explains the deterministic recommendation in natural, caddie-style
-  language. Deliberately last among functional milestones — see
+  language. Deliberately sequenced **after M11's real-round validation**:
+  the core deterministic engine must be proven correct and trustworthy in
+  real rounds — not only in controlled/integration conditions — before any
+  natural-language layer is added on top of it — see
   [adr/0001-deterministic-strategy-engine.md](adr/0001-deterministic-strategy-engine.md).
   Requires human approval to select an LLM provider. If the LLM is
   cloud-based, unreachability must degrade to the structured deterministic
   recommendation, never withhold a recommendation (`AGENTS.md` §2.2, see
   [ADR 0005](adr/0005-offline-first-active-round-architecture.md)). Tracking
-  issue: #14 (renumbered only).
+  issue: #14 (renumbered, previously M11).
 
-- **M12 — On-device inference research**
-  Exploratory research into on-device inference for the M11 explanation
+- **M13 — On-device inference research**
+  Exploratory research into on-device inference for the M12 explanation
   layer (not the decision engine). Not committed scope. The offline-first
   active-round principle (`AGENTS.md` §2.2) does not require pulling this
-  forward: a cloud-only M11 that degrades gracefully to the structured
+  forward: a cloud-only M12 that degrades gracefully to the structured
   recommendation when unreachable already satisfies that principle.
-  Tracking issue: #15 (renumbered only).
-
-- **M13 — Mobile real-round validation prototype**
-  A software-only mobile prototype, built on M10's mobile MVP (and, if
-  landed, M11's LLM explanation layer), run on existing consumer mobile
-  devices per M6's runtime findings — no dedicated hardware. Purpose:
-  prove CaddAI can actually be used during real, on-course rounds before
-  any dedicated hardware is designed, **after M9's synthetic validation
-  checkpoint has passed** — this milestone is where that gate actually
-  applies (M10's MVP build is not itself gated by M9). Field validates the
-  deterministic recommendation and offline-first active-round behaviour
-  (`AGENTS.md` §2.2) under real conditions (real GPS signal quality, real
-  battery drain, real between-shot workflow). Its findings — not
-  assumptions made now — are the evidence base for whether dedicated
-  hardware (M14) is worth building, and for that milestone's actual
-  sensor, compute, UX, latency, and battery requirements.
+  Tracking issue: #15 (renumbered, previously M12).
 
 - **M14 — Hardware / on-device intelligence research**
   Exploratory research into dedicated CaddAI hardware and on-device
-  sensing, deliberately sequenced after M13: dedicated hardware must not be
-  committed to until the M13 mobile real-round validation prototype has
-  been used in real rounds and its actual sensor, compute, UX, latency, and
-  battery requirements are understood from that experience. Candidate
-  hardware inputs include camera-based lie assessment, GNSS location,
+  sensing, deliberately sequenced after M11: dedicated hardware must not be
+  committed to until M11's mobile real-round validation has been used in
+  real rounds and its actual sensor, compute, UX, latency, and battery
+  requirements are understood from that experience. Candidate hardware
+  inputs include camera-based lie assessment, GNSS location,
   elevation/barometric data, IMU, compass, other environmental sensors, and
   microphone/voice input. Any hardware/sensor system explored here must
   produce canonical CaddAI domain inputs, never golf strategy logic of its
@@ -548,9 +593,14 @@
   golf decisions. Not committed scope; a real hardware/sensor adapter
   design is the trigger for a future ADR (or ADR 0001 amendment) naming
   hardware/sensor input adapters as a module category, per `AGENTS.md` §13.
+  This milestone remains **roadmap-only** (no GitHub milestone/issue) —
+  the same deliberate convention every version of this roadmap has applied
+  to hardware research, since it stays a distant, non-actionable research
+  placeholder until M11 findings exist; unlike M11, nothing new here
+  changes its actionability.
 
-LLM integration is deliberately kept late: the deterministic engine must be
-correct and trustworthy on its own before any natural-language layer is
-added on top of it. Dedicated hardware is deliberately kept later still —
-not committed to until the M13 mobile real-round validation prototype has
-proven the experience holds up in real rounds.
+LLM integration is deliberately kept until after real-round validation: the
+deterministic engine must be proven correct and trustworthy on real rounds
+before any natural-language layer is added on top of it. Dedicated hardware
+is deliberately kept later still — not committed to until M11's mobile
+real-round validation has proven the experience holds up in real rounds.

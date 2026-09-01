@@ -16,21 +16,28 @@ first public API is published.
   M5 onward into a clean integer sequence (M5 course-relative golf state &
   expected-value strategy; M6 production runtime & cross-language
   architecture checkpoint; M7 offline course package architecture; M8 round
-  tracking, decision journal & WHS scoring-policy layer; M9 pre-mobile
-  validation, monitoring/evaluation & Rules-of-Golf conformance gate; M10
-  mobile MVP; M11 LLM caddie layer; M12 on-device inference research; M13
-  mobile real-round validation prototype; M14 hardware research),
-  superseding the overloaded M5.5 entry. Reconciled
+  tracking, decision journal & WHS scoring-policy layer; M9 field-readiness
+  validation, evaluation & Rules-of-Golf gate; M10 mobile MVP
+  implementation; M11 mobile real-round validation; M12 LLM caddie layer;
+  M13 on-device inference research; M14 hardware research), superseding
+  the overloaded M5.5 entry. A narrow follow-up amendment renamed M9 from
+  "pre-mobile" to "field-readiness" and clarified it gates M11 (not M10's
+  build) via `M9 + M10 -> gate M11`; reframed M10 as a build/integration
+  milestone only; and moved mobile real-round validation from M13 to M11 so
+  it precedes the optional LLM (M12) and on-device-inference (M13)
+  enrichment milestones, rather than following them. Reconciled
   [docs/backlog.md](docs/backlog.md) and fixed stale milestone
   cross-references across [docs/architecture.md](docs/architecture.md),
   [docs/prd.md](docs/prd.md), [docs/decision-journal.md](docs/decision-journal.md),
   [docs/strategy-engine.md](docs/strategy-engine.md), [docs/vision.md](docs/vision.md),
   [docs/player-model.md](docs/player-model.md), [docs/domain-model.md](docs/domain-model.md),
   and [ADR 0005](docs/adr/0005-offline-first-active-round-architecture.md).
-  Migrated GitHub milestones M5–M9 and rewrote parent tracking issues
-  #11–#15 to match; created new milestones/parent issues for M6, M7, and
-  M9. No production code, ADRs, or detailed M5 implementation issues were
-  created by this task.
+  Migrated GitHub milestones M5–M14 and rewrote parent tracking issues
+  #11–#15 to match; created new milestones/parent issues for M6, M7, M9,
+  and M11. Hardware research (M14) deliberately remains roadmap-only (no
+  GitHub milestone/issue), consistent with prior roadmap versions. No
+  production code, ADRs, or detailed M5 implementation issues were created
+  by this task.
 
 - Added a post-M4 roadmap reassessment proposal document at
   [docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md)
