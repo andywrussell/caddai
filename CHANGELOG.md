@@ -10,6 +10,28 @@ first public API is published.
 
 ### Added
 
+- Converted the approved post-M4 roadmap reassessment
+  ([docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md))
+  into the durable CaddAI roadmap: rewrote [docs/roadmap.md](docs/roadmap.md)
+  M5 onward into a clean integer sequence (M5 course-relative golf state &
+  expected-value strategy; M6 production runtime & cross-language
+  architecture checkpoint; M7 offline course package architecture; M8 round
+  tracking, decision journal & WHS scoring-policy layer; M9 pre-mobile
+  validation, monitoring/evaluation & Rules-of-Golf conformance gate; M10
+  mobile MVP; M11 LLM caddie layer; M12 on-device inference research; M13
+  mobile real-round validation prototype; M14 hardware research),
+  superseding the overloaded M5.5 entry. Reconciled
+  [docs/backlog.md](docs/backlog.md) and fixed stale milestone
+  cross-references across [docs/architecture.md](docs/architecture.md),
+  [docs/prd.md](docs/prd.md), [docs/decision-journal.md](docs/decision-journal.md),
+  [docs/strategy-engine.md](docs/strategy-engine.md), [docs/vision.md](docs/vision.md),
+  [docs/player-model.md](docs/player-model.md), [docs/domain-model.md](docs/domain-model.md),
+  and [ADR 0005](docs/adr/0005-offline-first-active-round-architecture.md).
+  Migrated GitHub milestones M5–M9 and rewrote parent tracking issues
+  #11–#15 to match; created new milestones/parent issues for M6, M7, and
+  M9. No production code, ADRs, or detailed M5 implementation issues were
+  created by this task.
+
 - Added a post-M4 roadmap reassessment proposal document at
   [docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md)
   for human review. This is analysis and recommendations only — it does

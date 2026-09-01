@@ -1,6 +1,6 @@
 # Decision journal
 
-> Status: describes a **future** concept (milestone M6). No storage or data
+> Status: describes a **future** concept (milestone M8). No storage or data
 > model is implemented yet — this document exists to guide that eventual
 > design, not to describe existing functionality.
 
@@ -77,7 +77,7 @@ to support evaluation later, conceptually grouped as:
   once supported, the resulting golf state, and realised Strokes Gained
   where available.
 
-No single event schema is fixed by this document — the M5/M6 (and M5.5)
+No single event schema is fixed by this document — the M5/M8/M9
 architecture passes define the concrete, linked contracts.
 
 ### Counterfactual candidate information
@@ -158,7 +158,7 @@ systems — that is future work.
 ## Explicit non-goals for now
 
 - No storage technology is selected. Selecting one (file-based, embedded, or
-  hosted database) is a decision deferred to M6 and requires an ADR plus
+  hosted database) is a decision deferred to M8 and requires an ADR plus
   human approval per `AGENTS.md` §14 (database/infrastructure selection is
   an escalation trigger). Whatever is chosen must support a local write path
   for recording decisions/outcomes, since that is active-round core

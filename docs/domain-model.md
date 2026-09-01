@@ -35,7 +35,7 @@ reference, not an API listing.
   the dispersion model, used to estimate expected strokes.
 - **Recommendation** — the deterministic engine's structured output: target,
   club, intended shot shape, risk assessment, and the rationale that
-  produced it. This is the artifact an `llm` explanation layer (M8+) may
+  produced it. This is the artifact an `llm` explanation layer (M11+) may
   describe in natural language, never generate independently.
 - **Round** — a sequence of holes played by a player, eventually recording
   recommendations and outcomes (see [decision-journal.md](decision-journal.md)).

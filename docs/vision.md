@@ -43,21 +43,21 @@ roadmap (see [roadmap.md](roadmap.md)) — never a substitute for it. See
 - Not a general golf chatbot or rules-question assistant.
 - Not a swing-coaching or biomechanics tool.
 - Not dependent on a specific hardware GPS device — the domain model is
-  device-agnostic; integrations come later (see roadmap M7).
+  device-agnostic; integrations come later (see roadmap M10).
 - Not reliant on an LLM for any part of the actual shot decision.
 - Not reliant on any future hardware/sensor system (camera, IMU, compass,
   barometer, microphone) for golf strategy logic: such systems, if ever
   built, only ever produce canonical domain inputs (e.g. lie, position,
   elevation, wind) for the deterministic engine to consume — see roadmap
-  M11 and [architecture.md](architecture.md#future-hardwaresensor-adapters).
+  M14 and [architecture.md](architecture.md#future-hardwaresensor-adapters).
 - Not committed to dedicated hardware before the software has proven
-  itself: any future hardware (roadmap M11) is a research question only
-  after a mobile software prototype (roadmap M10) has been validated
+  itself: any future hardware (roadmap M14) is a research question only
+  after a mobile software prototype (roadmap M13) has been validated
   during real rounds.
 - Not reliant on internet connectivity for the core recommendation during a
   round: the deterministic decision (club, target, reasoning) must remain
   available offline; only presentation-layer natural-language phrasing
-  (a future LLM layer, roadmap M8) may depend on connectivity, and even then
+  (a future LLM layer, roadmap M11) may depend on connectivity, and even then
   must degrade to the structured recommendation if unreachable — see
   `AGENTS.md` §2.2 and
   [adr/0005-offline-first-active-round-architecture.md](adr/0005-offline-first-active-round-architecture.md).

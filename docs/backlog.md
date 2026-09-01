@@ -75,7 +75,7 @@
 - Derive/fit `CarryDistribution`/`DirectionalDispersion` from historical
   `ShotRecord` samples (deferred out of M3 — see #9/#30; M3 uses only
   manually supplied statistical parameters; likely lands around the
-  round-history/learning milestone, M6+).
+  round-history/learning milestone, M8+).
 - A more stable club-identity mechanism for `ShotRecord`, if plain
   `club_name` string snapshots prove insufficient (e.g. a club is renamed
   or replaced in a player's bag, silently orphaning historical shot
@@ -86,23 +86,31 @@
   distinct model, beyond club-level carry distribution/dispersion/bias
   (deferred out of M3; belongs to later strategy/player-preference work).
 - Decide the expected-strokes model / baseline data source used by
-  `strategy` (feeds M5; likely needs an ADR if it requires external
-  strokes-gained reference data).
-- Decide the decision-journal storage technology (feeds M6; requires ADR +
+  `strategy` (feeds M5, after its evidence/research spike and decision gate;
+  likely needs an ADR if it requires external strokes-gained reference
+  data).
+- Decide the production runtime / possible Rust core, mobile/core runtime
+  boundary, cross-language contracts, repository architecture, and
+  DevOps/release architecture (feeds M6; each remains its own future
+  ADR/human-approval decision).
+- Decide a commercial/legitimate offline course-data provider and package
+  format (feeds M7; requires human decision on the provider; no provider is
+  selected today).
+- Decide the decision-journal storage technology (feeds M8; requires ADR +
   human approval — database selection is an escalation trigger).
-- Decide the target mobile/GPS platform and integration approach (feeds M7;
-  requires human decision).
+- Decide the target mobile/GPS platform and integration approach (feeds
+  M10; requires human decision).
 - Decide the LLM provider and integration approach for the explanation layer
-  (feeds M8; requires human approval — LLM provider selection is an
+  (feeds M11; requires human approval — LLM provider selection is an
   escalation trigger).
-- Investigate on-device inference feasibility for the M8 explanation layer
-  (feeds M9; research only, not committed scope).
-- Decide the target mobile devices/OS versions for the M10 real-round
-  validation prototype (feeds M10; no dedicated hardware, reuses M7's
+- Investigate on-device inference feasibility for the M11 explanation layer
+  (feeds M12; research only, not committed scope).
+- Decide the target mobile devices/OS versions for the M13 real-round
+  validation prototype (feeds M13; no dedicated hardware, reuses M10's
   platform decision).
 - Decide whether/which hardware/sensor inputs (camera lie assessment, GNSS,
   IMU, compass, barometer, microphone) warrant dedicated hardware (feeds
-  M11; research only — not committed scope until M10 real-round validation
+  M14; research only — not committed scope until M13 real-round validation
   is complete; a concrete hardware/sensor adapter design requires a future
   ADR per `AGENTS.md` §13).
 - Decide the payment/billing mechanism (if any) for optional paid rounds,
@@ -150,15 +158,24 @@
   ownership (a separate `caddai-sim` repository, part of a future
   `caddai-evals` repository, or another clearly separated component), its
   CI/DevOps placement, and its future role as a cross-repository
-  integration gate, at the M5.5 pre-mobile architecture checkpoint (see
-  [roadmap.md](roadmap.md) M5.5).
-- At the post-M4 pause before detailed M5 implementation planning, jointly
-  reassess M5+ milestones (M5 scope, round/decision model, the synthetic
-  validation requirement, real-world evaluation, a possible Rust production
-  core, the mobile boundary, cloud/API architecture, course
-  packaging/distribution, Rules-of-Golf conformance, DevOps/release
-  engineering, multi-repository structure, agentic/multi-repo development
-  harness) rather than planning M5 in isolation — see [roadmap.md](roadmap.md).
+  integration gate, at the M9 pre-mobile validation gate (see
+  [roadmap.md](roadmap.md) M9), informed by M6's repository-architecture
+  decision point if a split occurs.
+- Full analytics/calibration tooling and dashboards beyond M9/M10's MVP
+  local event-capture and issue-reporting level (post-MVP; see
+  [decision-journal.md](decision-journal.md#intended-uses) for the
+  candidate MVP evaluation scorecard).
+- The static Course Handicap/Playing Handicap arithmetic could in principle
+  be implemented as soon as M5/M7's player/tee data exists, ahead of M8's
+  round-progress-sensitive WHS scoring policy — not split out today since
+  it is one coherent objective layer with M8 (see [roadmap.md](roadmap.md)
+  M8); revisit only if a real consumer needs the arithmetic before M8
+  lands.
+- The post-M4 roadmap reassessment
+  ([docs/plans/post-m4-roadmap-reassessment.plan.md](plans/post-m4-roadmap-reassessment.plan.md))
+  that produced the current M5–M14 structure is now resolved and merged
+  into [roadmap.md](roadmap.md); no further reassessment action is pending
+  here.
 
 ## Process
 

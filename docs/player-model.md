@@ -445,7 +445,7 @@ Player Engineer (see `.github/agents/player-engineer.agent.md`).
   of player handedness.
 - **Performance history**: historical shot/round data feeding into
   statistical estimates (data model only at this stage — no storage
-  technology selected; storage design is deferred to M6, see
+  technology selected; storage design is deferred to M8, see
   `decision-journal.md`).
 - **Round statistics**: aggregate stats derived from a player's rounds
   (e.g. average proximity to target by club/distance band).
