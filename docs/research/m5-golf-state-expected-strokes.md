@@ -36,6 +36,16 @@ remain unchanged in substance — this amendment only narrows the
 expected-strokes evidence/decision, not the `GolfState`
 architecture/ownership conclusions.
 
+**Second amendment (dated 2026-09-01, same day).** A further amendment
+added [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk),
+folding in a CaddAI Architect review of how the verified evidence above
+should be applied to an expected-strokes *value architecture* (separating
+a neutral benchmark, a player-specific adjustment, and strategic risk into
+distinct layers). This second amendment does **not** redo, weaken, or add
+to the external evidence verified above — it only changes how that
+evidence is applied to the value contract in sections M/N and the decision
+gates at the end of this document.
+
 ---
 
 ## A. Executive recommendation
@@ -66,14 +76,20 @@ architecture/ownership conclusions.
    research (see [section H](#h-expected-strokes-evidence-review)) and
    found the distance/lie/ability-conditioned expected-strokes *concept*
    well-supported by independent, verified sources, but found **no**
-   legally reusable public numeric baseline table or dataset. The
-   previously-recommended monotonic-interpolation-plus-handicap-band
-   combination is therefore recorded as a **leading engineering candidate
-   for the model family/contract shape only**, not an approved or
-   provisionally-adopted V0 (see [section J](#j-recommended-expected-strokes-v0)).
-   A separate, still-unresolved follow-on decision covers the numeric
-   baseline/data source itself (see the `FOLLOW-ON REQUIRED` block at the
-   end of this document).
+   legally reusable public numeric baseline table or dataset. A second
+   amendment the same day (see
+   [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk))
+   further found that the ability/handicap-band part of this concept
+   belongs to a future, separately-gated, **unscheduled** player-adjustment
+   layer (`Delta`/Layer C), not to the neutral V0 benchmark
+   (`E_base`/Layer B) — see the reconciled
+   [section J](#j-recommended-expected-strokes-v0). V0's own candidate
+   model family (a monotonic, distance/lie-conditioned interpolation, no
+   handicap axis) is recorded as a **leading engineering candidate for
+   `E_base`'s model family/contract shape only**, not an approved or
+   provisionally-adopted V0. A separate, still-unresolved follow-on
+   decision covers the numeric baseline/data source itself (see the
+   `FOLLOW-ON REQUIRED` block at the end of this document).
 5. **This spike recommends, but does not decide,** the `GolfState`
    ownership question, the expected-strokes contract direction, or the
    still-open expected-strokes numeric-baseline/data-source follow-on —
@@ -883,8 +899,19 @@ proposal from the original document must be **downgraded from
 "recommended V0" to "leading engineering candidate for the model
 FAMILY/contract shape, pending a still-unresolved
 numeric-baseline/data-source decision."** It is not presented as an
-approved or even provisionally-adopted V0 model anywhere in this document
-— see [section J](#j-recommended-expected-strokes-v0).
+approved or even provisionally-adopted V0 model anywhere in this document.
+
+> **Reconciling note (2026-09-01, second amendment):** the value-
+> architecture separation in
+> [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk)
+> further splits this conclusion. The **handicap/ability-band axis**
+> specifically is now understood to belong to a future, separately-gated,
+> **unscheduled** `Delta`/Layer C player-adjustment (Architecture Option
+> B), never to V0's neutral `E_base`/Layer B benchmark (Architecture
+> Option C, per the amended decision gate). Only the **monotonic,
+> distance/lie-conditioned interpolation part** (no handicap axis) remains
+> the candidate model family for `E_base` itself — see the reconciled
+> [section J](#j-recommended-expected-strokes-v0).
 
 ## H.1 Amateur evidence extra scrutiny
 
@@ -921,6 +948,300 @@ Using only the verified findings above:
   today?** **NO.**
 
 **The evidence supports the CONCEPT but not the NUMBERS.**
+
+## H.2 Value architecture: separating benchmark, player-adjustment, and strategic risk
+
+**Amendment (dated 2026-09-01, second amendment).** This subsection folds
+in a CaddAI Architect review commissioned specifically to resolve a risk
+identified in section M's previous "ability-conditioned contract
+direction" subsection (now superseded — see section M below): a single
+`expected_strokes(state, ability_context?) -> value` contract risks
+conflating three genuinely distinct questions into one function and one
+number. This subsection separates them explicitly. Nothing here revisits
+or weakens section H/H.1/K's verified evidence findings — it only changes
+*how that evidence is applied* to a value contract.
+
+### The problem being fixed
+
+A single expected-strokes function that takes an optional ability/handicap
+parameter can silently conflate:
+
+1. **The benchmark/reference value of a golf state** — "what is the
+   reference expected strokes to hole out from here, against a fixed,
+   comparable population?"
+2. **How difficult that state is for a SPECIFIC golfer** — "how much
+   harder or easier is this state for THIS golfer than the reference
+   population?"
+3. **What strategic risk/objective should drive a recommendation** —
+   "given a distribution of possible outcomes and their values, which
+   candidate shot should CaddAI actually recommend, and how much risk
+   should it take on?"
+
+These are answerable independently, have different evidence bases
+(question 1: section H's Broadie/commercial-product evidence; question 2:
+golfer-specific performance history, out of scope for M5; question 3:
+belongs to later strategy/M8 risk-policy work), and must not be collapsed
+into one function or one number.
+
+### Four conceptual layers
+
+- **Layer A — physical player model.** Already implemented in M4
+  (`PlayerShotDistribution` → a distribution of physical shot outcomes).
+  Answers "where is THIS golfer likely to hit the ball?" Not redesigned
+  here.
+- **Layer B — baseline/benchmark state value.** `E_base(state)`. Answers
+  "what is the reference expected strokes to hole out from this
+  `GolfState`?" Independent of current score, strategic goal, risk
+  appetite, or WHS policy — and independent of player identity/handicap
+  too: the function itself takes no player/ability parameter, because a
+  benchmark needs a fixed, single reference population to remain
+  comparable across golfers and over time (matching section H item 2's
+  description of Broadie's "fractional par" function, fit once against a
+  single scratch-golfer benchmark, not per skill band).
+- **Layer C — player-adjusted state value.** `E_player(state,
+  player_context) = E_base(state) + Delta(state, player_context)`. Answers
+  "how difficult is this state for THIS golfer?" Examples of what `Delta`
+  might eventually capture: bunker play, wedge play, recovery play,
+  putting strength, rough performance. May be identity/no-op in V0 (see
+  below). Handicap is one possible input to a future `Delta`, never
+  assumed to be the only or final one (see the evidence-sources
+  discussion below).
+- **Layer D — strategic objective/risk.** Consumes a distribution of
+  player-relative values plus round/scoring/goal/risk context to produce a
+  recommendation. Belongs to later strategy/M8 work, not this document.
+  Must **not** encode "higher handicap = more/less risk" as a universal
+  rule (see the rejected-options note below).
+
+### Three value architectures compared
+
+Labelled **Architecture Option A/B/C** — deliberately distinct from the
+Layer A–D labels above and from section I's numbered model-family options
+1–6, to avoid confusion between "which conceptual layer" and "which
+overall value-architecture shape" and "which numeric model family."
+
+**Architecture Option A — ability-conditioned expected strokes:**
+`E(state, ability_context) -> value`, a single function taking both state
+and ability context.
+
+- *Conceptual simplicity:* one function, one call site — simplest surface
+  area.
+- *Fit to verified evidence:* poor — section H's evidence is either
+  single-reference-population (Broadie's fractional par) or
+  ability-differences at the *performance-metric* level (section H.1),
+  never a fitted, combined distance+lie+ability-conditioned expected-
+  strokes surface. No verified source publishes this combined shape.
+- *Data requirements:* highest — needs a numeric surface conditioned on
+  distance, lie, AND ability simultaneously, which is both unresolved
+  (section K) and, per the evidence, may not exist publicly at all.
+- *Meaning of SG:* forecloses conventional, benchmark-comparable Strokes
+  Gained semantics (see the SG discussion below) — SG becomes
+  player-relative by construction, with no way to recover the
+  conventional benchmark quantity without a second, separate computation.
+- *Ability to personalise later:* none needed — already "personalised" by
+  construction, but at the cost of losing the neutral benchmark.
+- *Coupling risk:* high — couples the benchmark concept and the
+  player-adjustment concept into one signature, one data source, and one
+  future implementation, so upgrading either independently (e.g.
+  refitting the benchmark table without touching player-adjustment, or
+  vice versa) is harder than necessary.
+
+**Architecture Option B — neutral baseline + player adjustment:**
+`E_base(state) + Delta(state, player_context) = E_player(state)`, two
+named, composed functions.
+
+- *Separation:* clean — `E_base` depends only on the neutral `GolfState`
+  type; `Delta` depends on golfer-ability data
+  (`caddai.player`/`caddai.statistics`, already-approved edges, no new
+  edge introduced).
+- *Data requirements:* `E_base` needs a single-reference-population
+  numeric baseline (unresolved — see the `FOLLOW-ON REQUIRED` block);
+  `Delta` needs its own, separately-unresolved ability-conditioned
+  evidence/data, gated on its own future decision.
+- *SG compatibility:* preserves conventional, benchmark-comparable SG via
+  `E_base` alone, while still allowing a distinctly-named
+  player-relative SG quantity computed from `E_player` (see below) — both
+  available, never conflated.
+- *Future personalisation:* `Delta` can be introduced later purely as a
+  `Delta`-only change, with no signature break to `E_base` or to any
+  consumer already built against it.
+- *Contract complexity:* two named interfaces plus one composition layer
+  — more surface area than Option A, but each piece stays small and
+  independently testable.
+- *Replaceability:* excellent — mirrors ADR 0007's `PopulationPrior`
+  stable-interface/replaceable-implementation precedent, applied to two
+  independently-swappable pieces instead of one.
+- *M6/batch portability:* both `E_base` and `Delta` are representable as
+  pure array-in/array-out transforms over a fixed scalar/categorical
+  schema (see the batch-implications note added to section N below); a
+  single fused function (Option A) would hide two independently-
+  reimplementable pieces behind one opaque call.
+
+**Architecture Option C — neutral baseline only for V0:**
+`E_player(state) = E_base(state)` (i.e. `Delta` is identity/no-op).
+
+- *MVP viability:* good — ships the one piece of evidence-grounded work
+  that is actually gated on a resolvable (if still open) baseline
+  problem, per section H/K, without waiting on a second, currently
+  unfounded ability-adjustment data source.
+- *Unavailable data avoided:* yes — no numeric ability-conditioned
+  adjustment is invented or licensed prematurely; section H found no
+  legally reusable numeric baseline even for the *neutral* benchmark, let
+  alone an ability-conditioned one.
+- *Known accuracy limitations:* identical resulting states (e.g. same
+  bunker, same distance) produce the same expected-strokes value for
+  every golfer under Option C, even though a scratch golfer and a
+  high-handicap golfer plausibly have different true strokes-to-hole-out
+  expectations from that same state — a real, acknowledged limitation,
+  not a claim that Option C is fully accurate.
+- *Ease of upgrading to B:* high, provided `Delta` is kept as a distinct,
+  named, swappable step conceptually from the start (see the V0
+  implementation guidance below) rather than fused into `E_base`'s own
+  code path.
+
+### Recommendation
+
+**Semantic/long-term architecture: Architecture Option B.**
+**V0 implementation: Architecture Option C.**
+
+This is the Architect's reasoned conclusion from the analysis above, not a
+forced, pre-decided outcome — a defensible alternative (not adopted here)
+would be to skip recording Layer C/`Delta` as a named seam entirely until
+Option B is actually justified by data. A human may reach a different
+conclusion at the decision gate below; this document records a
+recommendation, not an adopted decision.
+
+**Why long-term ≠ V0 is appropriate here:** ability effects on
+expected-strokes-relevant performance are real (Broadie 2008's Table 1,
+and Arccos'/Shot Scope's shipped handicap-conditioned commercial
+products — section H), but reusable, licensable, handicap-conditioned
+*state-value* data is currently unavailable (section H/K), while M4
+already provides substantial personalisation in outcome *probabilities*
+(Layer A, see below) — so Option C's V0 does not mean "no
+personalisation," and Option B remains the correct long-term target once
+`Delta`'s own evidence/data question is separately resolved.
+
+### M4 already personalises value indirectly
+
+Two golfers evaluated against the **identical** `E_base` function can
+still receive **different recommendations** for the same candidate target,
+because their `PlayerShotDistribution`s differ:
+
+```
+personalised PlayerShotDistribution (Layer A, per-golfer carry/lateral/
+bias/scale/correlation/dof)
+        v (seeded sampling, per-golfer)
+personalised distribution of resulting ShotOutcomes
+        v (classification, per candidate shot)
+personalised distribution of resulting GolfStates (different fairway/
+rough/bunker/green/OB probabilities per golfer)
+        v (E_base applied identically to every golfer)
+personalised distribution of E_base values -> personalised expected value
+/ Strokes Gained for the candidate
+```
+
+Two golfers' `PlayerShotDistribution`s differ in carry mean/scale, lateral
+bias/scale, correlation, and Student-t tail weight (per ADR 0006), shaped
+by ADR 0007's population prior and M4.5's personal partial-pooling update
+— this changes the probability mass landing in each lie/hazard category,
+which changes the *distribution* of `E_base` values a candidate shot
+produces, even though `E_base` itself never asks "who is playing."
+
+**State this explicitly:** A baseline expected-strokes model does NOT
+imply a non-personalised CaddAI recommendation. Personalisation under
+Option C flows entirely through Layer A (`PlayerShotDistribution`), not
+through the state-value function.
+
+`GolfState` itself remains unaffected by this: player/value context is
+supplied to the *value function*, never to the state type, under any of
+Options A, B, or C (see the amendment note on the `GolfState` ownership
+decision gate below).
+
+### Player-state ability is still a real future concern
+
+Option C is **potentially defensible for V0, not necessarily the final
+player-value architecture.** Identical resulting states (e.g. the same
+greenside bunker at the same distance) may plausibly produce different
+true strokes-to-hole-out expectations for a scratch golfer vs. a
+high-handicap golfer — a real limitation of Option C, acknowledged and
+not hidden, and the reason Option B remains the recorded long-term target
+rather than being dismissed.
+
+### Conventional Strokes Gained semantics preserved
+
+`SG_base = E_base(current) - (1 + E_base(resulting))`, using the *same*
+single-reference-population function on both sides, is the conventional,
+benchmark-comparable Strokes Gained quantity — exactly Broadie 2008's
+verified formula `v = f_s - f_e - 1` (one fractional-par function fit once
+against one reference population; section H item 2).
+
+A fully personalised `E_player(current) - (1 + E_player(resulting))` is a
+**different, not-necessarily-equivalent** quantity: it answers "how many
+strokes did this golfer gain relative to their *own* difficulty-adjusted
+baseline," not "relative to the conventional scratch/reference
+benchmark." These can diverge in sign and magnitude for the same shot
+(e.g. a below-average bunker player playing an average bunker shot:
+`SG_base` may be strongly negative relative to *scratch*, while a
+personalised quantity might be closer to zero because it's roughly what
+*that* golfer expected of themselves). Both are legitimate, but **must be
+named distinctly and never silently treated as interchangeable.**
+
+Under Option C, `E_player == E_base`, so the two SG quantities are
+numerically identical in V0 — this is a coincidence of Option C's
+collapse, not a justification for merging the two names/concepts. Keep
+distinct naming even when V0's numbers happen to match.
+
+### Proposed terminology (semantic clarity only, not locking exact names)
+
+Candidate names, offered for clarity of discussion — **exact code/type
+names are not locked here**, only the discipline of never silently
+conflating the concepts they'd represent:
+
+- Layer B's output type: `ExpectedStrokesBaseline` or
+  `BenchmarkExpectedStrokes`.
+- Layer C's output type: `PlayerAdjustedExpectedStrokes`,
+  `PlayerStateValue`, or `PlayerRelativeValue`.
+- The Layer-B-derived SG quantity: `BenchmarkStrokesGained` or
+  `strokes_gained_base`.
+- The Layer-C-derived SG quantity: `PlayerRelativeStrokesValue` or
+  `strokes_gained_player_relative`.
+
+### Recommendation-evaluation (M9) vs. strategy dual-use note
+
+A benchmark value function (Layer B) is comparable across players,
+comparable across model versions, useful for calibration/evaluation, and
+interpretable independently of personal strategy settings — plausibly
+useful to a future M9 synthetic-validation/evaluation harness. A
+player-adjusted value (Layer C) may be better suited to recommendation
+*selection* itself, since it can reflect a specific golfer's individual
+weaknesses/strengths. This document only records this potential dual use
+for a future milestone's benefit — **no M9 telemetry, evaluation harness,
+or metric design is proposed or implemented here.**
+
+### `Delta`'s evidence sources remain open
+
+A future `Delta` should not be narrowly scoped to handicap alone from the
+outset. Plausible, non-exhaustive evidence sources for a future `Delta`,
+listed to keep the design space open, not to select among them now:
+Handicap Index or a broader ability class, learned player history
+(per-lie-category performance derived from `ShotRecord` data),
+shot-type-specific performance, lie-specific performance, short-game
+performance, putting performance, or a population-prior-plus-personal-
+learning blend mirroring M4's own architecture (ADR 0006/0007,
+`docs/player-model.md`'s population-prior → onboarding → personal
+partial-pooling pipeline). **None of these is designed or implemented
+here** — this is a list of open evidence sources for a future `Delta`
+decision, not a selection among them.
+
+### Rejected note
+
+"Higher handicap = more/less risk" as a universal rule is **rejected** —
+it conflates Layer C (a fact about state difficulty for a given golfer)
+with Layer D (strategic risk/objective policy, out of scope, belonging to
+later M8 strategy work). A handicap-conditioned `Delta` may legitimately
+say "this golfer's bunker outcomes are worse than baseline, raising
+`E_player` for a bunker-heavy candidate" (Layer C) — it must never
+additionally encode "and therefore this golfer should always take the
+safer/riskier line" as baked-in universal policy (Layer D).
 
 ## I. Expected-strokes V0 options
 
@@ -1154,20 +1475,37 @@ modelling sophistication.
 
 ## J. Recommended expected-strokes V0
 
+> **Reconciled by the second amendment (2026-09-01) — read alongside
+> [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk).**
+> This section previously combined a distance/lie-conditioned interpolation
+> *and* a handicap/ability-band axis into one "V0" candidate. Following the
+> value-architecture separation in section H.2, only the distance/lie part
+> belongs to V0's neutral `E_base`/Layer B benchmark (Architecture Option
+> C). The handicap/ability-band axis belongs to a future, separately-gated,
+> **unscheduled** `Delta`/Layer C player-adjustment (Architecture Option
+> B) — it is **not** part of this section's V0 candidate any more. This
+> section is retitled in substance accordingly: it now describes
+> `E_base`'s candidate model family only.
+
 ```
-Status: LEADING ENGINEERING CANDIDATE (model family/contract shape) — NOT an approved V0, pending a still-unresolved numeric-baseline/data-source decision.
+Status: LEADING ENGINEERING CANDIDATE (E_base/Layer B model family/contract shape only) — NOT an approved V0, pending a still-unresolved numeric-baseline/data-source decision. The handicap/ability-band axis previously discussed here is now a separate, unscheduled Delta/Layer C follow-on (Architecture Option B), not part of this candidate.
 ```
 
-**Candidate model family (structural only — no formula, no table values,
-no implementation):** a **monotonic, interpolated lookup table,
-conditioned on distance and lie category, with an explicit
-handicap/ability-band axis** — i.e. **option 5 (monotonic interpolation)
-combined with option 6 (handicap-conditioned banding)** from
-[section I](#i-expected-strokes-v0-options), deliberately **not** options
-3/4 (parametric curve / regression), since both require either data
-CaddAI does not have or reused published coefficients whose licensing
-this amendment's live research found to be unresolved for every candidate
-source (section H/K).
+**Candidate model family for `E_base`/Layer B (structural only — no
+formula, no table values, no implementation):** a **monotonic,
+interpolated lookup table, conditioned on distance and lie category only,
+with no player-ability/handicap axis** — i.e. **option 5 (monotonic
+interpolation)** from [section I](#i-expected-strokes-v0-options),
+deliberately **not** options 3/4 (parametric curve / regression), since
+both require either data CaddAI does not have or reused published
+coefficients whose licensing this amendment's live research found to be
+unresolved for every candidate source (section H/K). Option 6
+(handicap-conditioned tables) from section I is **not** part of this
+V0 candidate — it is the natural candidate shape for a future `Delta`
+(Architecture Option B), if and when that separately-gated, currently
+unscheduled follow-on is pursued (see the `DECISION REQUIRED:
+Expected-Strokes / State-Value Architecture` and the two `FOLLOW-ON
+REQUIRED` blocks at the end of this document).
 
 **This is not presented as "recommended" in isolation, and must always be
 paired with the status qualifier above.** Why: this amendment's
@@ -1176,13 +1514,13 @@ underlying **semantic/conditioning structure** — distance + lie +
 ability-conditioned expected strokes — strongly supported by multiple
 independent, verified sources (section A conclusion). It found **no**
 legally reusable public numeric baseline for the actual table/coefficient
-values (section B conclusion). The model family/contract shape is
-therefore a defensible **engineering direction to design around now**, but
-the monotonic-interpolation-plus-handicap-band combination itself is
-**not adopted, approved, or provisionally accepted as V0** anywhere in
-this document — it remains gated on the still-unresolved numeric-baseline/
-data-source follow-on (see the `FOLLOW-ON REQUIRED` block at the end of
-this document).
+values (section B conclusion), for `E_base` or for a future `Delta`. The
+`E_base` model family/contract shape is therefore a defensible
+**engineering direction to design around now**, but it is **not adopted,
+approved, or provisionally accepted as V0** anywhere in this document —
+it remains gated on the still-unresolved numeric-baseline/data-source
+follow-on (see the `FOLLOW-ON REQUIRED` block at the end of this
+document).
 
 No specific numeric table, formula, or coefficient is proposed anywhere in
 this document.
@@ -1263,7 +1601,8 @@ licensing picture; it does not resolve licensing for any external source.
 
 - **Stable consumer contract, replaceable implementation.** Whatever
   expected-strokes function CaddAI eventually implements
-  (`expected_strokes(golf_state) -> float`, illustratively) should be
+  (`baseline_expected_strokes(golf_state) -> float`, illustratively —
+  see the naming below) should be
   designed so its initial implementation (a lookup/interpolated table) can
   later be replaced by a refitted table, a regression fit against CaddAI's
   own data, or a richer representation — **without changing the function
@@ -1271,40 +1610,60 @@ licensing picture; it does not resolve licensing for any external source.
   journal/the M9 harness consume.** This mirrors ADR 0007's core
   guarantee almost exactly, applied to a new value-model contract instead
   of a population-prior contract.
-- **Ability-conditioned contract direction (Architect items 4/5, 2026-09-01
-  amendment).** A future
-  `expected_strokes(state, ability_context?) -> value` contract shape is
-  architecturally sound to record now:
-  - **(a) Where ability/handicap lives — a separate parameter, not inside
-    `GolfState`.** `GolfState` is physical/course-relative fact
-    independent of who is playing; ability/handicap is golfer context.
-    This mirrors the existing separation between
-    `PlayerShotDistribution` (`caddai.statistics`, golfer-specific) and
-    course-relative facts (`course`/`simulation`) — the same seam, one
-    layer up.
-  - **(b) Does this foreclose a population-only V0? No.** An optional
-    parameter that, when absent, collapses to a documented "population
-    baseline" behavior mirrors ADR 0007's `PopulationPrior` shape exactly
-    (config-table-backed today, replaceable later, no signature change).
-    Recording the optional-parameter shape now does not commit CaddAI to
-    shipping handicap-conditioning in V0.
-  - **(c) Dependency-direction concern — none beyond what's already
+- **Value-architecture contract direction (Architect items 2/4/7,
+  2026-09-01 second amendment) — SUPERSEDES the previous
+  `expected_strokes(state, ability_context?) -> value` signature
+  proposal.** A prior version of this subsection proposed a single
+  function taking an optional `ability_context` parameter. Following the
+  Architect review recorded in full in
+  [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk),
+  that single-function shape is rejected in favour of two named,
+  separately composed interfaces:
+  - **Semantic/long-term contract:** a `baseline_expected_strokes(state)
+    -> value`-shaped Layer B interface (`E_base`), and a future
+    `player_adjusted_state_value(state, baseline_value, player_context)
+    -> value`-shaped Layer C interface (`Delta`/`E_player`), composed by
+    one composition layer — not a single function with an optional
+    parameter that silently switches behaviour, and not two
+    independently-owned services. See section H.2 for the full
+    Architecture Option A/B/C comparison and the recommendation
+    (semantic: Option B; V0: Option C).
+  - **V0 implementation ships only the one-parameter function.** V0
+    should expose **only** `baseline_expected_strokes(state) -> value` —
+    no `ability_context` parameter, inert/always-`None` or otherwise.
+    Recording the eventual two-function composition shape now (above) is
+    acceptable — an accepted-but-inert parameter wired into V0 code today
+    would be a premature-abstraction pattern, inviting a future caller to
+    pass something meaningful before `Delta` has any real content behind
+    it.
+  - **Where ability/handicap lives, if/when `Delta` is implemented — a
+    separate parameter to `Delta`, never inside `GolfState`.**
+    `GolfState` is physical/course-relative fact independent of who is
+    playing; ability/handicap is golfer context passed to `Delta`. This
+    mirrors the existing separation between `PlayerShotDistribution`
+    (`caddai.statistics`, golfer-specific) and course-relative facts
+    (`course`/`simulation`) — the same seam, one layer up. `GolfState`'s
+    own invariants (section D) are unaffected by this contract choice.
+  - **Dependency-direction concern — none beyond what's already
     documented.** `docs/architecture.md` already states `strategy`/
     `simulation` depend on `course`, `player`, `statistics`, and shared
-    domain types. An expected-strokes model reading player-ability data
-    would depend on `caddai.player`/`caddai.statistics` — both
-    already-approved, already-diagrammed edges, not new ones.
+    domain types. `E_base` needs no `caddai.player`/`caddai.statistics`
+    dependency at all; a future `Delta` reading player-ability data would
+    depend on those modules — both already-approved, already-diagrammed
+    edges, not new ones.
   - **Contract semantics vs. numeric implementation — confirmed
     compatible with ADR 0007's precedent.** Recording a stable
-    expected-strokes contract (accepting `GolfState` + optional ability
-    context, returning a value + explicit unsupported-state signal +
-    model/version provenance) without committing to numeric
-    tables/coefficients is architecturally sound now — this is ADR 0007's
-    "stable interface, replaceable implementation" pattern reapplied.
-    Recording this direction in this research document is **not itself
-    the ADR** — a separate future ADR is still required for the
-    expected-strokes interface at its own implementation time (see
-    [section P](#p-adr-requirements)).
+    `baseline_expected_strokes(state)` contract (returning a value +
+    explicit unsupported-state signal + model/version provenance, see
+    below) without committing to numeric tables/coefficients is
+    architecturally sound now — this is ADR 0007's "stable interface,
+    replaceable implementation" pattern reapplied. Recording this
+    direction in this research document is **not itself the ADR** — a
+    separate future ADR is still required for the expected-strokes
+    interface at its own implementation time (see
+    [section P](#p-adr-requirements)), and a further, separately-gated
+    future ADR is anticipated for `Delta`/Layer C if/when it is
+    implemented.
 - **Explicit model/version provenance.** Any expected-strokes result
   should be traceable to which underlying table/model version produced
   it (mirroring `population_prior_config.py`'s `config_version` /
@@ -1338,6 +1697,14 @@ licensing picture; it does not resolve licensing for any external source.
   until licensing is separately resolved (section K) — "provisional" here
   means "CaddAI-authored placeholder," not "an unverified transcription of
   someone else's proprietary table."
+- **Applies equally to a future `Delta`/Layer C.** The four provenance/
+  no-network/determinism/explicit-provisionality properties above are
+  described here in terms of `E_base`/Layer B specifically, since that is
+  the piece V0 actually ships (section H.2). They apply equally, without
+  modification, to `Delta`/Layer C once/if it is implemented — a future
+  `Delta` must carry its own model/version provenance, must remain
+  offline/deterministic, and must mark its own numeric content as
+  provisional until separately validated, exactly as `E_base` must.
 
 ## N. Performance / batch-evaluation implications
 
@@ -1384,8 +1751,15 @@ licensing picture; it does not resolve licensing for any external source.
   spike does not choose a technology, only notes the shape that keeps
   that option open.
 - **Verifying the Strokes Gained formula is representable in batch form.**
+  This describes the general shape shared by `SG_base` (using `E_base`
+  throughout) and a possible future player-relative quantity (using
+  `E_player` throughout, per
+  [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk))
+  — never a mix of the two on either side of one computation:
   `strokes_gained = expected_strokes(current_state) - (1 +
-  expected_strokes(resulting_state))`. This is representable in a fully
+  expected_strokes(resulting_state))`, where `expected_strokes` is
+  consistently `E_base` for `SG_base`, or consistently a future `E_player`
+  for a player-relative quantity. This is representable in a fully
   vectorised form **provided**:
   - `expected_strokes` itself accepts a batch of `GolfState`s (or their
     array-representable fields) and returns a same-shaped array of
@@ -1436,6 +1810,18 @@ licensing picture; it does not resolve licensing for any external source.
       (a deterministic array-wise offset, not a per-item Python loop) to
       avoid becoming the actual bottleneck in an otherwise-vectorised
       pipeline.
+- **A future `Delta`/Layer C composition remains vectorisable, not just
+  `E_base` alone.** Per the [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk)
+  value-architecture discussion: when/if `Delta` is eventually
+  implemented, it is conditioned on a *single* golfer's `player_context`
+  for an entire batch of N simulated outcomes — ability context does not
+  vary per Monte Carlo sample within one candidate-shot evaluation — so
+  it can be applied as one broadcast adjustment per lie-category cell
+  across all N samples. `E_base(states) + Delta(states, player_context)`
+  therefore remains a vectorised, O(N) composition, not O(N) stateful
+  calls. Batch/vectorisation is preserved under Architecture Option B,
+  not only under Option C — this is not a reason to prefer one option
+  over the other.
 
 ## O. Edge cases
 
@@ -1656,7 +2042,15 @@ DECISION REQUIRED: GolfState ownership and course-relative mapping
 > **Amendment note (2026-09-01):** this decision block is otherwise
 > unchanged in substance. This amendment's Architect confirmation (see
 > sections E/F) **reconfirms — does not reopen** — the recommendation
-> below.
+> below. A second amendment, the same day, separately reconfirmed (per
+> [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk)
+> item 6) that `GolfState` remains player-neutral under **every**
+> expected-strokes value-architecture option (A, B, or C, see the
+> `DECISION REQUIRED: Expected-Strokes / State-Value Architecture` block
+> below) — none of them requires adding player/ability/handicap/risk
+> fields to `GolfState` itself; player/value context is supplied to the
+> *value function*, never to the state type. This is a confirmation, not
+> a reopening, of the recommendation below.
 
 **Recommended ownership:** `GolfState` (the type) lives in a new, neutral,
 dependency-free top-level module (illustratively `caddai.golf_state`),
@@ -1697,64 +2091,114 @@ future migration timeline (see the Batch/vectorisation + M6 compatibility
 note above).
 
 ```
-DECISION REQUIRED: Expected-Strokes V0 Contract Direction
+DECISION REQUIRED: Expected-Strokes / State-Value Architecture
 ```
 
-**Question:** Should CaddAI's expected-strokes contract support distance +
-lie/state + golfer-ability/handicap conditioning, with the concrete
-numeric baseline/model remaining replaceable and unresolved until
-usable-data/licensing verification is complete?
+> **Amendment note (2026-09-01, second amendment):** this block
+> **replaces** the previous `DECISION REQUIRED: Expected-Strokes V0
+> Contract Direction` block, which asked whether CaddAI's expected-strokes
+> contract should support combined distance + lie/state +
+> golfer-ability/handicap conditioning in a single function. That framing
+> is superseded — see [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk)
+> for why a single combined function risks conflating three distinct
+> questions. This block reframes the decision around the separated
+> Architecture Option A/B/C comparison instead.
 
-**Recommended answer:** **YES**, supported by verified evidence per
-[section H](#h-expected-strokes-evidence-review)'s OVERALL CONCLUSION
-(part A) and [section H.1](#h1-amateur-evidence-extra-scrutiny)'s amateur
-evidence scrutiny.
+**Question:** Should CaddAI separate benchmark expected strokes (Layer B,
+`E_base`) from player-specific state-value adjustment (Layer C, `Delta`)
+from strategic risk/objective (Layer D, out of scope, later strategy/M8
+work) — i.e. Architecture Option B — rather than a single ability-
+conditioned function (Architecture Option A), or should V0 ship only the
+neutral baseline with no player-adjustment seam at all (Architecture
+Option C)? See [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk)
+for the full Architecture Option A/B/C comparison.
+
+**Recommended answer:** this is the **Architect's reasoned recommendation
+for human review, not something this document adopts unilaterally**:
+- **Semantic/long-term architecture: Architecture Option B** (neutral
+  `E_base` + separately named, separately composed `Delta`).
+- **V0 implementation: Architecture Option C** (`E_player(state) =
+  E_base(state)`; `Delta` is identity/no-op and unimplemented).
 
 **Verified evidence:** two peer-reviewed Broadie papers (2008, 2011) using
 real distance+lie+scratch/tour-benchmark data, plus three independently
-verified commercial products (Golfmetrics, Arccos, Shot Scope) all
-convergently built around a distance + lie + ability/handicap benchmark —
-see section H's VERIFIED EXTERNAL EVIDENCE list.
+verified commercial products (Golfmetrics, Arccos, Shot Scope), support
+the *concept* that ability materially affects expected-strokes-relevant
+performance (section H's VERIFIED EXTERNAL EVIDENCE list, section H.1's
+amateur evidence scrutiny) — but no verified source publishes a combined
+distance+lie+ability-conditioned expected-strokes numeric surface
+(Architecture Option A's specific data need), and Broadie's own
+fractional-par methodology (section H, item 2) is itself a
+single-reference-population benchmark, i.e. exactly Layer B/Architecture
+Option B's `E_base` shape, not Option A's combined shape.
 
-**Alternatives considered:** a population-only V0 with no ability
-conditioning at all (simpler, but fails the tour-vs-amateur
-transferability concern that Broadie 2011 vs. Broadie 2008/commercial
-products' population differences make explicit); waiting for a full
-licensed dataset before defining any contract (defers a design decision
-that does not itself require data — the contract *shape* is separable
-from the numeric baseline, per ADR 0007's precedent — and would stall
-`GolfState`/classification-dependent design work with no offsetting
-benefit).
+**Alternatives considered:**
+- **Architecture Option A** (single ability-conditioned function) —
+  rejected as the long-term target: forecloses conventional,
+  benchmark-comparable Strokes Gained semantics (section H.2), has no
+  supporting evidence for a *combined* numeric surface, and bakes an
+  unresolved data/licensing problem into the core value contract instead
+  of isolating it behind a swappable `Delta`.
+- **Architecture Option C as a permanent architecture** (no player
+  adjustment ever) — rejected as a *permanent* end-state: it discards real
+  evidence (Broadie 2008's Table 1, Arccos'/Shot Scope's shipped
+  handicap-conditioned products) that ability materially affects
+  difficulty beyond what Layer A alone captures.
+- **Skip recording the Layer C/`Delta` seam entirely until Option B is
+  actually justified by data** — a defensible alternative, not adopted:
+  the Architect judges recording the seam now costs little and avoids a
+  future signature-breaking change (ADR 0007 precedent), but a human
+  reviewer may reasonably prefer this simpler alternative instead.
 
-**Consequences:** enables `GolfState`, classification, and rollout design
-to proceed on a contract shape that will not need to change when the
-numeric baseline is eventually resolved; keeps the contract stable for
-`strategy`, the decision journal, and the M9 harness.
+**Consequences:** enables `GolfState`, classification, and rollout design,
+plus the V0 `baseline_expected_strokes(state)` contract (section M), to
+proceed now; keeps the door open for `Delta`/Layer C to be added later as
+an additive, non-breaking change; keeps Strokes Gained semantics
+unambiguous (`SG_base` vs. a distinctly-named player-relative quantity,
+section H.2).
 
-**Remaining uncertainty:** section H's OVERALL CONCLUSION part B (no
-usable public numeric baseline was found) is **not** resolved by this
-decision — see the `FOLLOW-ON REQUIRED` block below.
+**Remaining uncertainty:** the numeric baseline for `E_base`/Layer B
+itself is **still unresolved regardless of which architecture option is
+chosen** — see the `FOLLOW-ON REQUIRED` block below, which this decision
+does not resolve. A `Delta`/Layer C numeric/model content question is a
+further, separate, even-less-evidenced follow-on, also not resolved here
+(see the amended `FOLLOW-ON REQUIRED` block below).
 
-**Licensing implications:** all specific numeric sources identified this
-session (Broadie 2008/2011, Golfmetrics, Arccos, Shot Scope) are
-proprietary, access-restricted, or never published as open data (section
-K) — no numeric content from any of them may be embedded until licensing
-is separately resolved, which this decision does not attempt to resolve.
+**Licensing implications:** unchanged from the existing analysis — all
+specific numeric sources identified this session (Broadie 2008/2011,
+Golfmetrics, Arccos, Shot Scope) are proprietary, access-restricted, or
+never published as open data (section K); no numeric content from any of
+them may be embedded until licensing is separately resolved, which this
+decision does not attempt to resolve, for either `E_base` or a future
+`Delta`.
 
-**Implementation implications:** the expected-strokes *contract* (function
-signature, optional ability-context parameter, population-baseline
-collapse behaviour, model/version provenance — section M) can be designed
-now, gated on its own future ADR (section P). The expected-strokes
-*numeric baseline* cannot be implemented yet — see the follow-on below.
+**Implementation implications:** the V0 single-parameter
+`baseline_expected_strokes(state) -> value` function (section M) can be
+designed now, gated on its own future ADR (section P) and on the numeric-
+baseline follow-on below. `Delta`/Layer C remains unimplemented, pending
+its own future evidence/data question — not designed, scheduled, or
+gated on an ADR here.
 
 **What later decision is still required:** the numeric-baseline/data-source
-follow-on immediately below.
+follow-on immediately below, for `E_base`/Layer B; and, separately and
+later, `Delta`/Layer C's own evidence/data/implementation question if
+Architecture Option B is pursued.
 
 ```
 FOLLOW-ON REQUIRED: Expected-Strokes Numeric Baseline / Data Source
 ```
 
+> **Amendment note (2026-09-01, second amendment):** this follow-on is
+> specifically about Layer B's (`E_base`'s) numeric baseline — see
+> [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk).
+> A **second, even-less-evidenced future follow-on** would separately
+> cover Layer C's (`Delta`'s) numeric/model content, if/when Architecture
+> Option B is pursued — that second follow-on is not designed or
+> scheduled by this document at all; it is noted here only so it is not
+> forgotten once `E_base`'s own follow-on is eventually resolved.
+
 This follow-on must determine one of:
+
 
 - a legally reusable public baseline (**none currently identified** —
   section H/K);
@@ -1777,7 +2221,14 @@ terms) that a future pass toward this follow-on might start from.
 ## Likely future M5 implementation decomposition (proposal only, not created as issues)
 
 **None of the following are created as GitHub issues by this task.** This
-is a candidate ordering only, for the human/Orchestrator to review:
+is a candidate ordering only, for the human/Orchestrator to review.
+
+> **Amendment note (2026-09-01, second amendment):** reordered/relabelled
+> below to reflect the [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk)
+> Layer A–D breakdown. Item 3 is now explicitly scoped to Layer B
+> (`E_base`) only. Player-adjustment (Layer C, `Delta`) is listed
+> separately at the end as a **later, not-yet-scheduled** item, consistent
+> with Architecture Option C being the V0 recommendation.
 
 1. **`GolfState` domain/state contract** — new neutral module, minimal
    fields per section D, gated on an ADR per section P.
@@ -1785,18 +2236,35 @@ is a candidate ordering only, for the human/Orchestrator to review:
    `caddai.simulation`, including the `ROUGH`/generic-penalty-area
    `FeatureType` additions and new point-in-polygon geometric primitives
    identified in section B.
-3. **Expected-strokes V0** — gated on independent human verification of
-   section H/K's sources and the roadmap's required decision gate; not to
-   be opened until that gate passes.
-4. **Strokes Gained distribution-aware candidate evaluation** — consumes
-   1–3 above; produces the full outcome distribution (never a single
-   scalar), per the roadmap's explicit requirement.
+3. **Baseline expected strokes (Layer B, `E_base`)** — the single-
+   parameter `baseline_expected_strokes(state) -> value` contract (section
+   M), gated on independent human verification of section H/K's sources
+   and the `DECISION REQUIRED: Expected-Strokes / State-Value
+   Architecture` gate, and separately gated on the `FOLLOW-ON REQUIRED:
+   Expected-Strokes Numeric Baseline / Data Source` block's own numeric-
+   baseline resolution; not to be opened until both pass.
+4. **Strokes Gained (benchmark) distribution-aware candidate evaluation**
+   — consumes 1–3 above; produces the full outcome distribution (never a
+   single scalar), per the roadmap's explicit requirement; computes
+   `SG_base` (section H.2), not a player-relative SG quantity.
 5. **Baseline expected-value strategy & recommendation assembly** —
    consumes 1–4; the first structured, trustworthy `strategy`
-   recommendation maximising expected Strokes Gained as its baseline
-   objective.
+   recommendation maximising expected Strokes Gained (benchmark) as its
+   baseline objective.
+
+**Later, not-yet-scheduled, distinct from the above:**
+
+6. **Player-adjustment (Layer C, `Delta`)** — `player_adjusted_state_value
+   (state, baseline_value, player_context) -> value` (section M's future
+   contract), gated on its own separate future evidence/data follow-on
+   (see the amended `FOLLOW-ON REQUIRED` block above) and its own future
+   ADR (section P); not designed, scheduled, or opened by this document.
+   Only pursued if Architecture Option B (section H.2) is adopted at the
+   decision gate.
 
 Ordering follows strict data dependency (each item consumes the previous).
-Item 3's gate is the most consequential sequencing constraint: items 4–5
-cannot meaningfully begin before it, and item 3 itself cannot begin before
-its own human-verification/decision-gate step completes.
+Item 3's gate is the most consequential sequencing constraint for items
+1–5: items 4–5 cannot meaningfully begin before it, and item 3 itself
+cannot begin before its own human-verification/decision-gate step
+completes. Item 6 is independent of this sequencing — it is a later,
+separately-gated addition, not a blocker for items 1–5.
