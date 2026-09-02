@@ -11,6 +11,15 @@ first public API is published.
 ### Added
 
 - Amended [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, PR #96), third revision: renamed the
+  derived distance property from `distance_to_hole_metres` to
+  `distance_to_hole_reference_metres`, making explicit that
+  `hole_reference_position` may be an approximation (a green-centroid
+  fallback) rather than a verified physical pin location. No contract
+  shape/field-set change and no status change — ADR 0008 remains
+  **Proposed**.
+
+- Amended [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
   domain contract and ownership, PR #96) with a second revision, before any
   human sign-off: removed `selected_target`, `is_penalty`,
   `course_reference`, and `hole_number` from the `GolfState` field contract

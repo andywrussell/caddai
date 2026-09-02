@@ -2,11 +2,17 @@
 
 ## Status
 
-Proposed. This is the **second revision** of this same ADR (same ADR
-number, still PR #96) — it shrinks the `GolfState` field contract further,
-in response to Adversarial Review scrutiny of the first draft, before any
-human sign-off has been given. It is not a new ADR, and it does not hide
-the first draft's content: the first draft's now-superseded choices
+Proposed. This is the **third revision** of this same ADR (same ADR
+number, still PR #96) — the second revision shrank the `GolfState` field
+contract (removing `selected_target`, `is_penalty`, `course_reference`,
+`hole_number`, and relaxing the `holed` invariant), and this third revision
+renames the derived distance property from `distance_to_hole_metres` to
+`distance_to_hole_reference_metres` and tightens the surrounding wording to
+make explicit that it is a distance to a *reference* point, not necessarily
+to a verified physical pin — a naming/wording-only change with no field-set,
+invariant, ownership, or dependency-direction change. Neither revision has
+received human sign-off yet. This is not a new ADR, and it does not hide
+earlier drafts' content: the first draft's now-superseded choices
 (`selected_target`, `is_penalty`, the `holed`/exact-coordinate-equality
 invariant, `course_reference`/`hole_number`) are preserved, explained, and
 formally rejected in [Alternatives considered](#alternatives-considered)
@@ -45,7 +51,7 @@ ADR can move to **Accepted**:
    section below).
 3. The exact `GolfState` field set and its validated invariants: four
    stored fields (`position`, `hole_reference_position`, `lie`, `holed`)
-   plus the computed `distance_to_hole_metres`; the relaxed `holed`
+   plus the computed `distance_to_hole_reference_metres`; the relaxed `holed`
    invariant (no exact-coordinate-equality requirement against
    `hole_reference_position`, but now requiring `holed=True ⇒ lie not in
    {OUT_OF_BOUNDS, PENALTY_AREA, UNKNOWN}` — see the `holed` field
@@ -172,13 +178,19 @@ class GolfState(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def distance_to_hole_metres(self) -> float:
+    def distance_to_hole_reference_metres(self) -> float:
         return haversine_distance_metres(self.position, self.hole_reference_position)
 ```
 
 `# type: ignore[prop-decorator]` matches the existing `computed_field`
 precedent in `caddai.player.models` (mypy strict does not yet understand
 `@computed_field` stacked on `@property`).
+
+`distance_to_hole_reference_metres` is the geometric distance between the
+ball position and the reference position used for value evaluation. It
+may equal the true distance to the hole when the reference is an actual
+known pin. It may be an approximation when the reference is a green
+centroid or another fallback.
 
 This is a smaller contract than this ADR's first draft: `is_penalty`,
 `selected_target`, `course_reference`, and `hole_number` are removed
@@ -192,7 +204,7 @@ One implementation note for whichever issue implements/consumes this:
 
 - `extra="forbid"` combined with a `@computed_field` means
   `GolfState.model_validate(instance.model_dump())` will **not** round-trip
-  — `model_dump()` serializes `distance_to_hole_metres` out, but
+  — `model_dump()` serializes `distance_to_hole_reference_metres` out, but
   `model_validate()` rejects it back in as an unexpected keyword under
   `extra="forbid"`. Any future persistence/replay path (e.g. a decision
   journal, M8) must reconstruct `GolfState` from its *stored* fields only
@@ -215,9 +227,10 @@ section D's requirements table:
   `course/distance.py` already does per-call (ADR 0004's frame-consistency
   invariant) — `GolfState` does not cache a stale local frame.
 - **`hole_reference_position`** (renamed from `hole_position`) — stored as
-  data, not `distance_to_hole_metres` as a precomputed float, structurally
-  eliminating the drift risk between a stored distance and `position`:
-  `distance_to_hole_metres` is derived on demand (see below), so it is
+  data, not `distance_to_hole_reference_metres` as a precomputed float,
+  structurally eliminating the drift risk between a stored distance and
+  `position`: `distance_to_hole_reference_metres` is derived on demand
+  (see below), so it is
   definitionally always consistent with whichever `position`/
   `hole_reference_position` pair is currently stored — there is no second
   value that can go stale. Renamed from `hole_position` because that name
@@ -241,12 +254,12 @@ section D's requirements table:
   small, flat, multi-field value objects (including nested `Coordinate`
   fields) thousands of times per candidate-evaluation loop without
   measurable overhead. Issue #82's actual `golf_state/models.py`
-  implementation should repeat this "not an authoritative pin location,
+  implementation **must** repeat this "not an authoritative pin location,
   may be a green-centroid approximation" warning inline in the field's own
   docstring, not only in this ADR — a future engineer reading the type
   definition directly won't necessarily cross-reference ADR 0008.
-- **`distance_to_hole_metres`** — a Pydantic `@computed_field` property,
-  derived via `caddai.gps.distance.haversine_distance_metres(position,
+- **`distance_to_hole_reference_metres`** — a Pydantic `@computed_field`
+  property, derived via `caddai.gps.distance.haversine_distance_metres(position,
   hole_reference_position)` (an existing, pure `Coordinate -> Coordinate ->
   float` function in the already-approved `caddai.gps` dependency). This
   makes finiteness and non-negativity automatic — given two valid
@@ -318,20 +331,22 @@ section D's requirements table:
   relaxed invariant. No constraint that `holed` implies `lie == GREEN` (a
   hole-in-one from `TEE` is holed with an irrelevant/moot lie, and `TEE`
   remains a permitted `holed=True` lie). A
-  `distance_to_hole_metres` value that is non-zero alongside `holed=True`
-  is representable and intentionally not forbidden — `distance_to_hole_metres`
-  is always computed via `haversine_distance_metres(position,
+  `distance_to_hole_reference_metres` value that is non-zero alongside
+  `holed=True` is representable and intentionally not forbidden —
+  `distance_to_hole_reference_metres` is always computed via
+  `haversine_distance_metres(position,
   hole_reference_position)` regardless of `holed`'s value, and is never
   special-cased to `0.0`. This is a **binding consumer contract, not a
   `GolfState`-internal one**: `holed=True` implies expected-strokes-
   remaining is semantically zero, and any consumer (`E_base`, Strokes
   Gained) **must** check `holed` first and short-circuit to zero — it must
-  **never** read `distance_to_hole_metres`'s numeric value as a proxy for
-  terminal status, regardless of what that value happens to be. Stated
-  plainly: distance must not be used to infer `holed=True` (already true —
-  `holed` is independently stored), **and** a non-zero
-  `distance_to_hole_metres` alongside `holed=True` must not be treated by
-  any consumer as evidence against `holed`'s own explicit value — `holed`
+  **never** read `distance_to_hole_reference_metres`'s numeric value as a
+  proxy for terminal status, regardless of what that value happens to be.
+  Stated plainly: distance must not be used to infer `holed=True` (already
+  true — `holed` is independently stored), **and** a non-zero
+  `distance_to_hole_reference_metres` alongside `holed=True` must not be
+  treated by any consumer as evidence against `holed`'s own explicit value
+  — `holed`
   is authoritative. A non-zero discrepancy is, if anything, a useful
   data-quality signal for a future decision journal (e.g. a golfer's
   recorded position was 2m from the recorded hole reference when they
@@ -478,7 +493,7 @@ revision removes both fields and adopts **Option B**.
 - **Option B — identity supplied by surrounding context (SELECTED).**
   `GolfState` contains only state/value-relevant physical semantics
   (`position`, `hole_reference_position`, `lie`, `holed`,
-  `distance_to_hole_metres`). Course/hole identity remains with:
+  `distance_to_hole_reference_metres`). Course/hole identity remains with:
   - the mapping input/context — the caller already supplies `course`/
     `Hole` geometry as an *input* to the mapper per "Course-relative
     mapping responsibility" above, so it already has that identity in hand
@@ -489,8 +504,8 @@ revision removes both fields and adopts **Option B**.
 
   Justification against every anticipated consumer:
   - **Expected-strokes (`E_base`) needs**: only state characteristics —
-    position, distance-to-hole, lie, holed — not which physical course/
-    hole this is in a leaderboard/navigation sense.
+    position, distance-to-hole-reference, lie, holed — not which physical
+    course/hole this is in a leaderboard/navigation sense.
   - **Strokes Gained needs**: the same.
   - **Simulation needs**: the mapper already receives `course`/`Hole` as
     an input; it does not need `GolfState` to echo an identifier back to
@@ -608,11 +623,12 @@ records the following as guidance for issue #82 to implement:
   bypassing the `holed` check awkward by construction, not just avoid it
   by convention. `E_base`'s own function body must check `state.holed` as
   its literal first statement and short-circuit to `0.0` before touching
-  `lie` or `distance_to_hole_metres` at all — never compute a distance- or
-  lie-based value first and special-case `holed` afterward. M5.9 **must**
-  include a parametrized unit test asserting `E_base` returns exactly
-  `0.0` for `holed=True` across multiple arbitrary, non-zero
-  `distance_to_hole_metres` values — not a single near-zero-distance case,
+  `lie` or `distance_to_hole_reference_metres` at all — never compute a
+  distance- or lie-based value first and special-case `holed` afterward.
+  M5.9 **must** include a parametrized unit test asserting `E_base` returns
+  exactly `0.0` for `holed=True` across multiple arbitrary, non-zero
+  `distance_to_hole_reference_metres` values — not a single
+  near-zero-distance case,
   which would pass even if the short-circuit were absent and the result
   were merely incidentally correct. This test is required, not optional,
   exactly like the exhaustive-`match`/no-catch-all requirement for
@@ -627,16 +643,17 @@ records the following as guidance for issue #82 to implement:
   all three exclusions are physically required, not just the original
   `UNKNOWN` case. This revision removes the first draft's other
   malformed-state rule (`holed=True` and `is_penalty=True` together) along
-  with `is_penalty` itself. `distance_to_hole_metres` no longer needs its
-  own finiteness/
+  with `is_penalty` itself. `distance_to_hole_reference_metres` no longer
+  needs its own finiteness/
   non-negativity validation: as a `@computed_field` derived via
   `haversine_distance_metres`, it is always finite and `>= 0` given two
   valid `Coordinate`s, by construction of the haversine formula itself —
   there is no separate malformed-float state to reject.
-- `GolfState` does not verify `distance_to_hole_metres` against `position`
-  (the drift risk this would require is eliminated structurally — see the
-  `hole_reference_position`/`distance_to_hole_metres` field rationale
-  above): the value is always recomputed from whichever `position`/
+- `GolfState` does not verify `distance_to_hole_reference_metres` against
+  `position` (the drift risk this would require is eliminated structurally
+  — see the `hole_reference_position`/`distance_to_hole_reference_metres`
+  field rationale above): the value is always recomputed from whichever
+  `position`/
   `hole_reference_position` are currently stored. This revision also drops
   the first draft's requirement that the mapper copy
   `hole_reference_position` verbatim into `position` for a holed result —
@@ -736,8 +753,9 @@ to context that already has it.
   remaining impossible/ambiguous states ("holed with an unknown lie",
   "holed while out of bounds", "holed while in a penalty area")
   unrepresentable at construction, not just discouraged by convention. A
-  non-zero computed `distance_to_hole_metres` alongside `holed=True`
-  remains representable and is intentionally not forbidden — see the
+  non-zero computed `distance_to_hole_reference_metres` alongside
+  `holed=True` remains representable and is intentionally not forbidden —
+  see the
   `holed` field rationale above; this is a deliberate design choice (a
   data-quality signal, not a defect), not a gap.
 - Positive: removing `is_penalty` eliminates a field whose value was fully
@@ -768,14 +786,14 @@ to context that already has it.
   dependency edge) from constructing one directly; this is a documented
   convention, not an enforced guarantee, consistent with how every other
   foundational value type in this codebase already works.
-- Negative: `hole_reference_position`/`distance_to_hole_metres` will
-  initially resolve against green-centroid distance, not a true pin
+- Negative: `hole_reference_position`/`distance_to_hole_reference_metres`
+  will initially resolve against green-centroid distance, not a true pin
   distance, because `Hole.pin_position` does not exist yet — a semantic
   approximation every M5.4/M5.5 consumer and any downstream
   expected-strokes evaluation must be aware of until pin data is added.
   This is purely a *semantic* limitation of what `hole_reference_position`
   currently refers to, not a structural risk: because
-  `distance_to_hole_metres` is a `@computed_field` derived from
+  `distance_to_hole_reference_metres` is a `@computed_field` derived from
   `position`/`hole_reference_position` rather than a separately stored
   float, drift/verification risk between a stored distance and `position`
   is eliminated structurally, not merely mitigated.
@@ -791,11 +809,12 @@ to context that already has it.
 - Negative: relaxing the `holed` invariant also introduces a new
   *consumer*-side foot-gun that the first draft's exact-coordinate-
   equality rule prevented for free. Under the first draft,
-  `holed=True ⇒ position == hole_position` meant `distance_to_hole_metres`
-  was structurally `0.0` whenever `holed=True`, so even a naive `E_base`
-  that forgot to check `holed` first got the right answer (zero remaining
-  strokes) by accident. That safety net is gone: a naive `E_base` that
-  reads `distance_to_hole_metres` instead of checking `holed` first will
+  `holed=True ⇒ position == hole_position` meant
+  `distance_to_hole_reference_metres` was structurally `0.0` whenever
+  `holed=True`, so even a naive `E_base` that forgot to check `holed` first
+  got the right answer (zero remaining strokes) by accident. That safety
+  net is gone: a naive `E_base` that reads
+  `distance_to_hole_reference_metres` instead of checking `holed` first will
   now silently compute a wrong, nonzero expected-strokes value, with zero
   structural signal that anything is wrong — unlike the `UNKNOWN`-handling
   guidance above, where an exhaustive `match` with no catch-all lets mypy
@@ -880,7 +899,8 @@ to context that already has it.
    computed once by the mapper from `course` geometry + `position` — this
    was this ADR's original draft, and is now rejected in favour of storing
    `hole_reference_position: Coordinate` and deriving
-   `distance_to_hole_metres` as a `@computed_field`. The stored-float
+   `distance_to_hole_reference_metres` as a `@computed_field`. The
+   stored-float
    approach left `GolfState` structurally unable to verify the distance
    against `position` (it holds no course geometry), an acknowledged drift
    risk between two values that must otherwise be kept in sync by
@@ -916,16 +936,17 @@ to context that already has it.
     would make `GolfState` reject a golfer-asserted holed shot merely
     because two independently recorded points differ at the float level.
     See the `holed` field rationale above.
-13. **Forcing `distance_to_hole_metres` to `0.0` when `holed=True`** —
-    considered as part of this revision (an alternative to the invariant
-    in #12) and rejected in favour of the consumer-contract approach:
-    forcing the computed distance to `0.0` whenever `holed` is true would
-    hide a genuine, potentially useful geometric discrepancy (e.g. a
-    data-quality signal for a future decision journal) and would
-    reintroduce exactly the kind of "magic override tied to a boolean"
-    this contract otherwise avoids. Instead, consumers must check `holed`
-    first and never read `distance_to_hole_metres` as a proxy for terminal
-    status — see the `holed` field rationale above.
+13. **Forcing `distance_to_hole_reference_metres` to `0.0` when
+    `holed=True`** — considered as part of this revision (an alternative
+    to the invariant in #12) and rejected in favour of the
+    consumer-contract approach: forcing the computed distance to `0.0`
+    whenever `holed` is true would hide a genuine, potentially useful
+    geometric discrepancy (e.g. a data-quality signal for a future
+    decision journal) and would reintroduce exactly the kind of "magic
+    override tied to a boolean" this contract otherwise avoids. Instead,
+    consumers must check `holed` first and never read
+    `distance_to_hole_reference_metres` as a proxy for terminal status —
+    see the `holed` field rationale above.
 14. **Option A — `GolfState` carries stable course/hole identity** — this
     ADR's own first draft's `course_reference`/`hole_number` fields. Now
     rejected in favour of Option B: defining a genuinely stable, unique
@@ -963,8 +984,9 @@ all-scalar/categorical field shape (no Shapely geometry, no embedded
 provider objects) is deliberately chosen so a future M6 language/process
 boundary can represent it in another schema (Protobuf, JSON Schema, a Rust
 struct) without a redesign of the contract itself — only a serialization
-mapping. A `@computed_field` (`distance_to_hole_metres`) is a Pydantic/
-Python-specific convenience for consumers within this codebase; a future
+mapping. A `@computed_field` (`distance_to_hole_reference_metres`) is a
+Pydantic/Python-specific convenience for consumers within this codebase;
+a future
 M6 schema representation would recompute it from `position`/
 `hole_reference_position` on the far side of the boundary rather than
 needing to serialize it as a stored field.
@@ -996,8 +1018,8 @@ Section D's distance-to-hole row favoured "storing it as a resolved
 scalar... [so] every consumer [avoids] needing course-geometry access just
 to read a distance" over deriving it on demand; this ADR honours that
 intent — no consumer needs course-geometry access to read
-`distance_to_hole_metres` — by storing `hole_reference_position` (itself a
-resolved point, requiring the same course-geometry access the spike
+`distance_to_hole_reference_metres` — by storing `hole_reference_position`
+(itself a resolved point, requiring the same course-geometry access the spike
 anticipated) and deriving the distance from it via a dependency-free,
 course-geometry-free `haversine_distance_metres` call, rather than storing
 the distance as an independent scalar that could drift from `position`/
