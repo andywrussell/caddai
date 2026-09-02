@@ -10,6 +10,23 @@ first public API is published.
 
 ### Added
 
+- [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, PR #96) promoted from **Proposed** to
+  **Accepted** — approved by the human on 2026-09-02, after three
+  revisions. Confirms: `caddai.golf_state` as the canonical neutral domain
+  module, maintained by the Strategy Engineer; the `LieCategory` V0
+  taxonomy; the final four-stored-field `GolfState` contract (`position`,
+  `hole_reference_position`, `lie`, `holed`, plus the computed
+  `distance_to_hole_reference_metres`); Option B (course/hole identity
+  supplied by surrounding context, never stored on `GolfState`); selected
+  target as mapper/decision context only, never a `GolfState` field; no
+  stored `is_penalty`; and the Rules/penalty boundary principle. Updated
+  [docs/adr/README.md](docs/adr/README.md)'s index status to `Accepted`
+  and [AGENTS.md](AGENTS.md) §4's `golf_state` ownership line to drop the
+  now-resolved "pending sign-off" caveat. No production code, `GolfState`
+  implementation, or test changes; no further architecture decisions were
+  reopened.
+
 - Amended [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
   domain contract and ownership, PR #96), third revision: renamed the
   derived distance property from `distance_to_hole_metres` to

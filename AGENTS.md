@@ -122,12 +122,10 @@ Each subsystem is owned by one domain engineer agent (see
 - `src/caddai/course/`, `src/caddai/gps/` → Course Engineer
 - `src/caddai/player/`, `src/caddai/statistics/` → Player Engineer
 - `src/caddai/strategy/`, `src/caddai/simulation/` → Strategy Engineer
-- `src/caddai/golf_state/` → Strategy Engineer (module ownership pending
-  ADR 0008's `Proposed` → `Accepted` human sign-off; see that ADR's Status
-  section). A neutral, dependency-light module (depends only on `gps`) the
-  Strategy Engineer maintains, not a subsystem it is entitled to add
-  ownership-direction dependencies to — see
-  [ADR 0008](docs/adr/0008-golf-state-domain-contract.md).
+- `src/caddai/golf_state/` → Strategy Engineer. A neutral, dependency-light
+  module (depends only on `gps`) the Strategy Engineer maintains, not a
+  subsystem it is entitled to add ownership-direction dependencies to —
+  see [ADR 0008](docs/adr/0008-golf-state-domain-contract.md).
 
 Don't edit another agent's owned files without reason (e.g. a small,
 clearly-scoped shared-type change). Cross-cutting changes should be flagged

@@ -2,22 +2,21 @@
 
 ## Status
 
-Proposed. This is the **third revision** of this same ADR (same ADR
-number, still PR #96) — the second revision shrank the `GolfState` field
-contract (removing `selected_target`, `is_penalty`, `course_reference`,
-`hole_number`, and relaxing the `holed` invariant), and this third revision
-renames the derived distance property from `distance_to_hole_metres` to
-`distance_to_hole_reference_metres` and tightens the surrounding wording to
-make explicit that it is a distance to a *reference* point, not necessarily
-to a verified physical pin — a naming/wording-only change with no field-set,
-invariant, ownership, or dependency-direction change. Neither revision has
-received human sign-off yet. This is not a new ADR, and it does not hide
-earlier drafts' content: the first draft's now-superseded choices
-(`selected_target`, `is_penalty`, the `holed`/exact-coordinate-equality
-invariant, `course_reference`/`hole_number`) are preserved, explained, and
-formally rejected in [Alternatives considered](#alternatives-considered)
-below, per this project's convention of recording ADR history rather than
-hiding it.
+Accepted — approved by the human on 2026-09-02, at PR #96 review, after
+three revisions. The second revision shrank the `GolfState` field contract
+(removing `selected_target`, `is_penalty`, `course_reference`,
+`hole_number`, and relaxing the `holed` invariant), and the third revision
+renamed the derived distance property from `distance_to_hole_metres` to
+`distance_to_hole_reference_metres` and tightened the surrounding wording
+to make explicit that it is a distance to a *reference* point, not
+necessarily to a verified physical pin — a naming/wording-only change with
+no field-set, invariant, ownership, or dependency-direction change. This is
+not a new ADR, and it does not hide earlier drafts' content: the first
+draft's now-superseded choices (`selected_target`, `is_penalty`, the
+`holed`/exact-coordinate-equality invariant, `course_reference`/
+`hole_number`) are preserved, explained, and formally rejected in
+[Alternatives considered](#alternatives-considered) below, per this
+project's convention of recording ADR history rather than hiding it.
 
 The semantic direction this ADR elaborates — `course` owns geometry, a new
 neutral module owns player-neutral course-relative state, `simulation`
@@ -33,38 +32,52 @@ materially different, unapproved direction — see
 [Relationship to M5.0 research](#relationship-to-m50-research) for how this
 revision specifically relates to that approval.
 
-However, the M5.0 approval was explicitly scoped to "semantic architecture
-direction only... exact Python APIs/implementation details are not approved
-by this." The following specific decisions in this ADR go beyond that prior
-approval and require the human's explicit sign-off at PR review before this
-ADR can move to **Accepted**:
+The M5.0 approval was explicitly scoped to "semantic architecture direction
+only... exact Python APIs/implementation details are not approved by
+this." The following specific decisions in this ADR went beyond that prior
+approval and required the human's explicit sign-off at PR review — **all
+are now confirmed accepted, unchanged from the final `Proposed` revision**:
 
-1. The `AGENTS.md` §4 module-maintainer assignment of
-   `src/caddai/golf_state/` to the **Strategy Engineer** — `AGENTS.md` §14
-   lists changing module ownership as a condition requiring a human
-   decision.
-2. The exact `LieCategory` enum membership and collapsing choices (no
+1. **`caddai.golf_state` as the canonical neutral domain module**,
+   maintained (per the `AGENTS.md` §4 module-maintainer assignment) by the
+   **Strategy Engineer** — `AGENTS.md` §14 lists changing module ownership
+   as a condition requiring a human decision; that decision is now made.
+2. **The exact `LieCategory` V0 taxonomy** and its collapsing choices (no
    distinct `RECOVERY` category; `WATER` and generic `PENALTY_AREA`
    collapsed into a single `PENALTY_AREA` member; the enum's broadened
    "resulting-state/location category" scope, deliberately mixing playable
    and non-playable/unmapped categories — see the Rules/penalty boundary
    section below).
-3. The exact `GolfState` field set and its validated invariants: four
-   stored fields (`position`, `hole_reference_position`, `lie`, `holed`)
-   plus the computed `distance_to_hole_reference_metres`; the relaxed `holed`
-   invariant (no exact-coordinate-equality requirement against
-   `hole_reference_position`, but now requiring `holed=True ⇒ lie not in
+3. **The final four-stored-field `GolfState` contract and its validated
+   invariants**: `position`, `hole_reference_position`, `lie`, `holed`,
+   plus the computed `distance_to_hole_reference_metres`; the relaxed
+   `holed` invariant (no exact-coordinate-equality requirement against
+   `hole_reference_position`, but requiring `holed=True ⇒ lie not in
    {OUT_OF_BOUNDS, PENALTY_AREA, UNKNOWN}` — see the `holed` field
-   rationale below); and Option B — course/hole identity is supplied by
-   surrounding context, not stored on `GolfState`.
+   rationale below).
+4. **Option B** — course/hole identity remains outside `GolfState`,
+   supplied by surrounding mapping/round/decision-journal/scenario context,
+   never stored on `GolfState` itself.
+5. **Selected target remains mapper/decision context only** — never a
+   `GolfState` field; the M5.0 research's domain invariant 5 is honoured as
+   a binding requirement on the mapper's contract instead (see
+   "Course-relative mapping responsibility" below).
+6. **No stored `is_penalty`** — a resulting `PENALTY_AREA`/`OUT_OF_BOUNDS`
+   location is not itself a claim that a penalty stroke was taken (see
+   "Rules/penalty boundary" below).
+7. **Reference-distance semantics** — `distance_to_hole_reference_metres`
+   is a distance to `hole_reference_position`, which may be an actual known
+   pin or a green-centroid/other fallback; it is never presented as an
+   automatic, authoritative "true distance to the hole."
+8. **The Rules/penalty boundary principle** — `GolfState` describes
+   geometric/resulting state only; it does not decide Rules procedure,
+   penalty-stroke application, or next playable state.
 
-A human reviewing the PR for this ADR should either approve these specific
-items — at which point a follow-up commit or PR note may update this ADR's
-status to **Accepted** — or request changes. This ADR does not silently
-self-promote to `Accepted`; per the standard Orchestrator -> Architect
-review -> Adversarial review -> Integrator pipeline, that promotion is a
-human decision made at PR review, consistent with how ADRs 0001–0007 were
-each accepted only once the human had approved that specific direction in
+This ADR does not reopen or modify any of the above. Per the standard
+Orchestrator -> Architect review -> Adversarial review -> Integrator
+pipeline, this promotion to **Accepted** reflects the human's explicit
+approval at PR #96 review, consistent with how ADRs 0001–0007 were each
+accepted only once the human had approved that specific direction in
 conversation.
 
 ## Context
