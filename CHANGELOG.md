@@ -10,6 +10,25 @@ first public API is published.
 
 ### Added
 
+- Amended the M5 detailed implementation plan/issue tree (PR #95) with a
+  targeted planning-quality correction pass, before merge: re-audited the
+  GitHub Project `Area`-field recovery from the earlier corruption
+  (cleared three items — #47, #53, #57 — back to blank where the
+  restoration didn't hold up on re-inspection, keeping only #56 marked as
+  empirically verified); reassigned #87–#91 (expected-strokes/value work)
+  from `Area: Simulation` to `Area: Statistics`, since expected-strokes/
+  value is a distinct conceptual layer, not `simulation`-owned merely
+  because it consumes simulated outcomes; retitled #84 to make the
+  rollout/final-position seam explicit and tightened its wording against
+  inventing fake rollout constants; confirmed #83's `Ready` status is
+  correct (no dependency on the `GolfState` ADR); tightened #85/#89 to
+  explicitly own normal correctness in full and narrowed #86/#90 to
+  genuinely additional adversarial/integration hardening; restated #91's
+  boundary against strategic-policy leakage. Reviewed by the CaddAI
+  Architect, QA Engineer, Adversarial Reviewer (two rounds), and
+  Integrator. No production code, ADR, or numeric-baseline research was
+  performed.
+
 - Created the detailed M5 implementation plan and GitHub issue tree,
   turning the approved M5.0 architecture decisions (PR #79) into
   executable, dependency-ordered work:
