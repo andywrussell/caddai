@@ -61,6 +61,12 @@
   forward pointer since M1 — see
   [docs/plans/m1-core-domain-vertical-slice.plan.md](plans/m1-core-domain-vertical-slice.plan.md)
   and [docs/strategy-engine.md](strategy-engine.md).
+- `caddai.golf_state.LieCategory`
+  ([ADR 0008](adr/0008-golf-state-domain-contract.md)) is the new canonical
+  course-relative lie/surface representation going forward; the "Unify
+  `strategy.Wind`/`strategy.LieType`..." item directly above should
+  eventually also consider `golf_state.LieCategory` once M5 lands — not
+  resolved or merged into that item now, only cross-referenced.
 - A dedicated putting-shot probabilistic model for `ClubCategory.PUTTER`,
   distinct from the stock full-swing `PopulationPrior`/
   `population_prior_config.py` table — putting is a behaviourally distinct

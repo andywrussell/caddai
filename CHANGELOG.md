@@ -10,6 +10,23 @@ first public API is published.
 
 ### Added
 
+- Added [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, status **Proposed** pending human sign-off
+  at PR review), proposing to resolve M5.0's open `GolfState`
+  ownership/dependency/field-contract questions for issue #81 (M5.1):
+  `caddai.golf_state` (`GolfState`, `LieCategory`) as a new neutral,
+  `caddai.gps`-only leaf module; `simulation` as the sole mapping owner;
+  `course` forbidden from depending on it; the exact V0 field contract
+  (position, hole-location reference, derived distance-to-hole, lie,
+  penalty, terminal/holed, selected target, course/hole identifiers) and
+  its validators. Recorded `caddai.golf_state` as a new module owned by the
+  Strategy Engineer in `AGENTS.md` §3/§4; updated
+  [docs/architecture.md](docs/architecture.md)'s subsystem table, mermaid
+  diagram, and dependency-direction section accordingly; added a
+  cross-reference in [docs/backlog.md](docs/backlog.md). No production
+  code, no `GolfState` implementation, no course-relative mapping, and no
+  expected-strokes/Strokes Gained/strategy work.
+
 - Amended the M5 detailed implementation plan/issue tree (PR #95) with a
   targeted planning-quality correction pass, before merge: re-audited the
   GitHub Project `Area`-field recovery from the earlier corruption

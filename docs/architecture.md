@@ -36,11 +36,14 @@ graph TD
     STRAT --> COURSE[course]
     STRAT --> PLAYER[player]
     STRAT --> STATS[statistics]
+    STRAT --> GOLFSTATE[golf_state]
     SIM --> COURSE
     SIM --> PLAYER
     SIM --> STATS
+    SIM --> GOLFSTATE
     PLAYER --> STATS
     COURSE --> GPS[gps]
+    GOLFSTATE --> GPS
     LLM[llm] -.explains output of.-> STRAT
     API -.optional.-> LLM
 ```
@@ -111,6 +114,7 @@ they share a service, repository, or storage technology.
 | Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics, the `ClubCategory` taxonomy, and the `PopulationPrior` contract/config |
 | Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes, Strokes Gained |
 | Simulation | `src/caddai/simulation/` | Deterministic wind/elevation/air-density environment transform of a forward-modelled shot outcome (M4.7); seeded bivariate Student-t intrinsic shot-outcome sampling composed with `player`'s shot distribution (M4.8); course-relative mapping, expected strokes/Strokes Gained, and risk/reward strategy are future work (M5+) |
+| GolfState | `src/caddai/golf_state/` | Player-neutral course-relative state (position, distance-to-hole, lie/surface, penalty, terminal/holed) — see [ADR 0008](adr/0008-golf-state-domain-contract.md) |
 | LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M12+) |
 | API | `src/caddai/api/` | FastAPI adapter; translates HTTP ↔ domain calls, no business logic |
 | CLI | `src/caddai/cli/` | Typer adapter; translates CLI ↔ domain calls, no business logic |
@@ -181,6 +185,10 @@ value, or any other course-relative outcome — see the M5 parent issue
 - `course`/`gps` and `player`/`statistics` are siblings: neither depends on
   the other. Shared concepts (e.g. a point-in-space type used by both) live
   in a neutral shared-domain module, not duplicated or cross-imported.
+- `golf_state` is a leaf domain module: it depends only on `gps`. `course`
+  must never depend on `golf_state`; `simulation`/`strategy` depend on it,
+  never the reverse — see
+  [ADR 0008](adr/0008-golf-state-domain-contract.md).
 
 ## Future hardware/sensor adapters
 
