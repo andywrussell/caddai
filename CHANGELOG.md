@@ -10,6 +10,24 @@ first public API is published.
 
 ### Added
 
+- Created the detailed M5 implementation plan and GitHub issue tree,
+  turning the approved M5.0 architecture decisions (PR #79) into
+  executable, dependency-ordered work:
+  [docs/plans/m5-detailed-implementation-plan.md](docs/plans/m5-detailed-implementation-plan.md)
+  decomposes milestone M5 into 14 child issues (M5.1–M5.14) across three
+  streams — Stream A (`GolfState`/course-relative domain, M5.1–M5.6),
+  Stream B (expected-strokes baseline, M5.7–M5.10, gated by an explicit
+  `HUMAN DECISION REQUIRED` research issue before any implementation
+  begins), and Stream C (Strokes Gained/value/strategy composition,
+  M5.11–M5.14) — reviewed by the CaddAI Architect, QA Engineer, and
+  Adversarial Reviewer before creation. Rewrote parent issue #11 as the
+  authoritative M5 tracking issue with all 14 as native GitHub sub-issues.
+  Added a new "GolfState" Area option to the CaddAI Development GitHub
+  Project. Updated [docs/backlog.md](docs/backlog.md) with
+  cross-references to the new plan and a new calibrated-rollout backlog
+  item. No production code, ADR, or numeric-baseline research was
+  performed by this task.
+
 - Amended the M5.0 research/design spike (dated 2026-09-02, third
   amendment, same document/branch/PR #79) to **record human decisions**
   on both `DECISION REQUIRED` blocks — this amendment records decisions
