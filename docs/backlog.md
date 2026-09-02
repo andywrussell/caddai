@@ -84,11 +84,22 @@
   round-history milestone if it becomes a real problem in practice.
 - Player-level strategic tendencies (risk preference, aggressiveness) as a
   distinct model, beyond club-level carry distribution/dispersion/bias
-  (deferred out of M3; belongs to later strategy/player-preference work).
+  (deferred out of M3; belongs to later strategy/player-preference work;
+  explicitly excluded from M5's baseline expected-value strategy, M5.12 —
+  a future risk/goal-sensitive strategic objective layer, not scheduled).
+- A calibrated/sophisticated terrain-rollout model (surface firmness,
+  slope, grass height/species, spin-dependent bounce), replacing M5.4's
+  deliberately coarse deterministic-offset-or-identity rollout seam behind
+  the same swappable-function contract — deferred out of M5 pending real
+  parameters/data; M5 must not be blocked on this. See
+  [docs/plans/m5-detailed-implementation-plan.md](plans/m5-detailed-implementation-plan.md)'s
+  "Rollout treatment" section.
 - Decide the expected-strokes model / baseline data source used by
-  `strategy` (feeds M5, after its evidence/research spike and decision gate;
-  likely needs an ADR if it requires external strokes-gained reference
-  data).
+  `strategy` — now tracked as a dedicated M5 issue (M5.7, see
+  [docs/plans/m5-detailed-implementation-plan.md](plans/m5-detailed-implementation-plan.md)),
+  ending in an explicit `HUMAN DECISION REQUIRED` gate before the M5.9
+  `E_base` implementation issue may begin; likely needs an ADR (M5.8) if
+  it requires external strokes-gained reference data.
 - The M5.0 research spike
   ([docs/research/m5-golf-state-expected-strokes.md](research/m5-golf-state-expected-strokes.md))
   ended in two `DECISION REQUIRED` blocks. **Both are now `HUMAN DECISION:
@@ -97,7 +108,7 @@
   course-relative classification operation's home in `simulation` are
   approved as **semantic architecture direction only** — a dedicated
   `GolfState`/course-relative-state ADR is still required before
-  implementation (not yet written); (2) the expected-strokes/state-value
+  implementation (M5.1); (2) the expected-strokes/state-value
   architecture is approved — long-term = a neutral benchmark (`E_base`,
   Layer B) composed with a separate player-specific adjustment (`Delta`,
   Layer C) (Architecture Option B), V0 = the neutral
@@ -108,10 +119,13 @@
   numeric model: a separate, still-unresolved follow-on item tracks the
   `E_base` numeric-baseline/data-source decision itself (see the research
   document's `FOLLOW-ON REQUIRED` block, unchanged); `Delta`'s own
-  numeric/model content is a further, later, unscheduled follow-on. Per
-  the research document's new "Next work after PR #79" section, the
+  numeric/model content is a further, later, unscheduled follow-on, not
+  placed on the M5 critical path (see
+  [docs/plans/m5-detailed-implementation-plan.md](plans/m5-detailed-implementation-plan.md)).
+  Per the research document's new "Next work after PR #79" section, the
   `GolfState` ADR/domain work and the numeric-baseline follow-on are
-  independent workstreams that may proceed in parallel.
+  independent workstreams that may proceed in parallel — this is now
+  reflected in the M5.1–M5.14 issue tree under parent issue #11.
 - Course-geometry gaps the M5.0 spike identified as needed (not built by
   the spike) before course-relative classification can be implemented: a
   `ROUGH` `FeatureType` (today's `FeatureType` enum has no rough
