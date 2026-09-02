@@ -114,7 +114,7 @@ they share a service, repository, or storage technology.
 | Statistics | `src/caddai/statistics/` | Carry distributions, dispersion, round statistics, the `ClubCategory` taxonomy, and the `PopulationPrior` contract/config |
 | Strategy | `src/caddai/strategy/` | Shot candidates, club/target selection, risk, expected strokes, Strokes Gained |
 | Simulation | `src/caddai/simulation/` | Deterministic wind/elevation/air-density environment transform of a forward-modelled shot outcome (M4.7); seeded bivariate Student-t intrinsic shot-outcome sampling composed with `player`'s shot distribution (M4.8); course-relative mapping, expected strokes/Strokes Gained, and risk/reward strategy are future work (M5+) |
-| GolfState | `src/caddai/golf_state/` | Player-neutral course-relative state (position, distance-to-hole, lie/surface, penalty, terminal/holed) — see [ADR 0008](adr/0008-golf-state-domain-contract.md) |
+| GolfState | `src/caddai/golf_state/` | Player-neutral course-relative state (position, distance-to-hole, lie/surface, terminal/holed) — see [ADR 0008](adr/0008-golf-state-domain-contract.md) |
 | LLM | `src/caddai/llm/` | Natural-language explanation of a finished recommendation (M12+) |
 | API | `src/caddai/api/` | FastAPI adapter; translates HTTP ↔ domain calls, no business logic |
 | CLI | `src/caddai/cli/` | Typer adapter; translates CLI ↔ domain calls, no business logic |

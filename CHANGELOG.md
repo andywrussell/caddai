@@ -10,6 +10,30 @@ first public API is published.
 
 ### Added
 
+- Amended [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, PR #96) with a second revision, before any
+  human sign-off: removed `selected_target`, `is_penalty`,
+  `course_reference`, and `hole_number` from the `GolfState` field contract
+  entirely; renamed `hole_position` to `hole_reference_position`; relaxed
+  the `holed` invariant to drop the exact-coordinate-equality requirement
+  against the hole reference position, extended to require `holed=True ⇒
+  lie not in {OUT_OF_BOUNDS, PENALTY_AREA, UNKNOWN}` (QA finding); adopted
+  Option B (course/hole identity supplied by surrounding context) over
+  Option A (`GolfState`-carried identity); added
+  a new "Rules/penalty boundary" principle distinguishing geometric/
+  resulting state from Rules procedure, penalty strokes, and next playable
+  state. Same-PR fix pass: documented the consumer-side `holed`-bypass
+  foot-gun this relaxation introduces and required M5.9's `E_base` to
+  check `holed` first (with a mandatory parametrized regression test);
+  added mapper-test guidance for issue #85 (selected target differing
+  from the recommendation); made the #82 keyword-scan test required
+  rather than recommended and fixed its `plan_reference=...` placeholder
+  and `round_` regex ambiguity; and other documentation consistency fixes.
+  ADR 0008 remains status **Proposed**. Lightly updated
+  [docs/architecture.md](docs/architecture.md)'s `GolfState` subsystem-table
+  row to remove the now-stale "penalty" mention. No production code,
+  `GolfState` implementation, or test changes.
+
 - Added [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
   domain contract and ownership, status **Proposed** pending human sign-off
   at PR review), proposing to resolve M5.0's open `GolfState`
