@@ -10,6 +10,73 @@ first public API is published.
 
 ### Added
 
+- [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, PR #96) promoted from **Proposed** to
+  **Accepted** — approved by the human on 2026-09-02, after three
+  revisions. Confirms: `caddai.golf_state` as the canonical neutral domain
+  module, maintained by the Strategy Engineer; the `LieCategory` V0
+  taxonomy; the final four-stored-field `GolfState` contract (`position`,
+  `hole_reference_position`, `lie`, `holed`, plus the computed
+  `distance_to_hole_reference_metres`); Option B (course/hole identity
+  supplied by surrounding context, never stored on `GolfState`); selected
+  target as mapper/decision context only, never a `GolfState` field; no
+  stored `is_penalty`; and the Rules/penalty boundary principle. Updated
+  [docs/adr/README.md](docs/adr/README.md)'s index status to `Accepted`
+  and [AGENTS.md](AGENTS.md) §4's `golf_state` ownership line to drop the
+  now-resolved "pending sign-off" caveat. No production code, `GolfState`
+  implementation, or test changes; no further architecture decisions were
+  reopened.
+
+- Amended [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, PR #96), third revision: renamed the
+  derived distance property from `distance_to_hole_metres` to
+  `distance_to_hole_reference_metres`, making explicit that
+  `hole_reference_position` may be an approximation (a green-centroid
+  fallback) rather than a verified physical pin location. No contract
+  shape/field-set change and no status change — ADR 0008 remains
+  **Proposed**.
+
+- Amended [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, PR #96) with a second revision, before any
+  human sign-off: removed `selected_target`, `is_penalty`,
+  `course_reference`, and `hole_number` from the `GolfState` field contract
+  entirely; renamed `hole_position` to `hole_reference_position`; relaxed
+  the `holed` invariant to drop the exact-coordinate-equality requirement
+  against the hole reference position, extended to require `holed=True ⇒
+  lie not in {OUT_OF_BOUNDS, PENALTY_AREA, UNKNOWN}` (QA finding); adopted
+  Option B (course/hole identity supplied by surrounding context) over
+  Option A (`GolfState`-carried identity); added
+  a new "Rules/penalty boundary" principle distinguishing geometric/
+  resulting state from Rules procedure, penalty strokes, and next playable
+  state. Same-PR fix pass: documented the consumer-side `holed`-bypass
+  foot-gun this relaxation introduces and required M5.9's `E_base` to
+  check `holed` first (with a mandatory parametrized regression test);
+  added mapper-test guidance for issue #85 (selected target differing
+  from the recommendation); made the #82 keyword-scan test required
+  rather than recommended and fixed its `plan_reference=...` placeholder
+  and `round_` regex ambiguity; and other documentation consistency fixes.
+  ADR 0008 remains status **Proposed**. Lightly updated
+  [docs/architecture.md](docs/architecture.md)'s `GolfState` subsystem-table
+  row to remove the now-stale "penalty" mention. No production code,
+  `GolfState` implementation, or test changes.
+
+- Added [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
+  domain contract and ownership, status **Proposed** pending human sign-off
+  at PR review), proposing to resolve M5.0's open `GolfState`
+  ownership/dependency/field-contract questions for issue #81 (M5.1):
+  `caddai.golf_state` (`GolfState`, `LieCategory`) as a new neutral,
+  `caddai.gps`-only leaf module; `simulation` as the sole mapping owner;
+  `course` forbidden from depending on it; the exact V0 field contract
+  (position, hole-location reference, derived distance-to-hole, lie,
+  penalty, terminal/holed, selected target, course/hole identifiers) and
+  its validators. Recorded `caddai.golf_state` as a new module owned by the
+  Strategy Engineer in `AGENTS.md` §3/§4; updated
+  [docs/architecture.md](docs/architecture.md)'s subsystem table, mermaid
+  diagram, and dependency-direction section accordingly; added a
+  cross-reference in [docs/backlog.md](docs/backlog.md). No production
+  code, no `GolfState` implementation, no course-relative mapping, and no
+  expected-strokes/Strokes Gained/strategy work.
+
 - Amended the M5 detailed implementation plan/issue tree (PR #95) with a
   targeted planning-quality correction pass, before merge: re-audited the
   GitHub Project `Area`-field recovery from the earlier corruption
