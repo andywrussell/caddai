@@ -91,26 +91,27 @@
   data).
 - The M5.0 research spike
   ([docs/research/m5-golf-state-expected-strokes.md](research/m5-golf-state-expected-strokes.md))
-  ends in two explicit `DECISION REQUIRED` blocks the human must resolve
-  before any M5 implementation issue is opened: (1) `GolfState` ownership
-  (a new neutral `caddai.golf_state` module, per the spike's
-  recommendation, vs. folding it into `simulation` or `strategy`) and the
-  course-relative classification operation's home; (2) the expected-
-  strokes/state-value architecture — a follow-up amendment performed live
-  verified web research and found the distance/lie/ability-conditioned
-  expected-strokes CONCEPT well-supported (Broadie 2008/2011, Golfmetrics,
-  Arccos, Shot Scope) but no legally reusable public numeric baseline
-  table; a second amendment then separated the value contract into a
-  neutral benchmark (`E_base`, Layer B), a player-specific adjustment
-  (`Delta`, Layer C), and strategic risk (Layer D, later strategy/M8
-  work), recommending a neutral `baseline_expected_strokes(state)`
-  function for V0 (Architecture Option C) and a two-function
-  `E_base`/`Delta` composition (Architecture Option B) as the long-term
-  target — not an approved V0 either way. A separate, still-unresolved
-  follow-on item tracks the `E_base` numeric-baseline/data-source
-  decision itself (see the research document's `FOLLOW-ON REQUIRED`
-  block); `Delta`'s own numeric/model content is a further, later,
-  unscheduled follow-on.
+  ended in two `DECISION REQUIRED` blocks. **Both are now `HUMAN DECISION:
+  APPROVED` (2026-09-02):** (1) `GolfState` ownership (a new neutral
+  `caddai.golf_state` module, per the spike's recommendation) and the
+  course-relative classification operation's home in `simulation` are
+  approved as **semantic architecture direction only** — a dedicated
+  `GolfState`/course-relative-state ADR is still required before
+  implementation (not yet written); (2) the expected-strokes/state-value
+  architecture is approved — long-term = a neutral benchmark (`E_base`,
+  Layer B) composed with a separate player-specific adjustment (`Delta`,
+  Layer C) (Architecture Option B), V0 = the neutral
+  `baseline_expected_strokes(state)` benchmark only, no player-adjustment
+  seam (Architecture Option C); a single ability-conditioned function
+  (Architecture Option A) was **not selected** as the long-term core
+  value architecture. Approving the architecture does **not** approve a
+  numeric model: a separate, still-unresolved follow-on item tracks the
+  `E_base` numeric-baseline/data-source decision itself (see the research
+  document's `FOLLOW-ON REQUIRED` block, unchanged); `Delta`'s own
+  numeric/model content is a further, later, unscheduled follow-on. Per
+  the research document's new "Next work after PR #79" section, the
+  `GolfState` ADR/domain work and the numeric-baseline follow-on are
+  independent workstreams that may proceed in parallel.
 - Course-geometry gaps the M5.0 spike identified as needed (not built by
   the spike) before course-relative classification can be implemented: a
   `ROUGH` `FeatureType` (today's `FeatureType` enum has no rough

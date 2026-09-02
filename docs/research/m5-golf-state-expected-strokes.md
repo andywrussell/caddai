@@ -46,6 +46,38 @@ to the external evidence verified above — it only changes how that
 evidence is applied to the value contract in sections M/N and the decision
 gates at the end of this document.
 
+**Third amendment (dated 2026-09-02) — human decisions recorded.** The
+human has now reviewed and made decisions on both `DECISION REQUIRED`
+blocks at the end of this document:
+
+- `DECISION REQUIRED: GolfState ownership and course-relative mapping` is
+  **APPROVED** — semantic architecture direction only (course/`GolfState`/
+  `simulation`/expected-strokes/`strategy` responsibilities, per the
+  recorded architecture); exact Python APIs/implementation details are not
+  approved by this. A dedicated `GolfState`/course-relative-state ADR is
+  still required before implementation and is **not** created by this
+  amendment.
+- `DECISION REQUIRED: Expected-Strokes / State-Value Architecture` is
+  **APPROVED** — long-term = Architecture Option B (neutral `E_base` +
+  separate `Delta`); V0 = Architecture Option C (`E_player(state) =
+  E_base(state)`, no player-adjustment layer in V0); Architecture Option A
+  (single ability-conditioned function) is **not selected** as the
+  long-term core value architecture.
+- The numeric expected-strokes baseline (`FOLLOW-ON REQUIRED: Expected-
+  Strokes Numeric Baseline / Data Source`) **remains UNRESOLVED and is
+  NOT approved by this amendment** — approving the value architecture is
+  not the same as approving a numeric model, table, or data source.
+
+This amendment only **records decisions already made** by the human. It
+does not introduce new research, does not redo or weaken any verified
+evidence/reasoning already in this document, and does not reopen or
+re-debate the architecture. See the `HUMAN DECISION: APPROVED (2026-09-02)`
+blocks under each `DECISION REQUIRED` heading, and the new
+["R. M5.0 resolution status"](#r-m50-resolution-status-2026-09-02-decision-recording-amendment)
+and
+["S. Next work after PR #79"](#s-next-work-after-pr-79-sequencing-guidance-only--no-issues-created)
+sections near the end of this document, for the full detail.
+
 ---
 
 ## A. Executive recommendation
@@ -94,6 +126,16 @@ gates at the end of this document.
    ownership question, the expected-strokes contract direction, or the
    still-open expected-strokes numeric-baseline/data-source follow-on —
    see the decision/follow-on blocks at the end of this document.
+6. **Amendment (2026-09-02):** the two decision gates in item 5 are now
+   marked `HUMAN DECISION: APPROVED` — `GolfState` ownership/course-
+   relative mapping (architecture direction only, ADR still required) and
+   the expected-strokes/state-value architecture (long-term Architecture
+   Option B, V0 Architecture Option C, Option A not selected). This
+   spike still only **recommends, and does not decide**, the one item
+   that remains genuinely open: the expected-strokes numeric-baseline/
+   data-source follow-on (see the `FOLLOW-ON REQUIRED` block, still
+   unresolved). See [section R](#r-m50-resolution-status-2026-09-02-decision-recording-amendment)
+   for the full resolution status.
 
 ## B. Current-state audit
 
@@ -2035,9 +2077,116 @@ future, undecided architecture checkpoint.
 
 ---
 
+## R. M5.0 resolution status (2026-09-02 decision-recording amendment)
+
+This section records what the 2026-09-02 amendment resolved and what it
+deliberately left open. It does not redo, weaken, or re-derive anything
+above — it only summarises the resolution status on top of the existing
+evidence and reasoning.
+
+### Resolved by M5.0
+
+- The `GolfState` semantic architecture direction (course owns geometry;
+  neutral `GolfState` owns player-neutral course-relative state
+  semantics; `simulation` owns the `ShotOutcome` + shot frame + course
+  geometry -> `GolfState` mapping; expected-strokes/value consumes
+  `GolfState`; `strategy` consumes distributions of resulting values) —
+  **approved**.
+- The course-relative mapping responsibility direction (`simulation` may
+  own the `ShotOutcome + origin + target/target frame + course geometry
+  -> GolfState` operation) — **approved, semantic responsibility only**.
+- The benchmark vs. player-adjusted value architecture separation (Layers
+  A–D; Architecture Options A/B/C compared in
+  [section H.2](#h2-value-architecture-separating-benchmark-player-adjustment-and-strategic-risk))
+  — the separation itself, and the comparison, are preserved as the
+  basis for the decision below.
+- The V0 baseline-only architecture: Architecture Option C **approved for
+  V0**; Architecture Option B **approved for the long-term target**;
+  Architecture Option A **not selected** as the long-term core value
+  architecture.
+- The benchmark Strokes Gained semantic boundary: `SG_base =
+  E_base(current_state) - (1 + E_base(resulting_state))` is defined and
+  preserved as the canonical benchmark-comparable quantity for the M5
+  baseline path.
+
+### NOT resolved by M5.0
+
+- The exact `GolfState` API/type design (fields, types, module contract
+  details beyond the semantic architecture).
+- The `GolfState`/course-relative-state ADR itself — not written by this
+  or any prior amendment.
+- The numeric expected-strokes baseline/data source (`FOLLOW-ON
+  REQUIRED: Expected-Strokes Numeric Baseline / Data Source`, below) —
+  still open.
+- The exact `E_base` implementation.
+- The player-adjustment (`Delta`) model.
+- Strokes Gained implementation (code).
+- Strategy implementation.
+
+## S. Next work after PR #79 (sequencing guidance only — no issues created)
+
+This section is **sequencing guidance only**. No GitHub issues are
+created by this document; detailed M5 planning remains a separate future
+task.
+
+- **Stream A — `GolfState` / course-relative domain:** `GolfState` ADR ->
+  `GolfState` contract implementation -> course-relative mapping
+  implementation.
+- **Stream B — Expected-strokes numeric baseline:** bounded numeric-
+  baseline/data-source research -> human decision -> expected-strokes
+  interface/implementation ADR if required -> `E_base` implementation.
+- **Convergence:** `GolfState` + `E_base` -> benchmark SG distributions ->
+  baseline expected-value strategy -> recommendation assembly.
+
+The unresolved expected-strokes numeric baseline blocks the value-model
+implementation path (Stream B and the convergence step), but it does not
+block `GolfState` ADR/domain work (Stream A). These are independent
+workstreams that may proceed in parallel. This is an important
+consequence of the approved separation above.
+
+Streams A and B correspond to, and refine, the existing
+["Likely future M5 implementation decomposition"](#likely-future-m5-implementation-decomposition-proposal-only-not-created-as-issues)
+list elsewhere in this document (items 1–2 = Stream A; item 3 = Stream B;
+items 4–5 = convergence; item 6 = the later, unscheduled `Delta`
+follow-on) — see that list for detail, not duplicated here.
+
+---
+
 ```
 DECISION REQUIRED: GolfState ownership and course-relative mapping
 ```
+
+```
+HUMAN DECISION: APPROVED (2026-09-02)
+```
+
+> The semantic architecture direction is approved:
+> ```
+> course              owns course geometry/data
+> neutral GolfState   owns player-neutral course-relative state semantics
+> simulation          owns the mapping operation: ShotOutcome + shot frame + course geometry -> GolfState
+> expected-strokes/value   consumes GolfState
+> strategy            consumes distributions of resulting values
+> ```
+> `GolfState` must remain independent of: player identity, Handicap Index,
+> risk preference, WHS scoring policy, current round score, and strategic
+> goal. This approves the **semantic architecture direction only** — not
+> exact Python APIs or implementation details. A dedicated `GolfState`/
+> course-relative-state ADR is still required before the foundational
+> contract is implemented (**not created by this amendment**); that future
+> ADR must resolve/record at least: canonical module/package ownership,
+> exact domain contract, dependency direction, classification ownership,
+> public API implications, interaction with `course`, interaction with
+> `simulation`, interaction with expected-strokes/value, and portability
+> implications for M6.
+>
+> The course-relative mapping ownership is also approved, as **semantic
+> responsibility only**: `simulation` may own the operation `ShotOutcome +
+> shot origin + actual selected target/target frame + course geometry ->
+> GolfState`. This does not approve exact APIs. It preserves the
+> requirement that the actual selected target frame is used — CaddAI must
+> never automatically substitute the pin, the green centre, or its own
+> recommendation when the golfer selected a different target.
 
 > **Amendment note (2026-09-01):** this decision block is otherwise
 > unchanged in substance. This amendment's Architect confirmation (see
@@ -2093,6 +2242,44 @@ note above).
 ```
 DECISION REQUIRED: Expected-Strokes / State-Value Architecture
 ```
+
+```
+HUMAN DECISION: APPROVED (2026-09-02)
+```
+
+> **Long-term = Architecture Option B; V0 = Architecture Option C;
+> Architecture Option A is not selected** as the long-term core value
+> architecture (not selected, not "impossible forever"). Reasons
+> recorded: Option A conflates benchmark expected strokes with
+> player-relative state difficulty; makes conventional benchmark Strokes
+> Gained semantics less clear; embeds unresolved ability-conditioned data
+> requirements in the core baseline; encourages handicap to become the
+> permanent personalisation mechanism; and reduces separation among
+> benchmark, player ability, and strategic objective.
+>
+> This decision **approves the value architecture only** — the numeric
+> expected-strokes baseline remains unresolved; see the (unchanged)
+> `FOLLOW-ON REQUIRED: Expected-Strokes Numeric Baseline / Data Source`
+> block below.
+>
+> The M4-personalisation-role principle is reaffirmed, verbatim: "A
+> baseline expected-strokes model does NOT make CaddAI recommendations
+> non-personalised." Under V0, the pipeline is:
+> `PlayerShotDistribution -> personalised distribution of resulting
+> GolfStates -> E_base applied to each state -> personalised distribution
+> of outcome values`.
+>
+> Benchmark Strokes Gained semantics are reaffirmed, verbatim: `SG_base =
+> E_base(current_state) - (1 + E_base(resulting_state))` is the canonical
+> benchmark-comparable quantity for the M5 baseline path. A future
+> `E_player(current) - (1 + E_player(resulting))` is a distinct
+> player-relative value metric requiring separate terminology — never
+> silently called "Strokes Gained" if benchmark semantics differ.
+>
+> Player-adjustment ≠ strategic risk is reaffirmed: `Delta` estimates
+> player ability from a state; strategic objective/risk remains a later
+> strategy/M8 concern. Any universal assumption like "high handicap =
+> more risk" or "low handicap = less risk" (or the reverse) is rejected.
 
 > **Amendment note (2026-09-01, second amendment):** this block
 > **replaces** the previous `DECISION REQUIRED: Expected-Strokes V0
@@ -2215,6 +2402,14 @@ now.** It remains a separate, explicitly gated future decision — see
 DEFERRED list for the narrower research items (Padova thesis full text,
 USGA/R&A primary WHS documentation, PGA TOUR's explicit ShotLink licensing
 terms) that a future pass toward this follow-on might start from.
+
+> **Amendment note (2026-09-02):** the value-architecture `DECISION
+> REQUIRED` block above is now `HUMAN DECISION: APPROVED`. This follow-on
+> remains the **only** unresolved item blocking `E_base(GolfState)`
+> implementation. It does **not** block the `GolfState` ADR/domain work
+> (see [section S](#s-next-work-after-pr-79-sequencing-guidance-only--no-issues-created),
+> Stream A) — Stream A (`GolfState`) and Stream B (this numeric-baseline
+> follow-on) are independent workstreams.
 
 ---
 

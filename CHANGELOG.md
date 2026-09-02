@@ -10,6 +10,36 @@ first public API is published.
 
 ### Added
 
+- Amended the M5.0 research/design spike (dated 2026-09-02, third
+  amendment, same document/branch/PR #79) to **record human decisions**
+  on both `DECISION REQUIRED` blocks — this amendment records decisions
+  already made, it does not redo external research or reopen the
+  architecture debate. `DECISION REQUIRED: GolfState ownership and
+  course-relative mapping` is now `HUMAN DECISION: APPROVED` — the
+  semantic architecture direction (`course` owns geometry, neutral
+  `GolfState` owns player-neutral course-relative state, `simulation`
+  owns the mapping operation, expected-strokes/value consumes
+  `GolfState`, `strategy` consumes distributions of resulting values) is
+  approved; exact Python APIs are not, and a dedicated `GolfState`/
+  course-relative-state ADR is still required before implementation (not
+  written by this amendment). `DECISION REQUIRED: Expected-Strokes /
+  State-Value Architecture` is now `HUMAN DECISION: APPROVED` — long-term
+  = Architecture Option B (neutral `E_base` + separate `Delta`), V0 =
+  Architecture Option C (`E_base` only), Architecture Option A not
+  selected as the long-term core value architecture. The numeric
+  expected-strokes baseline (`FOLLOW-ON REQUIRED: Expected-Strokes
+  Numeric Baseline / Data Source`) remains explicitly **unresolved** —
+  approving the architecture is not the same as approving a numeric
+  model. Added a new "M5.0 resolution status" section (resolved vs. not
+  resolved) and a "Next work after PR #79" sequencing-guidance section
+  (Stream A: `GolfState`/course-relative domain; Stream B: expected-
+  strokes numeric baseline; independent workstreams). Updated
+  [docs/backlog.md](docs/backlog.md) and
+  [docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md](docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md)
+  to match. No `GolfState`, classification, expected-strokes, or other
+  production code, and no ADR or GitHub issue, was created by this
+  amendment.
+
 - Added the M5.0 research/design spike,
   [docs/research/m5-golf-state-expected-strokes.md](docs/research/m5-golf-state-expected-strokes.md)
   (plan:
