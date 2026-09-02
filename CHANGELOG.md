@@ -10,6 +10,88 @@ first public API is published.
 
 ### Added
 
+- Amended the M5.0 research/design spike (dated 2026-09-02, third
+  amendment, same document/branch/PR #79) to **record human decisions**
+  on both `DECISION REQUIRED` blocks — this amendment records decisions
+  already made, it does not redo external research or reopen the
+  architecture debate. `DECISION REQUIRED: GolfState ownership and
+  course-relative mapping` is now `HUMAN DECISION: APPROVED` — the
+  semantic architecture direction (`course` owns geometry, neutral
+  `GolfState` owns player-neutral course-relative state, `simulation`
+  owns the mapping operation, expected-strokes/value consumes
+  `GolfState`, `strategy` consumes distributions of resulting values) is
+  approved; exact Python APIs are not, and a dedicated `GolfState`/
+  course-relative-state ADR is still required before implementation (not
+  written by this amendment). `DECISION REQUIRED: Expected-Strokes /
+  State-Value Architecture` is now `HUMAN DECISION: APPROVED` — long-term
+  = Architecture Option B (neutral `E_base` + separate `Delta`), V0 =
+  Architecture Option C (`E_base` only), Architecture Option A not
+  selected as the long-term core value architecture. The numeric
+  expected-strokes baseline (`FOLLOW-ON REQUIRED: Expected-Strokes
+  Numeric Baseline / Data Source`) remains explicitly **unresolved** —
+  approving the architecture is not the same as approving a numeric
+  model. Added a new "M5.0 resolution status" section (resolved vs. not
+  resolved) and a "Next work after PR #79" sequencing-guidance section
+  (Stream A: `GolfState`/course-relative domain; Stream B: expected-
+  strokes numeric baseline; independent workstreams). Updated
+  [docs/backlog.md](docs/backlog.md) and
+  [docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md](docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md)
+  to match. No `GolfState`, classification, expected-strokes, or other
+  production code, and no ADR or GitHub issue, was created by this
+  amendment.
+
+- Added the M5.0 research/design spike,
+  [docs/research/m5-golf-state-expected-strokes.md](docs/research/m5-golf-state-expected-strokes.md)
+  (plan:
+  [docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md](docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md)),
+  resolving the two highest-uncertainty domain-semantics questions ahead of
+  detailed M5 implementation planning (mirroring M4.0's format and rigour):
+  (1) how an M4 golfer-relative `ShotOutcome` becomes a course-relative
+  resulting golf state using existing `course` geometry, and (2) the
+  minimal `GolfState` representation, its recommended owning module, and a
+  structural (not numeric) expected-strokes-to-hole-out V0 evidence
+  review. Reviewed by the CaddAI Architect (design-space input) and the
+  Adversarial Reviewer (`APPROVE`, after one round of fixes for
+  Rules-of-Golf hedging). This is a **research/design spike only** — no
+  `GolfState`, course-relative classification, rollout, expected-strokes,
+  Strokes Gained, strategy utility, round lifecycle, WHS calculation, ADR,
+  M5 implementation issue tree, or production code was created. The
+  document ends in two explicit `DECISION REQUIRED` blocks (`GolfState`
+  ownership and course-relative mapping; expected-strokes V0) that a human
+  must review before any M5 implementation issue is opened. The
+  expected-strokes evidence review (document sections H/K) was built
+  without a live web-fetch/browsing tool this session, so it reflects
+  stable general public golf-analytics knowledge rather than freshly
+  verified sources, and does **not** meet M4.0's citation-verification bar
+  — every claim is flagged inline and the human must independently verify
+  sources/licensing before treating it as an accepted evidence base. Added
+  a small, scoped [docs/backlog.md](docs/backlog.md) entry recording the
+  two pending decision gates and the course-geometry gaps the spike
+  identified (missing `ROUGH`/generic-penalty-area `FeatureType`s, no
+  point-in-polygon containment primitive) as candidate items feeding M5.
+  No other documentation was modified.
+
+- Amended the M5.0 research/design spike with a follow-up live-research
+  pass (dated 2026-09-01, same document/branch): performed live web
+  research verifying eight external sources (Broadie 2008/2011,
+  Golfmetrics, DataGolf, Arccos, Shot Scope, a University of Padova
+  thesis, and Wikipedia's World Handicap System summary), superseding the
+  original "no live web tool" disclosure in sections H/K. Verified
+  evidence strongly supports the distance/lie/ability-conditioned
+  expected-strokes **concept**, but no legally reusable public numeric
+  baseline table was found, so the previously-recommended monotonic-
+  interpolation-plus-handicap-band model is downgraded to a **leading
+  engineering candidate for the model family/contract shape only** — not
+  an approved or provisionally-adopted V0. Replaced the `Expected-Strokes
+  V0` decision block with `Expected-Strokes V0 Contract Direction` and
+  added a new `FOLLOW-ON REQUIRED: Expected-Strokes Numeric Baseline /
+  Data Source` block recording the still-unresolved numeric-baseline/
+  licensing decision. Updated [docs/backlog.md](docs/backlog.md) and
+  [docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md](docs/plans/m5.0-golf-state-expected-strokes-spike.plan.md)
+  to match. No `GolfState`, classification, expected-strokes, or other
+  production code, and no ADR or GitHub issue, was created by this
+  amendment.
+
 - Converted the approved post-M4 roadmap reassessment
   ([docs/plans/post-m4-roadmap-reassessment.plan.md](docs/plans/post-m4-roadmap-reassessment.plan.md))
   into the durable CaddAI roadmap: rewrote [docs/roadmap.md](docs/roadmap.md)

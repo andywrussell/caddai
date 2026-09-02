@@ -89,6 +89,39 @@
   `strategy` (feeds M5, after its evidence/research spike and decision gate;
   likely needs an ADR if it requires external strokes-gained reference
   data).
+- The M5.0 research spike
+  ([docs/research/m5-golf-state-expected-strokes.md](research/m5-golf-state-expected-strokes.md))
+  ended in two `DECISION REQUIRED` blocks. **Both are now `HUMAN DECISION:
+  APPROVED` (2026-09-02):** (1) `GolfState` ownership (a new neutral
+  `caddai.golf_state` module, per the spike's recommendation) and the
+  course-relative classification operation's home in `simulation` are
+  approved as **semantic architecture direction only** — a dedicated
+  `GolfState`/course-relative-state ADR is still required before
+  implementation (not yet written); (2) the expected-strokes/state-value
+  architecture is approved — long-term = a neutral benchmark (`E_base`,
+  Layer B) composed with a separate player-specific adjustment (`Delta`,
+  Layer C) (Architecture Option B), V0 = the neutral
+  `baseline_expected_strokes(state)` benchmark only, no player-adjustment
+  seam (Architecture Option C); a single ability-conditioned function
+  (Architecture Option A) was **not selected** as the long-term core
+  value architecture. Approving the architecture does **not** approve a
+  numeric model: a separate, still-unresolved follow-on item tracks the
+  `E_base` numeric-baseline/data-source decision itself (see the research
+  document's `FOLLOW-ON REQUIRED` block, unchanged); `Delta`'s own
+  numeric/model content is a further, later, unscheduled follow-on. Per
+  the research document's new "Next work after PR #79" section, the
+  `GolfState` ADR/domain work and the numeric-baseline follow-on are
+  independent workstreams that may proceed in parallel.
+- Course-geometry gaps the M5.0 spike identified as needed (not built by
+  the spike) before course-relative classification can be implemented: a
+  `ROUGH` `FeatureType` (today's `FeatureType` enum has no rough
+  category at all), a generic penalty-area `FeatureType` distinct from
+  `WATER`, and a point-in-polygon containment query against
+  `Feature.boundary` (no such primitive exists in `course/distance.py`
+  today, though Shapely — already an approved dependency — can supply it
+  directly). See
+  [docs/research/m5-golf-state-expected-strokes.md](research/m5-golf-state-expected-strokes.md)'s
+  "Current-state audit" section.
 - Decide the production runtime / possible Rust core, mobile/core runtime
   boundary, cross-language contracts, logical component boundaries,
   repository architecture, CI/CD architecture, release/version
