@@ -13,10 +13,12 @@ first public API is published.
 - Added the non-binding Phase 1 development-orchestration architecture
   research and proof-of-concept plan for issue #97. The documents compare
   manual, OpenClaw-first, GitHub Agentic Workflows-first, and GitHub-first
-  hybrid approaches and define measurable Phase 2 experiments without
-  installing OpenClaw, configuring Telegram, creating repositories, changing
-  product code, adopting an architecture, or starting M5/M6 work. Issue #82
-  remains unstarted at Project Status `Backlog`.
+  hybrid approaches. An amendment defines a replaceable Gemma 4 12B local-worker
+  Phase 2 experiment with deterministic fail-closed low-risk routing, four
+  measured strategies, and M3/18 GB hardware, security, quality, and total-cost
+  tests. It validates or adopts no model, runtime, infrastructure, hardware, or
+  product decision; downloads or installs nothing; and does not start M5/M6
+  work. Issue #82 remains unstarted at Project Status `Backlog`.
 
 - [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
   domain contract and ownership, PR #96) promoted from **Proposed** to

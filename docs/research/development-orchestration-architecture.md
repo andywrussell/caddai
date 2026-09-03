@@ -18,6 +18,12 @@ interactive coordinator and local execution adapter. GitHub Agentic Workflows
 is tested only for bounded event-driven work while it remains in Public
 Preview.
 
+The execution comparison should include a replaceable local open-weight worker,
+not only cloud routes. The first candidate is **Gemma 4 12B**, appropriately
+quantized, on Andy's 2024 M3 MacBook Pro with 18 GB unified memory. This is a
+hardware-and-quality hypothesis for bounded low-risk work, not a validated fit,
+an orchestrator, an authority, or an adoption decision.
+
 The recommendation is conditional. The first experiment is an ablation: run
 the same task through the current manual baseline and a GitHub Agentic
 Workflows-first path. If the GitHub-native path meets the operator, recovery,
@@ -107,6 +113,8 @@ PoC.
 | Sandboxing and threat detection exist | GitHub | PUBLIC PREVIEW | [Sandbox](https://github.com/github/gh-aw/blob/v0.88.2/docs/src/content/docs/reference/sandbox.md), [threat detection](https://github.com/github/gh-aw/blob/v0.88.2/docs/src/content/docs/reference/threat-detection.md) | Injection containment REQUIRES POC |
 | `gh aw` exposes best-effort usage/AIC metrics | GitHub | PUBLIC PREVIEW; estimate | [Cost management at v0.88.2](https://github.com/github/gh-aw/blob/v0.88.2/docs/src/content/docs/reference/cost-management.md) | Billing reconciliation REQUIRES POC |
 | Copilot CLI supports model/reasoning controls and per-model usage | GitHub | SUPPORTED product docs | [CLI command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference), [programmatic reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-programmatic-reference) | Effective reasoning telemetry may remain UNKNOWN |
+| Gemma 4 12B is an 11.95B dense model with coding, function calling, and a maximum 256K context | Google | SUPPORTED model card | [Gemma 4 model card](https://ai.google.dev/gemma/docs/core/model_card_4) | Bounded coding quality and usable local context REQUIRE POC |
+| Google publishes an instruction-tuned Gemma 4 12B QAT Q4 GGUF | Google | SUPPORTED artifact; runtime fit unproved | [`google/gemma-4-12B-it-qat-q4_0-gguf` at revision `29d0977`](https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf/tree/29d097773436b69ff9feafd636ab4cf873786537) | 18 GB M3 fit, backend support, speed, and quality REQUIRE POC |
 | App installation tokens are scoped and expire after one hour | GitHub | SUPPORTED product docs | [App installation authentication](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation) | Exact PoC permissions still require negative tests |
 | Rulesets can require PRs/checks and restrict updates | GitHub | SUPPORTED subject to repository plan | [Ruleset rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets) | Andy-only update enforcement REQUIRES POC |
 
@@ -447,21 +455,72 @@ does not prove routing. Any silent fallback is a failed test.
 
 Durable task contracts should name a role, risk, and capability class. A
 replaceable runtime policy resolves those to a provider, harness, current model,
-and reasoning level.
+and reasoning level. It may also resolve an eligible task to a local open-weight
+worker. Task contracts must not name Gemma or depend on one inference backend.
+
+The controlling risk classification is deterministic, versioned, and
+fail-closed. Rules derived from `AGENTS.md` identify architecture, public
+contract, dependency, unit, ownership, security, infrastructure, privacy,
+repository-topology, and other human-decision triggers. A model may recommend a
+classification but cannot classify its own work, downgrade risk, broaden its
+allowlist, or authorize dispatch. Unknown, conflicting, or ambiguous cases route
+to cloud reasoning or pause for Andy.
 
 | Role/task | Default capability | Initial PoC policy | Escalation |
 |---|---|---|---|
 | Deterministic metadata/status | No model | Script or safe output | Never use a model when deterministic logic suffices |
-| Triage and summaries | Fast/low-cost | Current small Copilot model, low reasoning | Escalate on ambiguity only |
+| Triage and summaries | Fast/low-cost | Gemma 4 12B local when allowlisted; economical Copilot otherwise | Escalate on ambiguity only |
 | Planning/orchestration | Strong reasoning | Current frontier Copilot model, high reasoning | Human decision on architecture ambiguity |
-| Domain implementation | Strong coding harness | Copilot SDK/CLI worker, high reasoning | Specialist plus review |
-| QA test design | Strong reasoning, read/write tests | Independent role/model where practical | Human on disputed acceptance criteria |
+| Bounded implementation | Scoped coding worker | Gemma 4 12B local for allowlisted low-risk fixtures; Copilot coding harness otherwise | Tests, review, and cloud escalation |
+| Domain implementation | Strong coding harness | Copilot SDK/CLI worker, high reasoning | Specialist plus review; local route denied when risk is not low |
+| First-pass QA | Bounded review | Gemma 4 12B local for allowlisted fixtures | Independent stronger review on rejection or ambiguity |
+| Final QA test design | Strong reasoning, read/write tests | Independent cloud role/model where practical | Human on disputed acceptance criteria |
 | Adversarial review | Strong independent review | Different session and preferably different model family | Human accepts residual risk |
 | Integration | Deterministic first | Scripts, CI, restricted summarizer | No model may override a failed gate |
 
-The policy should support three measured strategies: frontier everywhere,
-role-optimized, and cheap-first with explicit escalation. Model identifiers are
-versioned runtime data, not architecture.
+Candidate local tasks are small isolated code changes, straightforward unit
+tests, documentation updates, mechanical refactors, CI/test-output diagnosis,
+issue and diff summaries, first-pass QA, and simple implementation corrections.
+The initial local route is denied ADR and architecture decisions, foundational
+public contracts, high-risk probabilistic/statistical model changes, final
+adversarial review, human-decision interpretation, integration/merge authority,
+and repository security or permissions.
+
+**Local-first execution does not imply local-model authority.** The expected
+flow is policy classification, local execution in a bounded worktree,
+deterministic tests and stronger review, then continuation on success or cloud
+escalation on risk, ambiguity, failure, rejection, or scope growth. Copilot Max
+remains the principal cloud escalation route: an economical current model for
+medium work, Sol or the strongest suitable available model for high-risk
+reasoning, and a specialist frontier coding harness for difficult implementation
+where justified. These assignments are Phase 2 measurements, not fixed model
+architecture.
+
+Escalation triggers are:
+
+- risk above the configured low-risk threshold;
+- architecture, public-contract, or other `AGENTS.md` decision trigger;
+- observable model uncertainty or ambiguous output;
+- tool-call or deterministic test failure;
+- repeated fix-loop failure or reviewer rejection;
+- unexpected file, dependency, permission, or scope expansion;
+- context-window, memory, backend, or other resource failure;
+- an unsupported task category; or
+- explicit human escalation.
+
+The policy should support four measured strategies:
+
+- **A - Frontier cloud everywhere:** strongest suitable cloud model for each
+  role.
+- **B - Role-optimized cloud:** different Copilot models and reasoning levels
+  by role.
+- **C - Cheap-cloud first:** economical cloud worker with stronger cloud
+  escalation.
+- **D - Local-first:** Gemma 4 12B for eligible work with Copilot/cloud
+  escalation.
+
+Strategy D is not presumed to win. Model identifiers are versioned runtime data,
+not architecture.
 
 ## 20. Cost measurement plan
 
@@ -489,6 +548,12 @@ For each run record:
 - wall time, human interventions, review findings, CI attempts, and final
   acceptance result;
 - all concurrent Copilot use during the measurement window.
+
+For Strategy D also record local oracle pass rate, test results, reviewer
+findings, fix-loop iterations, escalation and human-correction rates, end-to-end
+latency, local resource use, and cloud credits consumed after escalation. Local
+inference with no cloud token charge is not cheaper if defects, retries, review,
+or machine contention move cost downstream.
 
 `gh-aw` estimates use catalogue pricing and may not match billing. Account
 before/after is also noisy when other sessions run. A valid comparison requires
@@ -562,6 +627,8 @@ state version. Exactly one side effect and one accepted transition may result.
 Examples: issue classification, status summaries, typo-only documentation, or
 read-only research. A bounded agent may act automatically through declared safe
 outputs. Deterministic validation and an auditable GitHub result are required.
+Only explicit low-risk categories are eligible for a local open-weight worker;
+unknown categories fail closed to cloud escalation or human review.
 
 ### Medium risk
 
@@ -694,6 +761,17 @@ Controls are layered:
 - inspect generated Agentic Workflow lock files and pin third-party actions;
 - log attempted denied operations and stop on privilege ambiguity.
 
+A local model starts with a narrower boundary than a frontier worker: one
+disposable worktree; only task-specific read/write paths; allowlisted shell
+commands; resource limits; no secrets, keychain, unrelated home-directory, or
+default-branch access; no merge, settings, policy, workflow, or human-decision
+tools; and external/web access denied unless a fixture explicitly requires it.
+Where the inference backend exposes a service, bind it to loopback only. Forced
+negative probes attempt secret and policy reads, out-of-scope writes, network
+egress, a high-risk task, default-branch update, and merge. Deterministic tests
+and an independent stronger reviewer remain the safety boundary because a local
+model may be less robust to prompt injection and tool misuse.
+
 OpenClaw supports environment, file, exec, and store SecretRefs. Its shared
 store is SQLite protected by filesystem permissions rather than strong at-rest
 encryption. Prefer the macOS Keychain or an established password manager/secret
@@ -734,18 +812,53 @@ instructions, and verification scripts. Machine-local rendered config and
 secrets remain ignored. Reproducibility means rendering a fresh real config from
 reviewed inputs, not linking a live home-directory file into Git.
 
+Local-worker configuration must declare role/purpose, provider kind, model
+identifier, source, immutable revision/hash where feasible, license, quantization,
+inference backend and version, context settings, tool/resource policy, and
+escalation policy. Model weights, caches, runtime databases, and machine-specific
+paths are not committed to Git.
+
 The old Mac can host the first disposable experiment. The target 2024 M3 must be
 bootstrapped from a fresh clone, pinned prerequisites, declarative templates,
 and fresh authentication. Do not copy `~/.openclaw`, `~/.copilot`, SQLite,
 pairing, sessions, memory, caches, worktrees, keychains, or hidden dotfiles.
 
 This research machine is an M1 Pro with eight CPU cores and 16 GB RAM; it is not
-the target M3 and is only a baseline. A 2024 M3 is plausibly sufficient because
-model inference is remote and local work is primarily Git, language tooling,
-processes, and sandboxes. The chip label alone is insufficient: RAM, swap, disk,
-repository workload, and concurrent toolchains determine capacity. Phase 2 must
-measure before any hardware conclusion. This report makes no purchase
-recommendation.
+the validation machine and is only a baseline. The target is Andy's 2024 M3
+MacBook Pro with 18 GB unified memory.
+
+Two hardware questions must remain separate:
+
+1. **Does OpenClaw itself need more powerful hardware?** Probably not: it is a
+  coordinator around remote services and local tools, but Phase 2 must verify
+  its measured overhead.
+2. **Could more memory become economically useful because it enables better
+  local models and reduces cloud usage?** This remains an empirical Phase 2 or
+  future capacity question.
+
+Gemma 4 12B is the first local candidate because Google documents coding and
+function-calling capability, publishes a QAT Q4 GGUF intended to reduce load
+memory, and positions the 12B class for consumer workstations. That makes an
+appropriately quantized artifact a plausible middle ground for 18 GB: more
+capable than a small utility model while avoiding the still less plausible
+memory/quality trade of starting with a 30B-class dense model alongside normal
+development workloads. Neither fit nor coding quality has been validated on
+this Mac.
+
+For the exact artifact, Phase 2 records source revision and checksum, license,
+backend/version, quantization, model and total process residency, usable rather
+than advertised context, time to first token, generation speed, peak unified
+memory, memory pressure, swap growth, CPU/GPU utilization where observable,
+thermal/power behavior where available, machine responsiveness, and end-to-end
+task time. It runs local inference alone, with OpenClaw, with tests/builds, and
+within the one/two/four-worker experiment. Distinguish multiple harnesses sharing
+one model service from multiple loaded model instances.
+
+No hardware purchase follows from parameter count. A future higher-memory Mac
+mini or desktop could expand the feasible model class, but no model, Mac, memory
+size, or purchase timing should be selected unless local routing proves useful,
+18 GB materially constrains that value, and measured cloud-cost or delivery-time
+savings justify the machine.
 
 ## 28. Multi-repository, failure, and removal design
 
@@ -782,6 +895,28 @@ frozen, versioned fixture manifest and execute these tests. Before execution,
 record the comparison thresholds in that manifest. All implementation-path and
 cost comparisons use at least three context-isolated runs in rotated order.
 
+The local-worker evaluation is one execution-route experiment, not a fifth
+orchestration architecture. The task path remains:
+
+```mermaid
+flowchart TD
+  A["Telegram / operator"] --> B["Optional frontier planning and advice"]
+  B --> C["GitHub authoritative work graph"]
+  C --> D["Deterministic fail-closed task/risk router"]
+  D -->|"allowlisted low risk"| E["Gemma 4 12B local worker"]
+  D -->|"medium or escalation"| F["Copilot/cloud worker"]
+  D -->|"high risk / decision"| G["Frontier analysis + Andy decision gate"]
+  E --> H["Scoped worktree + tests + independent review"]
+  F --> H
+  G --> H
+  H --> I["GitHub draft PR + CI"]
+  H -->|"failure / ambiguity / rejection / scope growth"| F
+```
+
+The optional frontier layer may propose plans and risk classifications, but the
+versioned router and GitHub dispatcher control transitions. It is not a second
+control plane.
+
 | Test | Evidence | Pass condition |
 |---|---|---|
 | A. Manual baseline | Manifest oracle, timeline, intervention events, prompts, checks | Every run meets the same deterministic oracle; human minutes and interventions are counted by the predeclared schema |
@@ -795,6 +930,7 @@ cost comparisons use at least three context-isolated runs in rotated order.
 | I. Routing and cost | Route-specific provider response/events, resolved model, effective reasoning evidence, tokens, settled account delta | Distinct model/reasoning controls and negative fallbacks are proved per route; unknown effective reasoning fails that route; three cost trials per strategy reconcile within tolerance |
 | J. One/two/four workers | Same fixed independent batch, three rotated trials each, local/provider metrics | Only oracle-passing tasks count; predeclared throughput, failure, pressure, swap, responsiveness, duration, and remote-throttle limits determine pass/fail |
 | K. Multi-repo, merge denial, and removal | Independently reported K1/K2/K3 gates | K1 exact-SHA flow/recovery passes; K2 GitHub denies every default-branch update route for automation and non-Andy actor before/after approval, then allows Andy; K3 second operator completes after both frameworks/runtime state are removed |
+| L. Local open-weight worker | Exact Gemma artifact/backend evidence, tiered eval, resource/security probes, cloud comparison | A useful allowlisted subset meets predeclared quality, review, escalation, tool, responsiveness, and total-cost thresholds without authority expansion or silent cloud fallback |
 
 Hardware sampling should capture `powermetrics` where permitted, Activity
 Monitor or `memory_pressure`, process RSS/CPU, swap, disk free space, Actions and
@@ -826,6 +962,32 @@ configuration file, latency, or apparent answer quality is insufficient. If a
 route exposes no such evidence, its reasoning-control result is inconclusive and
 it cannot satisfy a policy that requires verified reasoning selection.
 
+### Local task-evaluation tiers
+
+The local set contains representative CaddAI-shaped fixtures at increasing
+difficulty, each with exact expected outputs and deterministic checks:
+
+| Tier | Fixtures | Purpose |
+|---|---|---|
+| 1 - Mechanical | Summarize CI output; extract issue dependencies; recommend a risk class for policy validation; produce a structured diff summary | Establish structured accuracy without code authority |
+| 2 - Bounded engineering | Add straightforward unit tests; make a small isolated refactor; align documentation with code; implement a trivial helper | Identify the initial eligible coding subset |
+| 3 - Moderate reasoning | Diagnose a bounded failing test; review against acceptance criteria; fix a small bug after reviewer feedback | Measure escalation, fix loops, and downstream review cost |
+| 4 - High-risk control | ADR review; foundational public API change; probabilistic/statistical model design | Must be rejected by the router, not solved by the local worker |
+
+The strongest simple first proof is one harmless fixture containing a small
+deterministic helper, unit tests, and documentation. Run the same exact task with
+Gemma 4 12B and the selected cloud coding worker. Compare oracle correctness,
+latency, review findings and time, interventions, local resources, escalation,
+and cloud credits. Installation or a plausible-looking patch is not success.
+
+Strategy D is promising only if it demonstrates an allowlisted task subset with
+acceptable correctness and reviewer burden, bounded escalation, stable tools,
+acceptable M3 responsiveness, and a measurable reduction in cloud credits after
+all escalation and rework. Reject or narrow it when reviewer failures/retries
+erase savings, memory pressure harms development, tools are unreliable, security
+exposure is disproportionate, or nearly every meaningful coding task escalates.
+Predeclare numeric thresholds in the fixture manifest before execution.
+
 Adopt neither Option C nor D unless all hard gates pass: GitHub-only
 reconstruction, technical merge denial, durable human pause, clean-M3 bootstrap,
 bounded cost, no silent model fallback, idempotent recovery, two-repository
@@ -845,6 +1007,10 @@ Unresolved questions for the PoC are:
   worker throughput;
 - whether a GitHub App is worth creating for the disposable PoC or a tightly
   scoped, short-lived fine-grained PAT is sufficient.
+- whether Gemma 4 12B at a tested quantization has sufficient quality, stable
+  tool use, usable context, and memory headroom on the M3/18 GB machine;
+- whether local-first escalation reduces total cloud credits after reviewer,
+  retry, latency, and hardware contention costs are counted.
 
 Primary sources consulted, current on the research date:
 
@@ -860,6 +1026,9 @@ Primary sources consulted, current on the research date:
 - [GitHub Copilot CLI programmatic reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-programmatic-reference)
 - [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans-for-github-copilot)
 - [GitHub Copilot model comparison](https://docs.github.com/en/copilot/reference/ai-models/model-comparison)
+- [Google Gemma 4 model card](https://ai.google.dev/gemma/docs/core/model_card_4)
+- [Google Gemma 4 12B instruction model](https://huggingface.co/google/gemma-4-12B-it/tree/707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7)
+- [Google Gemma 4 12B QAT Q4 GGUF](https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf/tree/29d097773436b69ff9feafd636ab4cf873786537)
 - [GitHub ruleset rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
 - [Deciding when to build a GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/deciding-when-to-build-a-github-app)
 - [GitHub App installation authentication](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation)

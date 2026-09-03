@@ -52,6 +52,10 @@ This is a recommendation for a PoC, not a binding architecture decision.
 - Can Copilot Max be the primary model-access route through a native provider,
   Copilot-owned coding harness, or ACP worker, and how can actual routing and AI
   credit use be verified?
+- Can a replaceable Gemma 4 12B local worker perform enough allowlisted low-risk
+  work on an M3 MacBook Pro with 18 GB unified memory to reduce total cloud
+  credits without increasing defects, review, latency, security, or hardware
+  cost?
 - How should human decision and merge gates be enforced technically and survive
   loss of sessions, the Gateway, Telegram, or the local machine?
 - Is a dedicated `caddai-dev-orchestrator` repository needed for the PoC?
@@ -75,6 +79,8 @@ Fresh external research used first-party sources current on 2026-09-03:
 - GitHub Agentic Workflows documentation and `github/gh-aw` release `v0.88.2`.
 - GitHub Actions, rulesets, token-permission, GitHub App, and Projects
   documentation.
+- Google's Gemma 4 model card and Google-published Gemma 4 12B instruction and
+  QAT Q4 GGUF artifact metadata.
 
 Third-party reports may inform maturity risks but do not establish supported
 product behaviour. Unsupported and undocumented capabilities are kept distinct.
@@ -125,6 +131,9 @@ constraints are incorporated:
   topology decision.
 - Durable task contracts name capabilities and permissions, not providers or
   permanent model IDs.
+- Local models remain replaceable execution workers behind deterministic,
+  fail-closed risk policy. They never own classification, dispatch, project
+  state, decisions, security, integration, or merge authority.
 
 The research recommendation differs narrowly from the Architect's initial
 preference: it proposes testing a constrained hybrid first because Telegram,
@@ -157,6 +166,8 @@ Acceptance criteria:
   claims.
 - Compare OpenClaw native Copilot, Copilot-owned coding harness, and ACP/external
   worker routes.
+- Evaluate Gemma 4 12B as the first local open-weight candidate without
+  downloading weights or selecting an inference backend in Phase 1.
 - Record model-selection, reasoning-control, observability, cost, permissions,
   recovery, and lock-in limits in a claim-to-source ledger with exact versions,
   maturity labels, and CaddAI-specific PoC gaps.
@@ -173,6 +184,9 @@ Acceptance criteria:
 - Forbid migration of `~/.openclaw`, sessions, pairing databases, hidden memory,
   cached credentials, and runtime worktrees to the M3.
 - Require technical merge prevention and durable human-decision records.
+- Give the local worker one scoped worktree, allowlisted tools and paths, no
+  secrets or authority, loopback-only serving where applicable, and denied
+  external network access by default.
 
 ### Task 4 - Design the Phase 2 PoC
 
@@ -180,7 +194,8 @@ Owner: CaddAI Orchestrator, with QA review.
 
 Acceptance criteria:
 
-- Specify tests A-K with objective evidence and pass/fail criteria.
+- Specify tests A-L with objective evidence and pass/fail criteria, including
+  the local open-weight worker as Test L.
 - Run symmetric manual, GitHub-native, OpenClaw-first, and constrained-hybrid
   arms against the same versioned fixture oracle.
 - Verify actual provider, model, and reasoning level rather than accepting
@@ -189,8 +204,18 @@ Acceptance criteria:
 - Measure Copilot credits using baseline and before/after readings while
   controlling concurrent use, with repeated trials and a predeclared
   reconciliation tolerance.
+- Compare frontier-cloud, role-optimized-cloud, cheap-cloud-first, and
+  local-first-with-cloud-escalation strategies against the same oracle, counting
+  reviewer/retry/intervention cost rather than treating local inference as free.
+- Evaluate Tier 1 mechanical, Tier 2 bounded engineering, Tier 3 moderate
+  reasoning, and Tier 4 high-risk control fixtures; the router must reject Tier
+  4 before local execution.
 - Compare one, two, and four active workers using end-to-end throughput and
   machine-pressure metrics.
+- Benchmark the exact Gemma artifact, revision, quantization, backend, usable
+  context, latency, throughput, unified-memory footprint, pressure, swap,
+  responsiveness, and concurrency with OpenClaw and tests/builds on the actual
+  M3/18 GB validation machine.
 - Include two-repository coordination, interruption recovery, clean-M3 bootstrap,
   framework removal, attempted merge, negative human-gate cases, duplicate
   delivery, concurrent dispatcher intents, and a forced stop after the second
@@ -213,7 +238,9 @@ Acceptance criteria:
 QA must reject a PoC that proves only installation, startup, Telegram delivery,
 or acceptance of a model name. It must also reject recovery that copies old
 runtime state, session-only decisions, unmeasurable cost claims, prompt-only
-merge controls, or tests whose only success signal is CPU utilization.
+merge controls, or tests whose only success signal is CPU utilization. For the
+local route, it must reject cloud-credit savings that hide additional defects,
+review, retries, interventions, security exposure, or machine contention.
 
 ## Parallelism
 
@@ -233,6 +260,10 @@ Subject to explicit human approval, test a GitHub-first hybrid with:
 - Copilot Max tested through the native OpenClaw provider for reasoning roles and
   the Copilot coding harness for engineering work; ACP retained as the provider-
   neutral comparison route.
+- Gemma 4 12B tested as a replaceable local worker for explicitly allowlisted
+  low-risk tasks on the M3/18 GB machine, behind deterministic risk routing,
+  scoped tools/worktrees, deterministic checks, independent review, and cloud
+  escalation. It is not the orchestrator or a source of authority.
 - GitHub Agentic Workflows tested only for bounded event-driven tasks and the
   OpenClaw ablation, never as the only recovery or correctness mechanism while
   in Public Preview.
@@ -243,6 +274,8 @@ Subject to explicit human approval, test a GitHub-first hybrid with:
 ## Intentionally unexecuted actions
 
 - No OpenClaw, plugin, coding harness, or provider installation.
+- No Gemma/model-weight download, inference-runtime installation, local model
+  execution, M3 configuration change, or meaningful cloud-credit experiment.
 - No OpenClaw authentication or significant AI-credit experiment.
 - No Telegram bot, token, pairing, webhook, group, or dashboard setup.
 - No `andywrussell/caddai-dev-orchestrator` or fixture repository creation.
@@ -256,13 +289,17 @@ Subject to explicit human approval, test a GitHub-first hybrid with:
 Phase 1 raises no binding decision. Phase 2 requires a new human approval before
 installing OpenClaw, creating bots/repositories/apps or credentials, enabling a
 preview/cloud service, changing rulesets, spending material credits, or adopting
-any orchestration architecture. Binding adoption after the PoC should be handled
-as a separate ADR-backed decision.
+any orchestration architecture. The same approval boundary applies before
+downloading Gemma, installing an inference backend, or changing the M3. Binding
+adoption after the PoC should be handled as a separate ADR-backed decision.
 
 ## Review record
 
 - Architect: initial review complete. Spike framing approved; GitHub-native
   execution must be tested before hybrid complexity is credited.
+- Architect amendment review: `APPROVE` after one repair. The local route is a
+  replaceable worker behind deterministic fail-closed policy, with no production
+  coupling or hardware conclusion; no ADR is required for this research amendment.
 - QA: `APPROVE` after one test-design repair. The fixed oracle, negative cases,
   repeated trials, routing proof, cost reconciliation, hardware thresholds, and
   independent multi-repo/merge/removal gates are objectively falsifiable.
@@ -270,6 +307,16 @@ as a separate ADR-backed decision.
   deterministic GitHub single writer, separately authenticated Andy decisions,
   a route-specific permission matrix, symmetric A-D trials, and technical
   Andy-only default-branch update tests.
+- QA amendment review: `APPROVE` after one Test L traceability repair. The
+  four-strategy comparison, tiered fixtures, total-cost accounting, security
+  probes, M3 benchmark, and reject/narrow criteria are objectively falsifiable.
+- Adversarial Reviewer amendment review: `APPROVE`. The design accounts for
+  quantization quality, tool reliability, prompt injection, memory contention,
+  downstream rework, cloud-escalation cost, and model/backend replaceability.
 - Integrator: `PASS` on 2026-09-03. Documentation diff/whitespace checks and
   all required quality gates passed (`791` tests); pytest required clearing a
   local macOS `hidden` flag from `.venv` path files, with no repository change.
+- Integrator amendment validation: `PASS` on 2026-09-03. Documentation
+  diff/whitespace checks, exact three-file scope, GitHub state, and all required
+  quality gates passed (`791` tests); pytest required clearing local macOS
+  `hidden` flags from `.venv`, with no repository change.
