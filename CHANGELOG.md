@@ -10,6 +10,14 @@ first public API is published.
 
 ### Added
 
+- Added the non-binding Phase 1 development-orchestration architecture
+  research and proof-of-concept plan for issue #97. The documents compare
+  manual, OpenClaw-first, GitHub Agentic Workflows-first, and GitHub-first
+  hybrid approaches and define measurable Phase 2 experiments without
+  installing OpenClaw, configuring Telegram, creating repositories, changing
+  product code, adopting an architecture, or starting M5/M6 work. Issue #82
+  remains unstarted at Project Status `Backlog`.
+
 - [ADR 0008](docs/adr/0008-golf-state-domain-contract.md) (`GolfState`
   domain contract and ownership, PR #96) promoted from **Proposed** to
   **Accepted** — approved by the human on 2026-09-02, after three
