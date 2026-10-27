@@ -10,6 +10,11 @@ first public API is published.
 
 ### Added
 
+- Added non-binding research for issue #99 on Jev-style candidate scoring,
+  BitNet b1.58 mobile feasibility, deterministic and lightweight ML baselines,
+  pruning risks, and a future full-engine comparison protocol. No model,
+  interface, dependency, ADR, milestone, or decision-authority change is adopted.
+
 - Added the non-binding Phase 1 development-orchestration architecture
   research and proof-of-concept plan for issue #97. The documents compare
   manual, OpenClaw-first, GitHub Agentic Workflows-first, and GitHub-first
